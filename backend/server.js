@@ -22,6 +22,7 @@ app.use('/api/backtest', require('./routes/backtest'));
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
-    app.listen(5000, () => console.log('✅ Server on port 5000'));
+    const port = process.env.PORT || 5000;
+app.listen(port, () => console.log(`✅ Server on port ${port}`));
   })
   .catch(err => console.log('❌ MongoDB error:', err));
