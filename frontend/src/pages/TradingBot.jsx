@@ -58,10 +58,10 @@ function TradingBot() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-7xl mx-auto">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-white">Trading Bot</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Automated signal generation — a new signal fires every 4 seconds</p>
+        <h1 className="text-2xl font-bold text-white">Trading Bot</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Automated signal generation — a new signal fires every 4 seconds</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

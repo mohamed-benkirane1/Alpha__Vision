@@ -52,7 +52,7 @@ function TradeHistory({ trades }) {
                   <span className="text-gray-400 text-right sm:text-left">{t.qty}</span>
                   <span className="hidden sm:block text-gray-300 text-right">{fmt(t.price)}</span>
                   <div className="text-right col-span-1">
-                    <p className="text-white font-medium">{fmt(t.estimated)}</p>
+                    <p className="text-white font-medium">{fmt(t.total)}</p>
                     <p className="text-[10px] text-gray-600">{t.time}</p>
                   </div>
                 </motion.div>

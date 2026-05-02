@@ -54,10 +54,10 @@ function Backtesting() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-7xl mx-auto">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-white">Backtesting</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Simulate your strategy on 30 days of historical data</p>
+        <h1 className="text-2xl font-bold text-white">Backtesting</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Simulate your strategy on 30 days of historical data</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

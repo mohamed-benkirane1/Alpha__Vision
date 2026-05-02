@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Play } from 'lucide-react'
+import { Play, FlaskConical } from 'lucide-react'
 
 const SYMBOLS     = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL']
 const STRATEGIES  = [
-  { value: 'rsi',       label: 'RSI Strategy'        },
-  { value: 'macd',      label: 'MACD Crossover'      },
-  { value: 'bollinger', label: 'Bollinger Bands'     },
-  { value: 'multi',     label: 'Multi-Indicator'     },
+  { value: 'rsi',       label: 'RSI Strategy',    desc: 'Buys on RSI < 30, sells on RSI > 70. Simple momentum oscillator.' },
+  { value: 'macd',      label: 'MACD Crossover',  desc: 'Signal line crossover strategy using 12/26/9 EMA configuration.' },
+  { value: 'bollinger', label: 'Bollinger Bands', desc: 'Mean-reversion strategy. Trades band breakouts and squeezes.'   },
+  { value: 'multi',     label: 'Multi-Indicator', desc: 'Combines RSI + MACD + BB for higher-confidence signals.'        },
 ]
 
 const selectClass =
@@ -26,7 +26,10 @@ function BacktestForm({ onRun, loading }) {
 
   return (
     <div className="bg-gray-900/50 border border-gray-800/60 rounded-xl p-5 backdrop-blur-sm">
-      <h2 className="text-sm font-semibold text-white mb-5">Strategy Configuration</h2>
+      <div className="flex items-center gap-2 mb-5">
+        <FlaskConical size={13} className="text-indigo-400" />
+        <h2 className="text-sm font-semibold text-white">Strategy Configuration</h2>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -43,6 +46,10 @@ function BacktestForm({ onRun, loading }) {
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
+          {/* Strategy description */}
+          <p className="text-[11px] text-gray-600 mt-1.5 leading-relaxed">
+            {STRATEGIES.find((s) => s.value === strategy)?.desc}
+          </p>
         </div>
 
         <div>

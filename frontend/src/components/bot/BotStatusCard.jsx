@@ -33,7 +33,7 @@ function BotStatusCard({ bot }) {
           { label: 'Symbol',   value: bot.symbol   || '—' },
           { label: 'Strategy', value: bot.strategy ? bot.strategy.toUpperCase() : '—' },
           { label: 'Trades',   value: bot.trades || 0 },
-          { label: 'P&L',      value: bot.profit > 0 ? `+$${bot.profit.toFixed(2)}` : `$${bot.profit.toFixed(2)}`, green: bot.profit > 0 },
+          { label: 'P&L',      value: bot.profit > 0 ? `+$${bot.profit.toFixed(2)}` : bot.profit < 0 ? `-$${Math.abs(bot.profit).toFixed(2)}` : '$0.00', green: bot.profit > 0 ? true : bot.profit < 0 ? false : null },
         ].map((item) => (
           <div key={item.label} className="bg-gray-900/80 border border-gray-800/60 rounded-lg p-3">
             <p className="text-[11px] text-gray-500 mb-1">{item.label}</p>

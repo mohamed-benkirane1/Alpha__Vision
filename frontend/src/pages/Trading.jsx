@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import PriceCard from '../components/trading/PriceCard'
-import OrderForm from '../components/trading/OrderForm'
+import PriceCard    from '../components/trading/PriceCard'
+import OrderForm    from '../components/trading/OrderForm'
 import TradingPanel from '../components/trading/TradingPanel'
 import TradeHistory from '../components/trading/TradeHistory'
 
@@ -12,9 +12,12 @@ const MOCK_PRICES = [
   { symbol: 'AAPL', name: 'Apple',    price:   189.45, change: -0.88 },
 ]
 
+// OrderForm expects an object keyed by symbol
+const PRICE_MAP = Object.fromEntries(MOCK_PRICES.map((p) => [p.symbol, p]))
+
 function Trading() {
   const [selectedSymbol, setSelectedSymbol] = useState('BTC')
-  const [trades, setTrades] = useState([])
+  const [trades, setTrades]                 = useState([])
 
   function handleTrade({ type, symbol, qty, price }) {
     const time = new Date().toLocaleTimeString('en-US', {
@@ -29,31 +32,37 @@ function Trading() {
   const currentAsset = MOCK_PRICES.find((p) => p.symbol === selectedSymbol) || MOCK_PRICES[0]
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-7xl mx-auto">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-white">Trading Simulation</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Practice trading with simulated real-time prices</p>
+        <h1 className="text-2xl font-bold text-white">Trading Simulation</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Practice trading with simulated real-time prices</p>
       </div>
 
+      {/* Price ticker */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {MOCK_PRICES.map((asset) => (
           <PriceCard
             key={asset.symbol}
-            asset={asset}
+            {...asset}
             selected={selectedSymbol === asset.symbol}
-            onClick={() => setSelectedSymbol(asset.symbol)}
+            onSelect={setSelectedSymbol}
           />
         ))}
       </div>
 
+      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
-          <TradingPanel asset={currentAsset} />
+          <TradingPanel
+            symbol={currentAsset.symbol}
+            price={currentAsset.price}
+            type="BUY"
+          />
           <TradeHistory trades={trades} />
         </div>
         <div>
           <OrderForm
-            prices={MOCK_PRICES}
+            prices={PRICE_MAP}
             selectedSymbol={selectedSymbol}
             onTrade={handleTrade}
           />
