@@ -6,10 +6,10 @@ const filters = [
 ]
 
 const countColors = {
-  all:     'bg-gray-700/60 text-gray-400',
+  all:     'bg-slate-700/60 text-slate-400',
   bullish: 'bg-emerald-500/15 text-emerald-400',
   bearish: 'bg-red-500/15 text-red-400',
-  neutral: 'bg-gray-600/30 text-gray-400',
+  neutral: 'bg-slate-600/30 text-slate-400',
 }
 
 function NewsFilters({ active, onChange, counts }) {
@@ -21,15 +21,15 @@ function NewsFilters({ active, onChange, counts }) {
           <button
             key={f.key}
             onClick={() => onChange(f.key)}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
               isActive
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
-                : 'bg-gray-900/60 border border-gray-800/60 text-gray-400 hover:text-white hover:border-gray-700/60'
+                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_14px_rgba(99,102,241,0.3)]'
+                : 'bg-slate-900/60 border border-slate-700/50 text-slate-400 hover:text-white hover:border-indigo-500/25'
             }`}
           >
             {f.label}
             {counts[f.key] !== undefined && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isActive ? 'bg-white/15 text-white' : countColors[f.key]}`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${isActive ? 'bg-white/15 text-white' : countColors[f.key]}`}>
                 {counts[f.key]}
               </span>
             )}

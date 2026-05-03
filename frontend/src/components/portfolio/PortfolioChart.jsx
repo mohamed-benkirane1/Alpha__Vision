@@ -13,17 +13,17 @@ function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs shadow-xl">
-      <p className="text-white font-semibold">{d.name}</p>
-      <p className="text-gray-400">${d.value.toLocaleString()}</p>
-      <p className="text-indigo-400">{d.pct}%</p>
+    <div className="bg-[#0A1628] border border-indigo-500/30 rounded-xl px-3 py-2.5 text-xs shadow-xl">
+      <p className="text-white font-bold">{d.name}</p>
+      <p className="text-slate-400">${d.value.toLocaleString()}</p>
+      <p className="text-indigo-400 font-semibold">{d.pct}%</p>
     </div>
   )
 }
 
 function PortfolioChart() {
   return (
-    <div className="bg-gray-900/50 border border-gray-800/60 rounded-xl p-5 backdrop-blur-sm">
+    <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-5 backdrop-blur-xl">
       <h2 className="text-sm font-semibold text-white mb-5">Allocation</h2>
 
       <ResponsiveContainer width="100%" height={200}>
@@ -46,8 +46,7 @@ function PortfolioChart() {
         </PieChart>
       </ResponsiveContainer>
 
-      {/* Legend */}
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 space-y-2.5">
         {allocation.map((a) => (
           <motion.div
             key={a.name}
@@ -56,14 +55,14 @@ function PortfolioChart() {
             className="flex items-center justify-between text-xs"
           >
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
-              <span className="text-gray-400">{a.name}</span>
+              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+              <span className="text-slate-300 font-medium">{a.name}</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-16 h-1 bg-gray-800 rounded-full overflow-hidden">
+              <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${a.pct}%`, backgroundColor: a.color }} />
               </div>
-              <span className="text-gray-500 w-8 text-right">{a.pct}%</span>
+              <span className="text-slate-500 w-9 text-right font-medium">{a.pct}%</span>
             </div>
           </motion.div>
         ))}

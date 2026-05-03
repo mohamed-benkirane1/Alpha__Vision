@@ -7,7 +7,6 @@ import ChatInput          from '../components/chatbot/ChatInput'
 import SuggestionCard     from '../components/chatbot/SuggestionCard'
 import MarketContextPanel from '../components/chatbot/MarketContextPanel'
 
-// ── Mock response engine ────────────────────────────────────────────────────
 const RESPONSES = {
   btc:
 `Bitcoin (BTC) is currently trading at $67,432 with strong bullish momentum.
@@ -115,16 +114,14 @@ const getMockResponse = (text) => {
     return t.includes('buy') ? RESPONSES.buy_eth.replace(/ETH/g, 'BTC') : RESPONSES.btc
   if (t.includes('eth') || t.includes('ethereum'))
     return t.includes('buy') ? RESPONSES.buy_eth : RESPONSES.eth
-  if (t.includes('sol') || t.includes('solana'))  return RESPONSES.sol
-  if (t.includes('rsi'))                          return RESPONSES.rsi
+  if (t.includes('sol') || t.includes('solana'))     return RESPONSES.sol
+  if (t.includes('rsi'))                             return RESPONSES.rsi
   if (t.includes('risk') || t.includes('portfolio')) return RESPONSES.portfolio
   return RESPONSES.default
 }
 
-const now = () =>
-  new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-// ── Initial messages ────────────────────────────────────────────────────────
 const INITIAL_MESSAGES = [
   {
     id: 1,
@@ -134,15 +131,13 @@ const INITIAL_MESSAGES = [
   },
 ]
 
-// ── Suggestions ─────────────────────────────────────────────────────────────
 const SUGGESTIONS = [
-  { label: 'Analyze BTC',       text: 'Analyze BTC'                      },
-  { label: 'Explain RSI',       text: 'Explain RSI signal'               },
-  { label: 'Portfolio risk?',   text: 'What is my portfolio risk?'       },
-  { label: 'Should I buy ETH?', text: 'Should I buy ETH?'                },
+  { label: 'Analyze BTC',       text: 'Analyze BTC'              },
+  { label: 'Explain RSI',       text: 'Explain RSI signal'       },
+  { label: 'Portfolio risk?',   text: 'What is my portfolio risk?' },
+  { label: 'Should I buy ETH?', text: 'Should I buy ETH?'        },
 ]
 
-// ── Page ────────────────────────────────────────────────────────────────────
 function Chatbot() {
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [thinking, setThinking] = useState(false)
@@ -154,11 +149,9 @@ function Chatbot() {
 
   const handleSend = (text) => {
     if (!text.trim() || thinking) return
-
     const userMsg = { id: Date.now(), role: 'user', content: text.trim(), timestamp: now() }
     setMessages((prev) => [...prev, userMsg])
     setThinking(true)
-
     const delay = 1100 + Math.random() * 700
     setTimeout(() => {
       const aiMsg = { id: Date.now() + 1, role: 'ai', content: getMockResponse(text), timestamp: now() }
@@ -170,7 +163,6 @@ function Chatbot() {
   return (
     <div className="flex flex-col gap-5 h-[calc(100vh-7rem)]">
 
-      {/* ── Header ─────────────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
@@ -182,27 +174,22 @@ function Chatbot() {
             <Bot size={18} className="text-indigo-400" />
             <h1 className="text-2xl font-bold text-white">AI Trading Assistant</h1>
           </div>
-          <p className="text-sm text-gray-400">
-            Ask questions, analyze markets and receive trading insights
-          </p>
+          <p className="text-sm text-slate-400">Ask questions, analyze markets and receive trading insights</p>
         </div>
-        <span className="hidden sm:inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium px-3 py-1.5 rounded-full shrink-0">
+        <span className="hidden sm:inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 text-xs font-semibold px-3 py-1.5 rounded-full shrink-0 shadow-[0_0_12px_rgba(99,102,241,0.10)]">
           <Zap size={11} />
           AI Assistant
         </span>
       </motion.div>
 
-      {/* ── Content ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
 
-        {/* Chat panel */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.05 }}
-          className="lg:col-span-2 flex flex-col bg-gray-900/50 border border-gray-800/60 rounded-xl overflow-hidden backdrop-blur-sm min-h-0"
+          className="lg:col-span-2 flex flex-col bg-slate-900/60 border border-slate-700/50 rounded-xl overflow-hidden backdrop-blur-xl min-h-0"
         >
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} />
@@ -212,15 +199,10 @@ function Chatbot() {
             )}
             <div ref={bottomRef} />
           </div>
-
-          {/* Suggestions — always visible */}
           <SuggestionCard suggestions={SUGGESTIONS} onSelect={handleSend} />
-
-          {/* Input */}
           <ChatInput onSend={handleSend} disabled={thinking} />
         </motion.div>
 
-        {/* Sidebar — desktop only */}
         <motion.div
           initial={{ opacity: 0, x: 14 }}
           animate={{ opacity: 1, x: 0 }}
