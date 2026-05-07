@@ -1,35 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 
+/* ── Base ──────────────────────────────────────────────────────────────────── */
 body {
-  background-color: #060D1C;
+  background-color: #070E20;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Subtle grid overlay for the home hero page */
+/* ── Home hero grid ────────────────────────────────────────────────────────── */
 .home-grid {
   background-image:
-    linear-gradient(rgba(99, 102, 241, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 102, 241, 0.035) 1px, transparent 1px);
-  background-size: 60px 60px;
+    linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+  background-size: 52px 52px;
 }
 
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: rgba(99, 102, 241, 0.28); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
+
+/* Sidebar (even thinner) */
+.sidebar-scroll::-webkit-scrollbar       { width: 2px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.15); }
+
+/* ── Text selection ────────────────────────────────────────────────────────── */
+::selection { background: rgba(99, 102, 241, 0.28); color: #fff; }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   KEYFRAMES
+────────────────────────────────────────────────────────────────────────────── */
+
+/* Horizontal price ticker */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+.animate-ticker       { animation: ticker 34s linear infinite; }
+.animate-ticker:hover { animation-play-state: paused; }
+
+/* Slow float */
+@keyframes float {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-8px); }
 }
-::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.35);
-  border-radius: 3px;
+.animate-float { animation: float 4.5s ease-in-out infinite; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.6);
+.animate-shimmer {
+  background: linear-gradient(90deg, #0f1c33 0%, #192d4c 50%, #0f1c33 100%);
+  background-size: 400px 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
 }
 
-::selection {
-  background: rgba(99, 102, 241, 0.3);
-  color: #fff;
+/* Neon border glow */
+@keyframes neonGlow {
+  0%, 100% { box-shadow: 0 0 6px  rgba(99,102,241,0.35), 0 0 18px rgba(99,102,241,0.15); }
+  50%       { box-shadow: 0 0 14px rgba(99,102,241,0.75), 0 0 36px rgba(99,102,241,0.32); }
 }
+.animate-neon { animation: neonGlow 2.4s ease-in-out infinite; }
+
+/* Expanding ring */
+@keyframes ringPulse {
+  0%   { transform: scale(1);   opacity: 0.65; }
+  100% { transform: scale(2.2); opacity: 0;    }
+}
+.animate-ring { animation: ringPulse 2.2s ease-out infinite; }
+
+/* Brightness/saturation glow pulse */
+@keyframes glowPulse {
+  0%, 100% { filter: brightness(1)   saturate(1.0); }
+  50%       { filter: brightness(1.6) saturate(1.4); }
+}
+.animate-glow-pulse { animation: glowPulse 2.4s ease-in-out infinite; }
+
+/* SVG path draw-on */
+@keyframes drawSvg {
+  from { stroke-dashoffset: 3000; opacity: 0.2; }
+  to   { stroke-dashoffset: 0;    opacity: 1;   }
+}
+.animate-draw { animation: drawSvg 2.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Chart area drift */
+@keyframes chartDrift {
+  0%   { transform: translateX(0px)   scaleY(1.00); }
+  50%  { transform: translateX(-18px) scaleY(1.04); }
+  100% { transform: translateX(0px)   scaleY(1.00); }
+}
+.animate-chart-drift { animation: chartDrift 9s ease-in-out infinite; }
+
+/* Ripple on click */
+@keyframes ripple {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 0.45; }
+  100% { transform: translate(-50%,-50%) scale(5); opacity: 0;    }
+}
+.ripple-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.ripple-btn::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  transform: translate(-50%,-50%) scale(0);
+  opacity: 0;
+}
+.ripple-btn:active::after {
+  animation: ripple 0.55s ease-out forwards;
+}
+
+/* Bull image pulsating glow */
+@keyframes bullPulse {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 28px rgba(99, 102, 241, 0.55))
+      drop-shadow(0 0 60px rgba(99, 102, 241, 0.22));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 44px rgba(251, 191, 36, 0.46))
+      drop-shadow(0 0 82px rgba(251, 146, 60, 0.20));
+  }
+}
+.bull-glow { animation: bullPulse 3.2s ease-in-out infinite; }

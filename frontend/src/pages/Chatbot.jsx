@@ -138,7 +138,7 @@ const SUGGESTIONS = [
   { label: 'Should I buy ETH?', text: 'Should I buy ETH?'        },
 ]
 
-function Chatbot() {
+export default function Chatbot() {
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [thinking, setThinking] = useState(false)
   const bottomRef = useRef(null)
@@ -166,31 +166,32 @@ function Chatbot() {
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
+        transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
         className="flex items-center justify-between shrink-0"
       >
         <div>
           <div className="flex items-center gap-2.5 mb-0.5">
-            <Bot size={18} className="text-indigo-400" />
-            <h1 className="text-2xl font-bold text-white">AI Trading Assistant</h1>
+            <Bot size={16} className="text-indigo-400" />
+            <h1 className="text-2xl font-black text-white">AI Trading Assistant</h1>
           </div>
-          <p className="text-sm text-slate-400">Ask questions, analyze markets and receive trading insights</p>
+          <p className="text-xs text-slate-500 font-medium">Ask questions, analyze markets and receive trading insights</p>
         </div>
-        <span className="hidden sm:inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 text-xs font-semibold px-3 py-1.5 rounded-full shrink-0 shadow-[0_0_12px_rgba(99,102,241,0.10)]">
-          <Zap size={11} />
-          AI Assistant
+        <span className="hidden sm:inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 text-[10px] font-black px-3 py-1.5 rounded-full shrink-0 shadow-[0_0_12px_rgba(99,102,241,0.10)] tracking-wider">
+          <Zap size={10} />
+          AI ASSISTANT
         </span>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 flex-1 min-h-0">
 
+        {/* Chat window */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.05 }}
-          className="lg:col-span-2 flex flex-col bg-slate-900/60 border border-slate-700/50 rounded-xl overflow-hidden backdrop-blur-xl min-h-0"
+          transition={{ duration: 0.38, delay: 0.05 }}
+          className="lg:col-span-2 flex flex-col bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl overflow-hidden backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] min-h-0"
         >
-          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 sidebar-scroll">
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} />
             ))}
@@ -203,11 +204,12 @@ function Chatbot() {
           <ChatInput onSend={handleSend} disabled={thinking} />
         </motion.div>
 
+        {/* Context panel */}
         <motion.div
           initial={{ opacity: 0, x: 14 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
-          className="hidden lg:flex flex-col gap-4 overflow-y-auto min-h-0"
+          transition={{ duration: 0.38, delay: 0.1 }}
+          className="hidden lg:flex flex-col gap-3.5 overflow-y-auto min-h-0 sidebar-scroll"
         >
           <MarketContextPanel />
         </motion.div>
@@ -215,5 +217,3 @@ function Chatbot() {
     </div>
   )
 }
-
-export default Chatbot

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { LineChart, Zap } from 'lucide-react'
 import PriceCard    from '../components/trading/PriceCard'
 import OrderForm    from '../components/trading/OrderForm'
 import TradingPanel from '../components/trading/TradingPanel'
@@ -12,10 +14,12 @@ const MOCK_PRICES = [
   { symbol: 'AAPL', name: 'Apple',    price:   189.45, change: -0.88 },
 ]
 
-// OrderForm expects an object keyed by symbol
 const PRICE_MAP = Object.fromEntries(MOCK_PRICES.map((p) => [p.symbol, p]))
 
-function Trading() {
+const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
+const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
+
+export default function Trading() {
   const [selectedSymbol, setSelectedSymbol] = useState('BTC')
   const [trades, setTrades]                 = useState([])
 
@@ -33,43 +37,55 @@ function Trading() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Trading Simulation</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Practice trading with simulated real-time prices</p>
-      </div>
 
-      {/* Price ticker */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}
+        className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <LineChart size={16} className="text-indigo-400" />
+            <h1 className="text-2xl font-black text-white">Trading Simulation</h1>
+          </div>
+          <p className="text-xs text-slate-500 font-medium">Practice trading with simulated real-time prices</p>
+        </div>
+        <span className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/22 text-emerald-400 text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.10)] tracking-wider">
+          <Zap size={10} />
+          SIMULATED
+        </span>
+      </motion.div>
+
+      {/* Asset cards */}
+      <motion.div initial="hidden" animate="visible" variants={stagger}
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
         {MOCK_PRICES.map((asset) => (
-          <PriceCard
-            key={asset.symbol}
-            {...asset}
-            selected={selectedSymbol === asset.symbol}
-            onSelect={setSelectedSymbol}
-          />
+          <motion.div key={asset.symbol} variants={fadeUp}>
+            <PriceCard
+              {...asset}
+              selected={selectedSymbol === asset.symbol}
+              onSelect={setSelectedSymbol}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
+      <motion.div initial="hidden" animate="visible" variants={stagger}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+        <motion.div variants={fadeUp} className="lg:col-span-2 space-y-3.5">
           <TradingPanel
             symbol={currentAsset.symbol}
             price={currentAsset.price}
             type="BUY"
           />
           <TradeHistory trades={trades} />
-        </div>
-        <div>
+        </motion.div>
+        <motion.div variants={fadeUp}>
           <OrderForm
             prices={PRICE_MAP}
             selectedSymbol={selectedSymbol}
             onTrade={handleTrade}
           />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }
-
-export default Trading
