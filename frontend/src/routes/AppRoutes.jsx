@@ -5,6 +5,7 @@ import MainLayout from '../components/layout/MainLayout'
 import Home from '../pages/Home'
 import Login from '../pages/Login'
 import Signup from '../pages/Signup'
+import ForgotPassword from '../pages/ForgotPassword'
 import Dashboard from '../pages/Dashboard'
 import Portfolio from '../pages/Portfolio'
 import News from '../pages/News'
@@ -21,6 +22,7 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
