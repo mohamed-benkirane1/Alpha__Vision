@@ -1,14 +1,14 @@
 import { motion } from 'framer-motion'
 
 const accents = {
-  indigo: {
-    icon:     'text-indigo-400',
-    gradient: 'from-indigo-500/18 to-violet-500/5',
-    border:   'border-indigo-500/20',
-    glow:     'hover:shadow-[0_0_40px_rgba(99,102,241,0.12)] hover:border-indigo-500/35',
-    orb:      'bg-indigo-500/8',
-    ring:     'border-indigo-400/20',
-    sub:      'text-indigo-400/70',
+  rose: {
+    icon:     'text-rose-400',
+    gradient: 'from-rose-500/18 to-red-500/5',
+    border:   'border-rose-500/20',
+    glow:     'hover:shadow-[0_0_40px_rgba(225,29,72,0.12)] hover:border-rose-500/35',
+    orb:      'bg-rose-500/8',
+    ring:     'border-rose-400/20',
+    sub:      'text-rose-400/70',
   },
   emerald: {
     icon:     'text-emerald-400',
@@ -19,14 +19,14 @@ const accents = {
     ring:     'border-emerald-400/20',
     sub:      'text-emerald-400',
   },
-  violet: {
-    icon:     'text-violet-400',
-    gradient: 'from-violet-500/18 to-purple-500/5',
-    border:   'border-violet-500/20',
-    glow:     'hover:shadow-[0_0_40px_rgba(139,92,246,0.12)] hover:border-violet-500/35',
-    orb:      'bg-violet-500/8',
-    ring:     'border-violet-400/20',
-    sub:      'text-violet-400/70',
+  cyan: {
+    icon:     'text-cyan-400',
+    gradient: 'from-cyan-500/18 to-blue-500/5',
+    border:   'border-cyan-500/20',
+    glow:     'hover:shadow-[0_0_40px_rgba(6,182,212,0.10)] hover:border-cyan-500/35',
+    orb:      'bg-cyan-500/8',
+    ring:     'border-cyan-400/20',
+    sub:      'text-cyan-400/70',
   },
   amber: {
     icon:     'text-amber-400',
@@ -39,13 +39,13 @@ const accents = {
   },
 }
 
-export default function StatCard({ icon: Icon, label, value, sub, subUp, accentColor = 'indigo' }) {
-  const c = accents[accentColor] ?? accents.indigo
+export default function StatCard({ icon: Icon, label, value, sub, subUp, accentColor = 'rose' }) {
+  const c = accents[accentColor] ?? accents.rose
 
   return (
     <motion.div
       whileHover={{ y: -3, transition: { duration: 0.2 } }}
-      className={`relative bg-[#0a1628]/88 border ${c.border} rounded-2xl p-5 backdrop-blur-2xl ${c.glow} transition-all duration-300 overflow-hidden shadow-[0_4px_28px_rgba(0,0,0,0.32)]`}
+      className={`relative bg-[#0d0212]/90 border ${c.border} rounded-2xl p-5 backdrop-blur-2xl ${c.glow} transition-all duration-300 overflow-hidden shadow-[0_4px_28px_rgba(0,0,0,0.32)]`}
     >
       {/* Background orb */}
       <div className={`absolute -top-8 -right-8 w-36 h-36 ${c.orb} rounded-full blur-2xl pointer-events-none`} />
@@ -55,7 +55,6 @@ export default function StatCard({ icon: Icon, label, value, sub, subUp, accentC
         <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${c.gradient} border ${c.border} flex items-center justify-center`}>
           <Icon size={19} className={c.icon} />
         </div>
-        {/* Glow ring behind icon */}
         <div className={`absolute -inset-0.5 rounded-xl border ${c.ring} opacity-50 blur-[2px] pointer-events-none`} />
       </div>
 
@@ -69,7 +68,6 @@ export default function StatCard({ icon: Icon, label, value, sub, subUp, accentC
         </p>
       )}
 
-      {/* Bottom shimmer line */}
       <div className="absolute bottom-0 left-5 right-5 h-px bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
     </motion.div>
   )

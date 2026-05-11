@@ -54,7 +54,7 @@ export default function ParticleBackground({ count = 55, opacity = 1, className 
 
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(99,102,241,0.5)'
+        ctx.fillStyle = 'rgba(225,29,72,0.45)'
         ctx.fill()
       }
 
@@ -65,7 +65,7 @@ export default function ParticleBackground({ count = 55, opacity = 1, className 
           const d  = Math.sqrt(dx * dx + dy * dy)
           if (d < 105) {
             ctx.beginPath()
-            ctx.strokeStyle = `rgba(99,102,241,${0.13 * (1 - d / 105)})`
+            ctx.strokeStyle = `rgba(225,29,72,${0.12 * (1 - d / 105)})`
             ctx.lineWidth   = 0.5
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)

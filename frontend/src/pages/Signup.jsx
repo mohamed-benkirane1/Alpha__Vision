@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle, AlertCircle, Sparkles } from 'lucide-react'
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
 import ParticleBackground from '../components/ambient/ParticleBackground'
 
 const fadeUp  = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.42, ease: [0.16, 1, 0.3, 1] } } }
@@ -50,15 +50,15 @@ export default function Signup() {
   const isValid = (field) => form[field] && !errors[field]
 
   const inputCls = (field, extra = '') =>
-    `w-full bg-[#060D1C]/80 border ${
+    `w-full bg-[#06020c]/80 border ${
       errors[field]
-        ? 'border-rose-500/50 focus:border-rose-500/70 focus:shadow-[0_0_12px_rgba(244,63,94,0.12)]'
+        ? 'border-rose-500/50 focus:border-rose-500/70 focus:shadow-[0_0_12px_rgba(225,29,72,0.12)]'
         : isValid(field)
         ? 'border-emerald-500/40 focus:border-emerald-500/60 focus:shadow-[0_0_12px_rgba(16,185,129,0.12)]'
-        : 'border-white/[0.09] focus:border-violet-500/60 focus:shadow-[0_0_14px_rgba(139,92,246,0.14)]'
+        : 'border-white/[0.09] focus:border-rose-500/60 focus:shadow-[0_0_14px_rgba(225,29,72,0.14)]'
     } text-white text-sm rounded-xl py-2.5 placeholder-slate-700 focus:outline-none transition-all duration-200 ${extra}`
 
-  function Field({ name, type = 'text', label, placeholder, icon: Icon, show, onToggle, children }) {
+  function Field({ name, type = 'text', label, placeholder, icon: Icon, show, onToggle }) {
     return (
       <div>
         <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">{label}</label>
@@ -69,7 +69,7 @@ export default function Signup() {
             value={form[name]}
             onChange={handleChange(name)}
             placeholder={placeholder}
-            className={inputCls(name, show !== undefined ? 'pl-10 pr-10' : 'pl-10 pr-10')}
+            className={inputCls(name, 'pl-10 pr-10')}
           />
           {onToggle && (
             <button type="button" onClick={onToggle}
@@ -86,19 +86,18 @@ export default function Signup() {
             <AlertCircle size={10} />{errors[name]}
           </motion.p>
         )}
-        {children}
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#060D1C] flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06020c] flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden">
 
       <ParticleBackground count={45} opacity={0.5} className="absolute inset-0" />
 
       {/* Ambient orbs */}
-      <div className="pointer-events-none absolute top-[-8%] left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-violet-600/[0.08] rounded-full blur-[100px]" />
-      <div className="pointer-events-none absolute bottom-[-4%] left-1/4 w-[360px] h-[360px] bg-indigo-600/[0.06] rounded-full blur-[80px]" />
+      <div className="pointer-events-none absolute top-[-8%] left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-rose-950/20 rounded-full blur-[100px]" />
+      <div className="pointer-events-none absolute bottom-[-4%] left-1/4 w-[360px] h-[360px] bg-red-950/15 rounded-full blur-[80px]" />
 
       {/* Back link */}
       <div className="w-full max-w-sm mb-5 relative z-10">
@@ -112,16 +111,24 @@ export default function Signup() {
         initial="hidden"
         animate="visible"
         variants={stagger}
-        className="relative z-10 w-full max-w-sm bg-[#0a1628]/88 border border-white/[0.08] rounded-2xl p-8 backdrop-blur-2xl shadow-[0_8px_60px_rgba(0,0,0,0.55),0_0_0_1px_rgba(139,92,246,0.06)]"
+        className="relative z-10 w-full max-w-sm bg-[#0d0212]/90 border border-white/[0.08] rounded-2xl p-8 backdrop-blur-2xl shadow-[0_8px_60px_rgba(0,0,0,0.55),0_0_0_1px_rgba(225,29,72,0.06)]"
       >
-        {/* Logo circle */}
+        {/* Logo */}
         <motion.div variants={fadeUp} className="flex justify-center mb-6">
           <div className="relative">
-            <div className="absolute -inset-3 rounded-full bg-violet-500/8 blur-xl" />
-            <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600/20 to-indigo-600/10 border border-violet-500/30 flex items-center justify-center shadow-[0_0_32px_rgba(139,92,246,0.25)]">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_18px_rgba(139,92,246,0.5)]">
-                <Sparkles size={17} className="text-white" />
-              </div>
+            <div className="absolute -inset-3 rounded-full bg-rose-500/8 blur-xl" />
+            <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-600/20 to-red-600/10 border border-rose-500/30 flex items-center justify-center shadow-[0_0_32px_rgba(225,29,72,0.25)]">
+              <svg viewBox="0 0 34 34" fill="none" className="w-9 h-9" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="lgSg" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#e11d48" />
+                    <stop offset="100%" stopColor="#dc2626" />
+                  </linearGradient>
+                </defs>
+                <polygon points="17,2 32,31 2,31" fill="url(#lgSg)" />
+                <polygon points="17,10 26,29 8,29" fill="#06020c" />
+                <rect x="10" y="21" width="14" height="2.5" fill="url(#lgSg)" />
+              </svg>
             </div>
           </div>
         </motion.div>
@@ -142,12 +149,12 @@ export default function Signup() {
 
           {/* Terms */}
           <label className="flex items-start gap-2.5 cursor-pointer select-none pt-0.5">
-            <input type="checkbox" className="mt-0.5 w-3.5 h-3.5 rounded accent-violet-600 shrink-0" />
+            <input type="checkbox" className="mt-0.5 w-3.5 h-3.5 rounded accent-rose-600 shrink-0" />
             <span className="text-[11px] text-slate-500 leading-relaxed font-medium">
               I agree to the{' '}
-              <button type="button" className="text-violet-400 hover:text-violet-300 transition-colors font-black">Terms of Service</button>
+              <button type="button" className="text-rose-400 hover:text-rose-300 transition-colors font-black">Terms of Service</button>
               {' '}and{' '}
-              <button type="button" className="text-violet-400 hover:text-violet-300 transition-colors font-black">Privacy Policy</button>
+              <button type="button" className="text-rose-400 hover:text-rose-300 transition-colors font-black">Privacy Policy</button>
             </span>
           </label>
 
@@ -155,9 +162,9 @@ export default function Signup() {
           <motion.button
             type="submit"
             disabled={loading}
-            whileHover={{ scale: loading ? 1 : 1.01, boxShadow: '0 0 28px rgba(139,92,246,0.45)' }}
+            whileHover={{ scale: loading ? 1 : 1.01, boxShadow: '0 0 28px rgba(225,29,72,0.45)' }}
             whileTap={{ scale: loading ? 1 : 0.98 }}
-            className="ripple-btn w-full mt-1 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 disabled:opacity-55 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_22px_rgba(139,92,246,0.30)]"
+            className="ripple-btn w-full mt-1 py-3 bg-gradient-to-r from-rose-600 to-red-700 disabled:opacity-55 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_22px_rgba(225,29,72,0.30)]"
           >
             {loading ? (
               <>
@@ -206,7 +213,7 @@ export default function Signup() {
         {/* Footer link */}
         <motion.p variants={fadeUp} className="text-[11px] text-slate-600 text-center mt-6 font-medium">
           Already have an account?{' '}
-          <Link to="/login" className="text-violet-400 hover:text-violet-300 font-black transition-colors">
+          <Link to="/login" className="text-rose-400 hover:text-rose-300 font-black transition-colors">
             Log in
           </Link>
         </motion.p>

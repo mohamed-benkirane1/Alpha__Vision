@@ -17,7 +17,7 @@ const PERIODS = ['1W', '1M', '3M', '1Y']
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-[#0a1628] border border-indigo-500/28 rounded-xl px-4 py-3 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.55),0_0_0_1px_rgba(99,102,241,0.1)]">
+    <div className="bg-[#0d0212] border border-rose-500/28 rounded-xl px-4 py-3 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.55),0_0_0_1px_rgba(225,29,72,0.10)]">
       <p className="text-slate-500 mb-1.5 font-medium">{label}</p>
       <p className="text-white font-black text-sm tabular-nums">${payload[0].value.toLocaleString()}</p>
       <p className="text-emerald-400 text-[10px] mt-1 font-bold">↑ Portfolio value</p>
@@ -28,13 +28,13 @@ function CustomTooltip({ active, payload, label }) {
 export default function PerformanceChart() {
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.18)' }}
-      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      whileHover={{ borderColor: 'rgba(225,29,72,0.18)' }}
+      className="bg-[#0d0212]/90 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-5">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
-            <TrendingUp size={14} className="text-indigo-400" />
+            <TrendingUp size={14} className="text-rose-400" />
             <h2 className="text-sm font-bold text-white">Portfolio Performance</h2>
           </div>
           <p className="text-[11px] text-slate-600">7-day value history</p>
@@ -46,7 +46,7 @@ export default function PerformanceChart() {
               key={p}
               className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors ${
                 i === 0
-                  ? 'bg-indigo-500/14 text-indigo-400 border border-indigo-500/25'
+                  ? 'bg-rose-500/14 text-rose-400 border border-rose-500/25'
                   : 'text-slate-700 hover:text-slate-400'
               }`}
             >
@@ -63,9 +63,9 @@ export default function PerformanceChart() {
         <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="perfGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#6366f1" stopOpacity={0.48} />
-              <stop offset="55%"  stopColor="#6366f1" stopOpacity={0.08} />
-              <stop offset="100%" stopColor="#6366f1" stopOpacity={0}    />
+              <stop offset="0%"   stopColor="#e11d48" stopOpacity={0.48} />
+              <stop offset="55%"  stopColor="#e11d48" stopOpacity={0.08} />
+              <stop offset="100%" stopColor="#e11d48" stopOpacity={0}    />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="2 5" stroke="rgba(255,255,255,0.035)" vertical={false} />
@@ -82,27 +82,27 @@ export default function PerformanceChart() {
           />
           <Tooltip
             content={<CustomTooltip />}
-            cursor={{ stroke: 'rgba(99,102,241,0.18)', strokeWidth: 1, strokeDasharray: '3 3' }}
+            cursor={{ stroke: 'rgba(225,29,72,0.18)', strokeWidth: 1, strokeDasharray: '3 3' }}
           />
           <ReferenceLine
             y={21200}
-            stroke="rgba(99,102,241,0.10)"
+            stroke="rgba(225,29,72,0.10)"
             strokeDasharray="4 4"
             strokeWidth={1}
           />
           <Area
             type="monotone"
             dataKey="value"
-            stroke="#6366f1"
+            stroke="#e11d48"
             strokeWidth={2.5}
             fill="url(#perfGrad)"
             dot={false}
             activeDot={{
               r: 5,
-              fill: '#6366f1',
-              stroke: '#0a1628',
+              fill: '#e11d48',
+              stroke: '#0d0212',
               strokeWidth: 3,
-              filter: 'drop-shadow(0 0 6px rgba(99,102,241,0.9))',
+              filter: 'drop-shadow(0 0 6px rgba(225,29,72,0.9))',
             }}
           />
         </AreaChart>
