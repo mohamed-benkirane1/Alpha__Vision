@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import PriceTicker from '../components/ambient/PriceTicker'
-import heroImage from '../assets/reference/home-hero-reference.png'
+import heroImage from '../assets/home/home-hero-reference.png'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const NAV_LINKS = [
