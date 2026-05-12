@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+
 const filters = [
   { key: 'all',     label: 'All'     },
   { key: 'bullish', label: 'Bullish' },
@@ -6,38 +8,38 @@ const filters = [
 ]
 
 const countColors = {
-  all:     'bg-slate-700/60 text-slate-400',
-  bullish: 'bg-emerald-500/15 text-emerald-400',
-  bearish: 'bg-red-500/15 text-red-400',
-  neutral: 'bg-slate-600/30 text-slate-400',
+  all:     'bg-white/[0.08] text-slate-400',
+  bullish: 'bg-emerald-500/18 text-emerald-400',
+  bearish: 'bg-rose-500/18 text-rose-400',
+  neutral: 'bg-white/[0.06] text-slate-500',
 }
 
-function NewsFilters({ active, onChange, counts }) {
+export default function NewsFilters({ active, onChange, counts }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {filters.map((f) => {
         const isActive = active === f.key
         return (
-          <button
+          <motion.button
             key={f.key}
             onClick={() => onChange(f.key)}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+            whileHover={{ y: isActive ? 0 : -1 }}
+            whileTap={{ scale: 0.97 }}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all duration-200 ${
               isActive
-                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_14px_rgba(99,102,241,0.3)]'
-                : 'bg-slate-900/60 border border-slate-700/50 text-slate-400 hover:text-white hover:border-indigo-500/25'
+                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_16px_rgba(99,102,241,0.32)]'
+                : 'bg-white/[0.03] border border-white/[0.07] text-slate-500 hover:text-white hover:border-indigo-500/22'
             }`}
           >
             {f.label}
             {counts[f.key] !== undefined && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${isActive ? 'bg-white/15 text-white' : countColors[f.key]}`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black ${isActive ? 'bg-white/20 text-white' : countColors[f.key]}`}>
                 {counts[f.key]}
               </span>
             )}
-          </button>
+          </motion.button>
         )
       })}
     </div>
   )
 }
-
-export default NewsFilters

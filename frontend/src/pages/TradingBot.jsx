@@ -1,10 +1,12 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { Cpu } from 'lucide-react'
 import BotControlPanel from '../components/bot/BotControlPanel'
-import BotStatusCard from '../components/bot/BotStatusCard'
-import BotHistory from '../components/bot/BotHistory'
+import BotStatusCard   from '../components/bot/BotStatusCard'
+import BotHistory      from '../components/bot/BotHistory'
 
-const SIGNALS   = ['BUY', 'SELL', 'HOLD']
-const WEIGHTS   = [0.4, 0.3, 0.3]
+const SIGNALS = ['BUY', 'SELL', 'HOLD']
+const WEIGHTS = [0.4, 0.3, 0.3]
 
 function pickSignal() {
   const r = Math.random()
@@ -21,10 +23,14 @@ const DEFAULT_BOT = {
   trades: 0, profit: 0, lastSignal: null, confidence: null,
 }
 
-function TradingBot() {
+const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
+
+export default function TradingBot() {
   const [bot, setBot]               = useState(DEFAULT_BOT)
   const [signalHistory, setHistory] = useState([])
   const intervalRef                 = useRef(null)
+
+  useEffect(() => () => clearInterval(intervalRef.current), [])
 
   function handleStart(symbol, strategy) {
     setBot((prev) => ({ ...prev, running: true, symbol, strategy }))
@@ -59,27 +65,35 @@ function TradingBot() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Trading Bot</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Automated signal generation — a new signal fires every 4 seconds</p>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="space-y-5">
-          <BotControlPanel
-            running={bot.running}
-            onStart={handleStart}
-            onStop={handleStop}
-          />
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+        <div className="flex items-center gap-2 mb-0.5">
+          <Cpu size={16} className="text-indigo-400" />
+          <h1 className="text-2xl font-black text-white">Trading Bot</h1>
+        </div>
+        <p className="text-xs text-slate-500 font-medium">Automated signal generation — a new signal fires every 4 seconds</p>
+      </motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="space-y-3.5"
+        >
+          <BotControlPanel running={bot.running} onStart={handleStart} onStop={handleStop} />
           <BotStatusCard bot={bot} />
-        </div>
+        </motion.div>
 
-        <div className="lg:col-span-2">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="lg:col-span-2"
+        >
           <BotHistory signals={signalHistory} />
-        </div>
+        </motion.div>
       </div>
     </div>
   )
 }
-
-export default TradingBot
