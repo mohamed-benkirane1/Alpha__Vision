@@ -13,8 +13,8 @@ const assets = [
 export default function MarketOverview() {
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(225,29,72,0.14)' }}
-      className="bg-[#0d0212]/90 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
+      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -31,7 +31,7 @@ export default function MarketOverview() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.05, duration: 0.3 }}
-            whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.035)' }}
+            whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
             className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 cursor-default"
           >
             <div className="flex items-center gap-3">

@@ -6,8 +6,8 @@ const CONFIDENCE = 87
 export default function AISignalCard() {
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(225,29,72,0.22)' }}
-      className="bg-[#0d0212]/90 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl flex flex-col h-full shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      whileHover={{ borderColor: 'rgba(225,29,72,0.18)' }}
+      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl flex flex-col h-full shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
@@ -57,7 +57,7 @@ export default function AISignalCard() {
               initial={{ width: 0 }}
               animate={{ width: `${CONFIDENCE}%` }}
               transition={{ duration: 1.3, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full rounded-full bg-gradient-to-r from-rose-600 via-rose-400 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]"
+              className="h-full rounded-full bg-gradient-to-r from-rose-500 via-indigo-400/60 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]"
             />
           </div>
         </div>

@@ -22,11 +22,11 @@ export default function MarketContextPanel() {
     <>
       {/* Market Context */}
       <motion.div
-        whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+        whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
         className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
       >
         <div className="flex items-center gap-2 mb-4">
-          <Activity size={13} className="text-indigo-400" />
+          <Activity size={13} className="text-rose-400" />
           <h3 className="text-sm font-bold text-white">Market Context</h3>
         </div>
 
@@ -74,7 +74,7 @@ export default function MarketContextPanel() {
 
       {/* AI Decision */}
       <motion.div
-        whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+        whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
         className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
       >
         <div className="flex items-center gap-2 mb-4">
@@ -100,7 +100,7 @@ export default function MarketContextPanel() {
               initial={{ width: 0 }}
               animate={{ width: `${CONFIDENCE}%` }}
               transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.35)]"
+              className="h-full rounded-full bg-gradient-to-r from-rose-500 via-indigo-400/60 to-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.35)]"
             />
           </div>
         </div>

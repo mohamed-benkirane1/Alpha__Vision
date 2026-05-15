@@ -6,7 +6,7 @@ import HoldingsTable  from '../components/portfolio/HoldingsTable'
 import PortfolioChart from '../components/portfolio/PortfolioChart'
 
 const summaryCards = [
-  { icon: Wallet,     label: 'Total Value',  value: '$25,135.51', sub: '+$1,456 today (+6.1%)',    subUp: true,  accentColor: 'indigo'  },
+  { icon: Wallet,     label: 'Total Value',  value: '$25,135.51', sub: '+$1,456 today (+6.1%)',    subUp: true,  accentColor: 'rose'    },
   { icon: TrendingUp, label: 'Total Profit', value: '+$2,455.38', sub: '+10.8% overall return',   subUp: true,  accentColor: 'emerald' },
   { icon: Star,       label: 'Best Asset',   value: 'SOL',        sub: '+15.0% unrealized gain',  subUp: true,  accentColor: 'violet'  },
   { icon: Layers,     label: 'Assets Held',  value: '5',          sub: 'Crypto, stocks & commodities', subUp: true, accentColor: 'amber' },
@@ -29,7 +29,7 @@ const insights = [
     icon: CheckCircle,
     title: 'AAPL underperforming',
     body: 'Apple stock is slightly in the red (-2.8%). Monitor earnings announcements before adding more exposure.',
-    accent: { icon: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/22', hover: 'rgba(99,102,241,0.12)' },
+    accent: { icon: 'text-rose-400',   bg: 'bg-rose-500/10',   border: 'border-rose-500/20',  hover: 'rgba(225,29,72,0.12)'  },
   },
 ]
 
@@ -67,7 +67,7 @@ export default function Portfolio() {
       {/* Insights */}
       <motion.div initial="hidden" animate="visible" variants={stagger}>
         <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3.5">
-          <Lightbulb size={13} className="text-indigo-400" />
+          <Lightbulb size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Portfolio Insights</h2>
         </motion.div>
 

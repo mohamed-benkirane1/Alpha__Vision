@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 
 const accents = {
+  rose:    { icon: 'text-rose-400',    gradient: 'from-rose-500/18 to-red-500/5',       border: 'border-rose-500/20',    hover: 'rgba(225,29,72,0.14)',   orb: 'bg-rose-500/8'     },
   indigo:  { icon: 'text-indigo-400',  gradient: 'from-indigo-500/18 to-violet-500/6',  border: 'border-indigo-500/22',  hover: 'rgba(99,102,241,0.14)',  orb: 'bg-indigo-500/10'  },
   emerald: { icon: 'text-emerald-400', gradient: 'from-emerald-500/18 to-teal-500/6',  border: 'border-emerald-500/22', hover: 'rgba(16,185,129,0.12)',  orb: 'bg-emerald-500/10' },
   violet:  { icon: 'text-violet-400',  gradient: 'from-violet-500/18 to-purple-500/6', border: 'border-violet-500/22',  hover: 'rgba(139,92,246,0.14)',  orb: 'bg-violet-500/10'  },

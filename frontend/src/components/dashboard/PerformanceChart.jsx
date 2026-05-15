@@ -17,7 +17,7 @@ const PERIODS = ['1W', '1M', '3M', '1Y']
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-[#0d0212] border border-rose-500/28 rounded-xl px-4 py-3 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.55),0_0_0_1px_rgba(225,29,72,0.10)]">
+    <div className="bg-[#0a1628] border border-rose-500/22 rounded-xl px-4 py-3 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.55),0_0_0_1px_rgba(225,29,72,0.08)]">
       <p className="text-slate-500 mb-1.5 font-medium">{label}</p>
       <p className="text-white font-black text-sm tabular-nums">${payload[0].value.toLocaleString()}</p>
       <p className="text-emerald-400 text-[10px] mt-1 font-bold">↑ Portfolio value</p>
@@ -28,8 +28,8 @@ function CustomTooltip({ active, payload, label }) {
 export default function PerformanceChart() {
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(225,29,72,0.18)' }}
-      className="bg-[#0d0212]/90 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      whileHover={{ borderColor: 'rgba(225,29,72,0.14)' }}
+      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-5">
         <div>
@@ -46,7 +46,7 @@ export default function PerformanceChart() {
               key={p}
               className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors ${
                 i === 0
-                  ? 'bg-rose-500/14 text-rose-400 border border-rose-500/25'
+                  ? 'bg-rose-500/12 text-rose-400 border border-rose-500/22'
                   : 'text-slate-700 hover:text-slate-400'
               }`}
             >
@@ -63,8 +63,8 @@ export default function PerformanceChart() {
         <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="perfGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#e11d48" stopOpacity={0.48} />
-              <stop offset="55%"  stopColor="#e11d48" stopOpacity={0.08} />
+              <stop offset="0%"   stopColor="#e11d48" stopOpacity={0.42} />
+              <stop offset="55%"  stopColor="#e11d48" stopOpacity={0.07} />
               <stop offset="100%" stopColor="#e11d48" stopOpacity={0}    />
             </linearGradient>
           </defs>
@@ -82,11 +82,11 @@ export default function PerformanceChart() {
           />
           <Tooltip
             content={<CustomTooltip />}
-            cursor={{ stroke: 'rgba(225,29,72,0.18)', strokeWidth: 1, strokeDasharray: '3 3' }}
+            cursor={{ stroke: 'rgba(225,29,72,0.20)', strokeWidth: 1, strokeDasharray: '3 3' }}
           />
           <ReferenceLine
             y={21200}
-            stroke="rgba(225,29,72,0.10)"
+            stroke="rgba(225,29,72,0.08)"
             strokeDasharray="4 4"
             strokeWidth={1}
           />
@@ -100,9 +100,9 @@ export default function PerformanceChart() {
             activeDot={{
               r: 5,
               fill: '#e11d48',
-              stroke: '#0d0212',
+              stroke: '#0a1628',
               strokeWidth: 3,
-              filter: 'drop-shadow(0 0 6px rgba(225,29,72,0.9))',
+              filter: 'drop-shadow(0 0 6px rgba(225,29,72,0.90))',
             }}
           />
         </AreaChart>

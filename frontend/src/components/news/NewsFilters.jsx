@@ -27,8 +27,8 @@ export default function NewsFilters({ active, onChange, counts }) {
             whileTap={{ scale: 0.97 }}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all duration-200 ${
               isActive
-                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_16px_rgba(99,102,241,0.32)]'
-                : 'bg-white/[0.03] border border-white/[0.07] text-slate-500 hover:text-white hover:border-indigo-500/22'
+                ? 'bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-[0_0_16px_rgba(225,29,72,0.30)]'
+                : 'bg-white/[0.03] border border-white/[0.07] text-slate-500 hover:text-white hover:border-rose-500/22'
             }`}
           >
             {f.label}

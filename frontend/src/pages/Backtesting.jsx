@@ -62,7 +62,7 @@ export default function Backtesting() {
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <div className="flex items-center gap-2 mb-0.5">
-          <FlaskConical size={16} className="text-indigo-400" />
+          <FlaskConical size={16} className="text-rose-400" />
           <h1 className="text-2xl font-black text-white">Backtesting</h1>
         </div>
         <p className="text-xs text-slate-500 font-medium">Simulate your strategy on 30 days of historical data</p>
@@ -93,8 +93,8 @@ export default function Backtesting() {
               animate={{ opacity: 1 }}
               className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-10 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)] flex flex-col items-center justify-center text-center h-full min-h-[260px]"
             >
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l5-5 4 4 5-7 4 4" />
                 </svg>
               </div>

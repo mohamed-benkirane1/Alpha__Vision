@@ -13,6 +13,7 @@ import Trading from '../pages/Trading'
 import Backtesting from '../pages/Backtesting'
 import TradingBot from '../pages/TradingBot'
 import Settings from '../pages/Settings'
+import ForgotPassword from '../pages/ForgotPassword'
 import NotFound from '../pages/NotFound'
 
 function AppRoutes() {
@@ -21,6 +22,7 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />

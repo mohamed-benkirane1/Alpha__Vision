@@ -7,14 +7,14 @@ export default function NotFound() {
     <div className="min-h-screen bg-[#06020c] flex flex-col items-center justify-center px-5 relative overflow-hidden">
 
       {/* Ambient orbs */}
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-rose-950/20 rounded-full blur-[120px]" />
-      <div className="pointer-events-none absolute bottom-1/3 left-1/3 w-[280px] h-[280px] bg-red-950/15 rounded-full blur-[80px]" />
-      <div className="pointer-events-none absolute top-1/4 right-1/4 w-[200px] h-[200px] bg-rose-900/10 rounded-full blur-[60px]" />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-rose-600/[0.05] rounded-full blur-[120px]" />
+      <div className="pointer-events-none absolute bottom-1/3 left-1/3 w-[280px] h-[280px] bg-red-700/[0.04] rounded-full blur-[80px]" />
+      <div className="pointer-events-none absolute top-1/4 right-1/4 w-[200px] h-[200px] bg-rose-600/[0.03] rounded-full blur-[60px]" />
 
       {/* Animated grid lines */}
       <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
         style={{
-          backgroundImage: 'linear-gradient(rgba(225,29,72,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(225,29,72,0.8) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(225,29,72,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(225,29,72,0.7) 1px, transparent 1px)',
           backgroundSize: '64px 64px',
         }}
       />
@@ -32,8 +32,9 @@ export default function NotFound() {
           transition={{ duration: 0.6, delay: 0.1, type: 'spring', stiffness: 180, damping: 20 }}
           className="relative mb-4 select-none"
         >
-          <div className="absolute inset-0 blur-[60px] bg-rose-500/20 rounded-full scale-75" />
-          <span className="relative text-[8rem] sm:text-[10rem] font-black leading-none bg-gradient-to-b from-white via-rose-200 to-rose-500/50 bg-clip-text text-transparent">
+          {/* Glow behind the number */}
+          <div className="absolute inset-0 blur-[60px] bg-rose-500/16 rounded-full scale-75" />
+          <span className="relative text-[8rem] sm:text-[10rem] font-black leading-none bg-gradient-to-b from-white via-rose-200 to-rose-500/45 bg-clip-text text-transparent">
             404
           </span>
         </motion.div>
@@ -43,7 +44,7 @@ export default function NotFound() {
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: 0.55, delay: 0.3 }}
-          className="h-px w-48 mx-auto bg-gradient-to-r from-transparent via-rose-500/50 to-transparent mb-7"
+          className="h-px w-48 mx-auto bg-gradient-to-r from-transparent via-rose-500/45 to-transparent mb-7"
         />
 
         {/* Text */}
@@ -69,7 +70,7 @@ export default function NotFound() {
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
             <Link
               to="/"
-              className="ripple-btn inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-red-700 text-white text-sm font-black rounded-xl shadow-[0_0_22px_rgba(225,29,72,0.30)] hover:shadow-[0_0_30px_rgba(225,29,72,0.50)] transition-all duration-200"
+              className="ripple-btn inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-red-700 text-white text-sm font-black rounded-xl shadow-[0_0_22px_rgba(225,29,72,0.28)] hover:shadow-[0_0_30px_rgba(225,29,72,0.45)] transition-all duration-200"
             >
               <Home size={14} />
               Back to home

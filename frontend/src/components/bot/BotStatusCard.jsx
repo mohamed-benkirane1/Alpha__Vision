@@ -20,12 +20,12 @@ export default function BotStatusCard({ bot }) {
 
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <Cpu size={13} className="text-indigo-400" />
+          <Cpu size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Bot Status</h2>
         </div>
         <div className={`flex items-center gap-1.5 text-[10px] font-black px-3 py-1 rounded-full border tracking-wider ${
