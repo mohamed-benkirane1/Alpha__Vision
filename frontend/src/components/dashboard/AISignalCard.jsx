@@ -6,14 +6,14 @@ const CONFIDENCE = 87
 export default function AISignalCard() {
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.22)' }}
+      whileHover={{ borderColor: 'rgba(225,29,72,0.18)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl flex flex-col h-full shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-            <Zap size={13} className="text-indigo-400" />
+          <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+            <Zap size={13} className="text-rose-400" />
           </div>
           <h2 className="text-sm font-bold text-white">AI Signal</h2>
         </div>
@@ -57,7 +57,7 @@ export default function AISignalCard() {
               initial={{ width: 0 }}
               animate={{ width: `${CONFIDENCE}%` }}
               transition={{ duration: 1.3, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]"
+              className="h-full rounded-full bg-gradient-to-r from-rose-500 via-indigo-400/60 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]"
             />
           </div>
         </div>

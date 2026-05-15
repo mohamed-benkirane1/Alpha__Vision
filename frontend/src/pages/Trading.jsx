@@ -42,7 +42,7 @@ export default function Trading() {
         className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
-            <LineChart size={16} className="text-indigo-400" />
+            <LineChart size={16} className="text-rose-400" />
             <h1 className="text-2xl font-black text-white">Trading Simulation</h1>
           </div>
           <p className="text-xs text-slate-500 font-medium">Practice trading with simulated real-time prices</p>

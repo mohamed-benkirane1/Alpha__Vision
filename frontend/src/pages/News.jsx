@@ -50,7 +50,7 @@ export default function News() {
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <div className="flex items-center gap-2.5 mb-1">
-          <Newspaper size={16} className="text-indigo-400" />
+          <Newspaper size={16} className="text-rose-400" />
           <h1 className="text-2xl font-black text-white">Market News</h1>
         </div>
         <p className="text-xs text-slate-500 font-medium">Stay updated with financial market sentiment</p>
@@ -63,7 +63,7 @@ export default function News() {
           <motion.div
             key={s.key}
             variants={fadeUp}
-            whileHover={{ borderColor: 'rgba(99,102,241,0.18)' }}
+            whileHover={{ borderColor: 'rgba(225,29,72,0.15)' }}
             className={`bg-[#0a1628]/88 border ${s.accent.border} rounded-2xl p-4 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)] transition-all duration-300`}
           >
             <div className="flex items-center justify-between mb-3">

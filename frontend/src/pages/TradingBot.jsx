@@ -66,7 +66,7 @@ export default function TradingBot() {
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <div className="flex items-center gap-2 mb-0.5">
-          <Cpu size={16} className="text-indigo-400" />
+          <Cpu size={16} className="text-rose-400" />
           <h1 className="text-2xl font-black text-white">Trading Bot</h1>
         </div>
         <p className="text-xs text-slate-500 font-medium">Automated signal generation — a new signal fires every 4 seconds</p>
