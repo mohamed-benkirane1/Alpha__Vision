@@ -8,6 +8,7 @@ import {
 import { motion, useInView } from 'framer-motion'
 import PriceTicker from '../components/ambient/PriceTicker'
 import heroImage from '../assets/reference/home-hero-reference.png'
+import heroBg3D  from '../assets/reference/home-hero-3d-bg.jpg'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const NAV_LINKS = [
@@ -147,17 +148,6 @@ export default function Home() {
       <style>{`
         html { scroll-behavior: smooth; }
 
-        @keyframes flashDark {
-          0%   { opacity: 0;    }
-          2%   { opacity: 0.85; }
-          7%   { opacity: 0;    }
-          100% { opacity: 0;    }
-        }
-        .bull-flash-overlay {
-          animation: flashDark 4s ease-in-out infinite;
-          background: rgba(0,0,0,0.85);
-          box-shadow: inset 0 0 60px rgba(225,29,72,0.14), inset 0 0 20px rgba(0,0,0,0.6);
-        }
         @keyframes auraBreath {
           0%, 100% { opacity: 0.80; }
           50%       { opacity: 1;   }
@@ -307,11 +297,22 @@ export default function Home() {
                   3D is ready. Keep the relative wrapper + z-10 structure.
                   ──────────────────────────────────────────────────────────── */}
               <div className="relative flex items-center justify-center lg:justify-end">
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                  <div className="w-[420px] h-[420px] bg-rose-900/12 rounded-full blur-[100px]" />
-                </div>
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                  <div className="w-[260px] h-[260px] bg-red-800/10 rounded-full blur-[70px]" />
+
+                {/* ── Fond 3D Nano Banana ─────────────────────────────────── */}
+                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                  <img
+                    src={heroBg3D}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.55] lg:opacity-[0.88]"
+                  />
+                  {/* Fondu gauche → noir (préserve la lisibilité du texte) */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#06020c] via-[#06020c]/55 to-transparent" />
+                  {/* Fondu bas → noir (transition vers le ticker) */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06020c]/75 via-transparent to-transparent" />
+                  {/* Voile global léger pour calmer l'image */}
+                  <div className="absolute inset-0 bg-[#06020c]/18" />
                 </div>
 
                 <div className="relative z-10 w-full max-w-[480px] lg:max-w-[540px] xl:max-w-[600px]">
@@ -397,10 +398,8 @@ export default function Home() {
                         backgroundColor: p.c, animationDelay: p.d, boxShadow: `0 0 ${p.sz * 3}px ${p.c}` }} />
                   ))}
 
-                  <div className="bull-flash-overlay absolute inset-0 z-[3] pointer-events-none rounded-xl" aria-hidden="true" />
-
                   <img src={heroImage} alt="AI Trading Bull"
-                    className="w-full select-none relative z-[2]"
+                    className="bull-glow w-full select-none relative z-[2]"
                     style={{ mixBlendMode: 'screen' }} draggable={false} />
                 </div>
               </div>
