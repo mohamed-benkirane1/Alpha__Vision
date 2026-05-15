@@ -1,9 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 
+/* ── Design Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Zone publique — Home, Login, Signup */
+  --public-bg:      #06020c;
+  --accent-rose:    #e11d48;
+  --accent-red:     #dc2626;
+
+  /* Zone app — Dashboard, Portfolio, Trading… */
+  --app-bg:         #070E20;
+  --accent-indigo:  #6366f1;
+  --accent-violet:  #8b5cf6;
+  --accent-emerald: #10b981;
+  --accent-amber:   #f59e0b;
+
+  /* Glassmorphism */
+  --card-bg:        rgba(10, 22, 40, 0.88);
+  --card-border:    rgba(255, 255, 255, 0.07);
+  --glass-blur:     24px;
+}
+
 /* ── Base ──────────────────────────────────────────────────────────────────── */
 body {
-  background-color: #070E20;
+  background-color: var(--app-bg);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -12,8 +32,8 @@ body {
 /* ── Home hero grid ────────────────────────────────────────────────────────── */
 .home-grid {
   background-image:
-    linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(225, 29, 72, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(225, 29, 72, 0.04) 1px, transparent 1px);
   background-size: 52px 52px;
 }
 
@@ -120,17 +140,17 @@ body {
   animation: ripple 0.55s ease-out forwards;
 }
 
-/* Bull image pulsating glow */
+/* Bull image pulsating glow — rose/red theme (Home.jsx public zone) */
 @keyframes bullPulse {
   0%, 100% {
     filter:
-      drop-shadow(0 0 28px rgba(99, 102, 241, 0.55))
-      drop-shadow(0 0 60px rgba(99, 102, 241, 0.22));
+      drop-shadow(0 0 28px rgba(225, 29, 72, 0.55))
+      drop-shadow(0 0 60px rgba(220, 38, 38, 0.22));
   }
   50% {
     filter:
       drop-shadow(0 0 44px rgba(251, 191, 36, 0.46))
-      drop-shadow(0 0 82px rgba(251, 146, 60, 0.20));
+      drop-shadow(0 0 82px rgba(255, 100, 60, 0.22));
   }
 }
 .bull-glow { animation: bullPulse 3.2s ease-in-out infinite; }
