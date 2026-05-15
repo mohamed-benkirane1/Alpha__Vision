@@ -1,6 +1,15 @@
 import { motion } from 'framer-motion'
 
 const accents = {
+  rose: {
+    icon:     'text-rose-400',
+    gradient: 'from-rose-500/18 to-red-500/5',
+    border:   'border-rose-500/20',
+    glow:     'hover:shadow-[0_0_40px_rgba(225,29,72,0.14)] hover:border-rose-500/35',
+    orb:      'bg-rose-500/8',
+    ring:     'border-rose-400/20',
+    sub:      'text-rose-400/70',
+  },
   indigo: {
     icon:     'text-indigo-400',
     gradient: 'from-indigo-500/18 to-violet-500/5',
