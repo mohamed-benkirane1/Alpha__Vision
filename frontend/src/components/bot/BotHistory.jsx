@@ -10,12 +10,12 @@ const signalStyle = {
 export default function BotHistory({ signals }) {
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <History size={13} className="text-indigo-400" />
+          <History size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Signal History</h2>
         </div>
         <span className="text-[10px] text-slate-700 font-bold">{signals.length} signals</span>
@@ -44,7 +44,7 @@ export default function BotHistory({ signals }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.25 }}
-                  whileHover={{ x: 2, backgroundColor: 'rgba(99,102,241,0.04)' }}
+                  whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
                   className="grid grid-cols-3 sm:grid-cols-5 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-xs gap-1 sm:gap-0"
                 >
                   <span className="text-slate-600 font-mono text-[10px]">{s.time}</span>

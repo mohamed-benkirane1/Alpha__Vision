@@ -10,7 +10,7 @@ const STRATEGIES = [
   { value: 'multi',     label: 'Multi-Indicator', desc: 'Combines RSI + MACD + BB for higher-confidence signals.'         },
 ]
 
-const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500/60 focus:shadow-[0_0_14px_rgba(99,102,241,0.14)] transition-all duration-200 appearance-none'
+const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 appearance-none'
 
 export default function BacktestForm({ onRun, loading }) {
   const [symbol,   setSymbol]   = useState('BTC')
@@ -26,11 +26,11 @@ export default function BacktestForm({ onRun, loading }) {
 
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center gap-2 mb-5">
-        <FlaskConical size={13} className="text-indigo-400" />
+        <FlaskConical size={13} className="text-rose-400" />
         <h2 className="text-sm font-bold text-white">Strategy Configuration</h2>
       </div>
 
@@ -79,7 +79,7 @@ export default function BacktestForm({ onRun, loading }) {
           disabled={loading}
           whileHover={{ scale: loading ? 1 : 1.01 }}
           whileTap={{ scale: loading ? 1 : 0.98 }}
-          className="ripple-btn w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-55 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(99,102,241,0.26)]"
+          className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 disabled:opacity-55 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(225,29,72,0.28)]"
         >
           {loading ? (
             <>

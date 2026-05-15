@@ -16,8 +16,8 @@ export default function PriceCard({ symbol, name, price, change, selected, onSel
       whileTap={{ scale: 0.98 }}
       className={`w-full text-left rounded-xl p-3.5 border transition-all duration-200 ${
         selected
-          ? 'border-indigo-500/45 bg-indigo-500/10 shadow-[0_0_22px_rgba(99,102,241,0.20)]'
-          : 'bg-white/[0.02] border-white/[0.045] hover:border-indigo-500/20 hover:bg-white/[0.04]'
+          ? 'border-rose-500/45 bg-rose-500/10 shadow-[0_0_22px_rgba(225,29,72,0.20)]'
+          : 'bg-white/[0.02] border-white/[0.045] hover:border-rose-500/20 hover:bg-white/[0.04]'
       }`}
     >
       <div className="flex items-center justify-between">
@@ -26,7 +26,7 @@ export default function PriceCard({ symbol, name, price, change, selected, onSel
             className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0"
             style={
               selected
-                ? { background: 'rgba(99,102,241,0.18)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }
+                ? { background: 'rgba(225,29,72,0.18)', border: '1px solid rgba(225,29,72,0.3)', color: '#fb7185' }
                 : { background: `${color}16`, border: `1px solid ${color}28`, color }
             }
           >

@@ -10,21 +10,21 @@ export default function BacktestResults({ results, symbol, strategy }) {
     { label: 'Final Capital', value: fmt(finalCapital),           color: 'text-white',       icon: DollarSign  },
     { label: 'Total Profit',  value: `+${fmt(profit)}`,           color: 'text-emerald-400', icon: TrendingUp  },
     { label: 'Return',        value: `+${returnPct.toFixed(1)}%`, color: 'text-emerald-400', icon: TrendingUp  },
-    { label: 'Win Rate',      value: `${winRate.toFixed(0)}%`,    color: 'text-indigo-400',  icon: Target      },
+    { label: 'Win Rate',      value: `${winRate.toFixed(0)}%`,    color: 'text-rose-400',    icon: Target      },
     { label: 'Total Trades',  value: totalTrades,                 color: 'text-white',       icon: BarChart2   },
     { label: 'Wins / Losses', value: `${wins} / ${losses}`,       color: 'text-white',       icon: CheckCircle },
   ]
 
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-sm font-bold text-white">Backtest Results</h2>
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-slate-600 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg font-bold">{symbol}</span>
-          <span className="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/22 px-2 py-0.5 rounded-lg capitalize font-black">{strategy}</span>
+          <span className="text-[10px] text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg capitalize font-black">{strategy}</span>
         </div>
       </div>
 

@@ -47,11 +47,11 @@ export default function ChatMessage({ message }) {
 
       <div className={`max-w-[78%] px-4 py-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
         isUser
-          ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-br-sm shadow-[0_4px_20px_rgba(99,102,241,0.25)]'
+          ? 'bg-gradient-to-br from-rose-600 to-red-700 text-white rounded-br-sm shadow-[0_4px_20px_rgba(225,29,72,0.22)]'
           : 'bg-[#0a1628]/88 border border-white/[0.08] text-slate-200 rounded-bl-sm backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]'
       }`}>
         {message.content}
-        <p className={`text-[10px] mt-2 select-none ${isUser ? 'text-indigo-200/70 text-right' : 'text-slate-700'}`}>
+        <p className={`text-[10px] mt-2 select-none ${isUser ? 'text-rose-200/70 text-right' : 'text-slate-700'}`}>
           {message.timestamp}
         </p>
       </div>

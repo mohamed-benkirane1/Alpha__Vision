@@ -2,19 +2,19 @@ import { motion } from 'framer-motion'
 import { PieChart } from 'lucide-react'
 
 const allocation = [
-  { label: 'Crypto', value: '$18,234', pct: 73, color: '#6366f1', glow: 'rgba(99,102,241,0.55)'  },
-  { label: 'Stocks', value: '$4,890',  pct: 20, color: '#8b5cf6', glow: 'rgba(139,92,246,0.55)' },
+  { label: 'Crypto', value: '$18,234', pct: 73, color: '#e11d48', glow: 'rgba(225,29,72,0.50)'  },
+  { label: 'Stocks', value: '$4,890',  pct: 20, color: '#64748b', glow: 'rgba(100,116,139,0.45)' },
   { label: 'Cash',   value: '$1,732',  pct:  7, color: '#334155', glow: 'rgba(51,65,85,0.3)'    },
 ]
 
 export default function PortfolioSummary() {
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center gap-2 mb-5">
-        <PieChart size={13} className="text-indigo-400" />
+        <PieChart size={13} className="text-rose-400" />
         <h2 className="text-sm font-bold text-white">Portfolio Allocation</h2>
       </div>
 

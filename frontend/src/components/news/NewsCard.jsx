@@ -15,14 +15,14 @@ export default function NewsCard({ article, index }) {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ y: -2, borderColor: 'rgba(99,102,241,0.18)' }}
+      whileHover={{ y: -2, borderColor: 'rgba(225,29,72,0.15)' }}
       className="group bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)] transition-all duration-300 cursor-pointer"
     >
       <div className="flex items-start justify-between gap-3 mb-2.5">
-        <h3 className="text-sm font-bold text-white leading-snug group-hover:text-indigo-300 transition-colors line-clamp-2">
+        <h3 className="text-sm font-bold text-white leading-snug group-hover:text-rose-300 transition-colors line-clamp-2">
           {article.title}
         </h3>
-        <ExternalLink size={12} className="text-slate-700 group-hover:text-indigo-400 transition-colors shrink-0 mt-0.5" />
+        <ExternalLink size={12} className="text-slate-700 group-hover:text-rose-400 transition-colors shrink-0 mt-0.5" />
       </div>
 
       <p className="text-xs text-slate-500 leading-relaxed mb-4 line-clamp-2 font-medium">
