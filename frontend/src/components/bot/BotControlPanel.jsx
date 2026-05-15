@@ -10,7 +10,7 @@ const STRATEGIES = [
   { value: 'multi',     label: 'Multi-Indicator' },
 ]
 
-const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500/60 transition-all duration-200 disabled:opacity-40 appearance-none'
+const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 disabled:opacity-40 appearance-none'
 
 export default function BotControlPanel({ onStart, onStop, running }) {
   const [symbol,   setSymbol]   = useState('SOL')
@@ -18,11 +18,11 @@ export default function BotControlPanel({ onStart, onStop, running }) {
 
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center gap-2 mb-5">
-        <Settings2 size={13} className="text-indigo-400" />
+        <Settings2 size={13} className="text-rose-400" />
         <h2 className="text-sm font-bold text-white">Bot Configuration</h2>
       </div>
 

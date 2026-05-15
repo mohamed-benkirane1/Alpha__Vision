@@ -7,7 +7,8 @@ import {
 } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import PriceTicker from '../components/ambient/PriceTicker'
-import heroImage from '../assets/home/home-hero-reference.png'
+// heroImage supprimé — composition 3D abstraite remplace le taureau
+import heroBg3D  from '../assets/reference/home-hero-3d-bg.jpg'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const NAV_LINKS = [
@@ -147,42 +148,35 @@ export default function Home() {
       <style>{`
         html { scroll-behavior: smooth; }
 
-        @keyframes flashDark {
-          0%   { opacity: 0;    }
-          2%   { opacity: 0.85; }
-          7%   { opacity: 0;    }
-          100% { opacity: 0;    }
-        }
-        .bull-flash-overlay {
-          animation: flashDark 4s ease-in-out infinite;
-          background: rgba(0,0,0,0.85);
-          box-shadow: inset 0 0 60px rgba(225,29,72,0.14), inset 0 0 20px rgba(0,0,0,0.6);
-        }
-        @keyframes auraBreath {
-          0%, 100% { opacity: 0.80; }
-          50%       { opacity: 1;   }
-        }
-        @keyframes groundBreath {
-          0%, 100% { opacity: 0.55; }
-          50%       { opacity: 0.95; }
-        }
-        @keyframes particleBlink {
-          0%, 100% { opacity: 0;    }
-          50%       { opacity: 0.70; }
-        }
-        @keyframes candleFloat {
-          0%, 100% { opacity: 0.82; }
-          50%       { opacity: 1;   }
-        }
         @keyframes signalGlow {
           0%, 100% { box-shadow: 0 0 16px rgba(225,29,72,0.20); }
           50%       { box-shadow: 0 0 30px rgba(225,29,72,0.48); }
         }
-        .bull-aura        { animation: auraBreath    6s   ease-in-out infinite; }
-        .bull-ground-glow { animation: groundBreath  4.5s ease-in-out infinite; }
-        .bull-particle    { animation: particleBlink 4s   ease-in-out infinite; }
-        .bull-candles-r   { animation: candleFloat   5s   ease-in-out infinite; }
-        .signal-card      { animation: signalGlow    3s   ease-in-out infinite; }
+        .signal-card { animation: signalGlow 3s ease-in-out infinite; }
+
+        @keyframes coreBreath {
+          0%, 100% { opacity: 0.72; transform: scale(1);    }
+          50%       { opacity: 1;    transform: scale(1.08); }
+        }
+        .ai-core-breath { animation: coreBreath 5s ease-in-out infinite; }
+
+        @keyframes coreFloat {
+          0%, 100% { transform: translateY(0px);   }
+          50%       { transform: translateY(-10px); }
+        }
+        .ai-core-float { animation: coreFloat 7s ease-in-out infinite; }
+
+        @keyframes dataBlink {
+          0%, 100% { opacity: 0.18; }
+          50%       { opacity: 0.88; }
+        }
+        .ai-data-blink { animation: dataBlink 3s ease-in-out infinite; }
+
+        @keyframes ringPulse {
+          0%, 100% { opacity: 0.30; }
+          50%       { opacity: 0.60; }
+        }
+        .ai-ring-pulse { animation: ringPulse 4s ease-in-out infinite; }
       `}</style>
 
       <div className="bg-[#06020c] text-white overflow-x-hidden">
@@ -301,107 +295,178 @@ export default function Home() {
                 </motion.div>
               </motion.div>
 
-              {/* Right: bull
-                  ── THREE.JS SLOT ────────────────────────────────────────────
-                  Replace or overlay with a React Three Fiber <Canvas> when
-                  3D is ready. Keep the relative wrapper + z-10 structure.
-                  ──────────────────────────────────────────────────────────── */}
+              {/* Right: AI Neural Core — abstract premium composition */}
               <div className="relative flex items-center justify-center lg:justify-end">
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                  <div className="w-[420px] h-[420px] bg-rose-900/12 rounded-full blur-[100px]" />
+
+                {/* 3D background */}
+                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                  <img src={heroBg3D} alt="" loading="lazy" decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.55] lg:opacity-[0.88]" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#06020c] via-[#06020c]/55 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06020c]/75 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-[#06020c]/18" />
                 </div>
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                  <div className="w-[260px] h-[260px] bg-red-800/10 rounded-full blur-[70px]" />
-                </div>
 
-                <div className="relative z-10 w-full max-w-[480px] lg:max-w-[540px] xl:max-w-[600px]">
+                {/* Neural Core composition */}
+                <div className="relative z-10 w-full max-w-[480px] lg:max-w-[540px] xl:max-w-[580px] flex items-center justify-center">
 
-                  {/* Red radial aura */}
-                  <div className="bull-aura absolute inset-0 z-[1] pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse 55% 46% at 52% 44%, rgba(200,20,50,0.20) 0%, rgba(100,5,20,0.09) 52%, transparent 74%)' }}
-                  />
+                  {/* Ambient glow blobs */}
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                    <div className="w-[360px] h-[360px] bg-rose-500/[0.08] rounded-full blur-[80px] ai-core-breath" />
+                  </div>
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                    <div className="w-[200px] h-[200px] bg-red-600/[0.13] rounded-full blur-[45px] ai-core-breath"
+                      style={{ animationDelay: '1.4s' }} />
+                  </div>
 
-                  {/* SVG: left ambient bars + right ascending candles */}
-                  <svg className="absolute inset-0 w-full h-full z-[1] pointer-events-none"
-                    viewBox="0 0 500 520" preserveAspectRatio="xMidYMid meet"
-                    aria-hidden="true" style={{ overflow: 'visible' }}>
+                  {/* SVG Neural Core */}
+                  <svg viewBox="0 0 500 500" className="w-full h-auto ai-core-float" aria-hidden="true"
+                    style={{ maxHeight: '500px', overflow: 'visible' }}>
                     <defs>
-                      <filter id="bfL" x="-100%" y="-60%" width="300%" height="220%">
-                        <feGaussianBlur stdDeviation="5.5" />
+                      <filter id="glow8" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="8" result="b"/>
+                        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
                       </filter>
-                      <filter id="bfR" x="-70%" y="-40%" width="240%" height="180%">
-                        <feGaussianBlur stdDeviation="2.8" result="b" />
-                        <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+                      <filter id="glow4" x="-40%" y="-40%" width="180%" height="180%">
+                        <feGaussianBlur stdDeviation="4" result="b"/>
+                        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
                       </filter>
-                      <filter id="bfLn" x="-20%" y="-30%" width="140%" height="160%">
-                        <feGaussianBlur stdDeviation="1.8" result="b" />
-                        <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+                      <filter id="glow18" x="-80%" y="-80%" width="260%" height="260%">
+                        <feGaussianBlur stdDeviation="18"/>
                       </filter>
+                      <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%"   stopColor="#ff2255" stopOpacity="0.65"/>
+                        <stop offset="40%"  stopColor="#e11d48" stopOpacity="0.22"/>
+                        <stop offset="100%" stopColor="#e11d48" stopOpacity="0"/>
+                      </radialGradient>
                     </defs>
 
-                    {/* Left ambient bars — dark maroon */}
-                    {[
-                      [42, 350, 55, '#550011', 0.45],
-                      [68, 334, 70, '#440022', 0.38],
-                      [94, 354, 48, '#660010', 0.36],
-                      [120,330, 74, '#550011', 0.32],
-                      [146,345, 60, '#440022', 0.28],
-                    ].map(([x, y, h, color, op], i) => (
-                      <rect key={`l${i}`} x={x} y={y} width="13" height={h} rx="3"
-                        fill={color} opacity={op} filter="url(#bfL)" />
-                    ))}
-
-                    {/* Right ascending candles — crimson/red */}
-                    <g className="bull-candles-r">
-                      {[
-                        [290,386, 40, 379,432, '#cc2233',0.52],
-                        [313,360, 50, 352,416, '#e11d48',0.48],
-                        [336,328, 64, 319,398, '#dd2200',0.54],
-                        [359,292, 78, 281,376, '#e11d48',0.50],
-                        [382,250, 97, 238,353, '#ff3333',0.57],
-                        [405,204,117, 190,326, '#e11d48',0.54],
-                        [428,154,140, 138,300, '#ff4444',0.61],
-                        [451,100,164,  83,270, '#e11d48',0.57],
-                        [474, 48,190,  30,244, '#ff5555',0.66],
-                      ].map(([cx,bY,bH,wY1,wY2,color,op], i) => (
-                        <g key={`r${i}`} filter="url(#bfR)">
-                          <line x1={cx+7} y1={wY1} x2={cx+7} y2={wY2}
-                            stroke={color} strokeWidth="1.3" opacity={op * 0.72} />
-                          <rect x={cx} y={bY} width="14" height={bH} rx="2"
-                            fill={color} opacity={op} />
-                        </g>
+                    {/* Perspective grid */}
+                    <g opacity="0.10">
+                      {[402, 418, 432, 444, 454].map((y, i) => {
+                        const w = 36 + i * 44
+                        return <line key={y} x1={250 - w} y1={y} x2={250 + w} y2={y} stroke="#e11d48" strokeWidth="0.5"/>
+                      })}
+                      {[-4,-3,-2,-1,0,1,2,3,4].map((n) => (
+                        <line key={n} x1={250 + n * 9} y1={402} x2={250 + n * 58} y2={455}
+                          stroke="#e11d48" strokeWidth="0.5"/>
                       ))}
                     </g>
 
-                    {/* Ascending trend line */}
-                    <path d="M 297,406 C 355,342 415,228 481,142"
-                      fill="none" stroke="#ff3333" strokeWidth="1.3" opacity="0.25"
-                      filter="url(#bfLn)" />
+                    {/* Outer orbital ring */}
+                    <g className="ai-ring-pulse">
+                      <ellipse cx="250" cy="250" rx="205" ry="66"
+                        fill="none" stroke="#e11d48" strokeWidth="0.7" opacity="0.28"
+                        strokeDasharray="10 7">
+                        <animateTransform attributeName="transform" type="rotate"
+                          from="0 250 250" to="360 250 250" dur="24s" repeatCount="indefinite"/>
+                      </ellipse>
+                    </g>
+
+                    {/* Middle ring */}
+                    <ellipse cx="250" cy="250" rx="148" ry="50"
+                      fill="none" stroke="#dc2626" strokeWidth="0.5" opacity="0.22">
+                      <animateTransform attributeName="transform" type="rotate"
+                        from="28 250 250" to="-332 250 250" dur="32s" repeatCount="indefinite"/>
+                    </ellipse>
+
+                    {/* Inner ring */}
+                    <g filter="url(#glow4)">
+                      <ellipse cx="250" cy="250" rx="84" ry="30"
+                        fill="none" stroke="#ff3355" strokeWidth="1.0" opacity="0.52">
+                        <animateTransform attributeName="transform" type="rotate"
+                          from="52 250 250" to="412 250 250" dur="15s" repeatCount="indefinite"/>
+                      </ellipse>
+                    </g>
+
+                    {/* Outer hexagon */}
+                    <polygon points="250,178 312,214 312,286 250,322 188,286 188,214"
+                      fill="rgba(225,29,72,0.035)" stroke="rgba(225,29,72,0.16)" strokeWidth="0.8"
+                      filter="url(#glow4)" />
+
+                    {/* Inner diamond */}
+                    <polygon points="250,210 286,250 250,290 214,250"
+                      fill="rgba(225,29,72,0.055)" stroke="rgba(225,29,72,0.30)" strokeWidth="0.9"
+                      filter="url(#glow4)" />
+
+                    {/* Rotated square */}
+                    <rect x="228" y="228" width="44" height="44"
+                      fill="rgba(225,29,72,0.04)" stroke="rgba(225,29,72,0.20)" strokeWidth="0.7"
+                      transform="rotate(45, 250, 250)" filter="url(#glow4)" />
+
+                    {/* Radial filaments */}
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const angle = (i * 30) * Math.PI / 180
+                      const r1 = 44, r2 = 158 + (i % 3) * 16
+                      return (
+                        <line key={i}
+                          x1={250 + r1 * Math.cos(angle)} y1={250 + r1 * Math.sin(angle)}
+                          x2={250 + r2 * Math.cos(angle)} y2={250 + r2 * Math.sin(angle)}
+                          stroke="#e11d48"
+                          strokeWidth={i % 4 === 0 ? '0.65' : '0.28'}
+                          opacity={i % 4 === 0 ? 0.26 : 0.12} />
+                      )
+                    })}
+
+                    {/* Central energy sphere */}
+                    <circle cx="250" cy="250" r="60" fill="url(#coreGrad)" filter="url(#glow18)"/>
+                    <circle cx="250" cy="250" r="30"
+                      fill="rgba(225,29,72,0.14)" stroke="rgba(225,29,72,0.68)" strokeWidth="1.2"
+                      filter="url(#glow8)"/>
+                    <circle cx="250" cy="250" r="15" fill="rgba(255,42,72,0.60)" filter="url(#glow4)"/>
+                    <circle cx="250" cy="250" r="5.5" fill="rgba(255,165,180,0.95)" filter="url(#glow4)"/>
+                    <circle cx="244" cy="243" r="2.5" fill="rgba(255,255,255,0.55)"/>
+
+                    {/* Glass shards */}
+                    <polygon points="342,110 366,96 372,122 352,130"
+                      fill="rgba(225,29,72,0.05)" stroke="rgba(225,29,72,0.24)" strokeWidth="0.8"/>
+                    <polygon points="98,312 120,300 126,324 106,332"
+                      fill="rgba(225,29,72,0.04)" stroke="rgba(225,29,72,0.19)" strokeWidth="0.7"/>
+                    <polygon points="138,142 160,132 163,156 144,160"
+                      fill="rgba(200,20,50,0.04)" stroke="rgba(200,20,50,0.17)" strokeWidth="0.6"/>
+                    <polygon points="390,232 408,221 413,246 396,251"
+                      fill="rgba(225,29,72,0.05)" stroke="rgba(225,29,72,0.22)" strokeWidth="0.7"/>
+                    <polygon points="258,76 278,65 281,84 263,88"
+                      fill="rgba(225,29,72,0.04)" stroke="rgba(225,29,72,0.17)" strokeWidth="0.6"/>
+
+                    {/* Data nodes */}
+                    {[
+                      { x: 346, y: 113, r: 2.0, d: '0s'   },
+                      { x: 146, y: 170, r: 1.6, d: '0.7s' },
+                      { x: 393, y: 306, r: 1.8, d: '1.4s' },
+                      { x: 102, y: 326, r: 1.5, d: '0.3s' },
+                      { x: 264, y:  80, r: 1.8, d: '1.1s' },
+                      { x: 160, y: 416, r: 1.4, d: '1.8s' },
+                      { x: 418, y: 180, r: 1.6, d: '0.9s' },
+                    ].map((n, i) => (
+                      <g key={i}>
+                        <circle cx={n.x} cy={n.y} r={n.r * 2.8}
+                          fill="#e11d48" opacity="0.10" filter="url(#glow18)"/>
+                        <circle cx={n.x} cy={n.y} r={n.r}
+                          fill="#ff4466" className="ai-data-blink"
+                          style={{ animationDelay: n.d }}/>
+                      </g>
+                    ))}
+
+                    {/* Filaments: nodes → core */}
+                    {[
+                      { x: 346, y: 113 }, { x: 146, y: 170 },
+                      { x: 393, y: 306 }, { x: 102, y: 326 },
+                      { x: 264, y:  80 },
+                    ].map((n, i) => {
+                      const dx = n.x - 250, dy = n.y - 250
+                      const dist = Math.sqrt(dx * dx + dy * dy)
+                      const edgeR = 120
+                      return (
+                        <line key={i}
+                          x1={n.x} y1={n.y}
+                          x2={250 + (dx / dist) * edgeR}
+                          y2={250 + (dy / dist) * edgeR}
+                          stroke="#e11d48" strokeWidth="0.35" opacity="0.14"/>
+                      )
+                    })}
+
                   </svg>
-
-                  {/* Ground glow */}
-                  <div className="bull-ground-glow absolute left-[4%] right-[4%] z-[1] pointer-events-none"
-                    style={{ bottom: '10%', height: '4px',
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(180,0,60,0.65) 22%, rgba(225,29,72,0.95) 50%, rgba(180,0,60,0.65) 78%, transparent 100%)',
-                      filter: 'blur(5px)', boxShadow: '0 0 24px rgba(225,29,72,0.55), 0 0 50px rgba(160,0,50,0.25)' }} />
-
-                  {/* Particles */}
-                  {[
-                    { top: '22%', left: '18%', sz: 2,   c: '#e11d48', d: '0s'   },
-                    { top: '38%', left: '74%', sz: 2,   c: '#ff4466', d: '1.2s' },
-                    { top: '16%', left: '57%', sz: 1.5, c: '#dd2233', d: '0.7s' },
-                    { top: '64%', left: '11%', sz: 2,   c: '#cc1133', d: '1.9s' },
-                  ].map((p, i) => (
-                    <div key={i} className="bull-particle absolute z-[1] rounded-full pointer-events-none"
-                      style={{ top: p.top, left: p.left, width: `${p.sz}px`, height: `${p.sz}px`,
-                        backgroundColor: p.c, animationDelay: p.d, boxShadow: `0 0 ${p.sz * 3}px ${p.c}` }} />
-                  ))}
-
-                  <div className="bull-flash-overlay absolute inset-0 z-[3] pointer-events-none rounded-xl" aria-hidden="true" />
-
-                  <img src={heroImage} alt="AI Trading Bull"
-                    className="w-full select-none relative z-[2]"
-                    style={{ mixBlendMode: 'screen' }} draggable={false} />
                 </div>
               </div>
             </div>

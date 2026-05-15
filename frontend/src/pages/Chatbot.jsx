@@ -171,7 +171,7 @@ export default function Chatbot() {
       >
         <div>
           <div className="flex items-center gap-2.5 mb-0.5">
-            <Bot size={16} className="text-indigo-400" />
+            <Bot size={16} className="text-rose-400" />
             <h1 className="text-2xl font-black text-white">AI Trading Assistant</h1>
           </div>
           <p className="text-xs text-slate-500 font-medium">Ask questions, analyze markets and receive trading insights</p>

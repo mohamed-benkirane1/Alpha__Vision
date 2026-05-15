@@ -12,8 +12,8 @@ const trades = [
 export default function RecentTrades() {
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(225,29,72,0.14)' }}
-      className="bg-[#0d0212]/90 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
+      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -34,7 +34,7 @@ export default function RecentTrades() {
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.06 }}
-            whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.04)' }}
+            whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
             className="grid grid-cols-3 sm:grid-cols-5 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-xs gap-2 sm:gap-0"
           >
             <div className="flex items-center gap-2.5">
@@ -59,12 +59,12 @@ export default function RecentTrades() {
               <span className={`font-black tabular-nums ${t.up ? 'text-emerald-400' : 'text-red-400'}`}>{t.pnl}</span>
               <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md mt-0.5 font-bold ${
                 t.status === 'Open'
-                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/18'
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/18'
                   : 'bg-white/[0.04] text-slate-700 border border-white/[0.06]'
               }`}>
                 {t.status}
                 {t.status === 'Open' && (
-                  <span className="w-1 h-1 rounded-full bg-rose-400 animate-pulse" />
+                  <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
                 )}
               </span>
             </div>

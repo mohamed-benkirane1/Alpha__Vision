@@ -53,11 +53,11 @@ export default function Dashboard() {
           {/* Bell */}
           <button className="relative w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center hover:bg-white/[0.07] transition-colors">
             <Bell size={13} className="text-slate-400" />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-rose-400 ring-[1.5px] ring-[#06020c]" />
+            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-rose-400 ring-[1.5px] ring-[#070E20]" />
           </button>
 
           {/* Live badge */}
-          <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/25 text-rose-400 text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(225,29,72,0.10)] tracking-wider">
+          <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/25 text-rose-400 text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(225,29,72,0.12)] tracking-wider">
             <Zap size={10} />
             LIVE SIMULATION
           </div>

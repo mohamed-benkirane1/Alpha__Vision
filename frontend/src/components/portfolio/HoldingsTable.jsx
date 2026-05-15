@@ -20,12 +20,12 @@ const assetColors = {
 export default function HoldingsTable() {
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <BarChart2 size={13} className="text-indigo-400" />
+          <BarChart2 size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Holdings</h2>
         </div>
         <span className="text-[10px] text-slate-700 font-bold">{holdings.length} assets</span>
@@ -49,7 +49,7 @@ export default function HoldingsTable() {
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.055 }}
-              whileHover={{ x: 2, backgroundColor: 'rgba(99,102,241,0.04)' }}
+              whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
               className="grid grid-cols-3 md:grid-cols-6 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 gap-2 md:gap-0"
             >
               <div className="flex items-center gap-2.5 col-span-1 md:col-span-2">

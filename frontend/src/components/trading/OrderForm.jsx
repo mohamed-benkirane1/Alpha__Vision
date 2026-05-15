@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 
 const SYMBOLS = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL']
 
-const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500/60 focus:shadow-[0_0_14px_rgba(99,102,241,0.14)] transition-all duration-200 placeholder-slate-700 appearance-none'
+const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 placeholder-slate-700 appearance-none'
 
 export default function OrderForm({ prices, selectedSymbol, onTrade }) {
   const [symbol, setSymbol] = useState(selectedSymbol || 'BTC')
@@ -25,7 +25,7 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
 
   return (
     <motion.div
-      whileHover={{ borderColor: 'rgba(99,102,241,0.14)' }}
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <h2 className="text-sm font-bold text-white mb-5">Place Order</h2>
@@ -93,7 +93,7 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
           </div>
           <div className="flex justify-between">
             <span className="text-slate-600 font-medium">Estimated Value</span>
-            <span className={`font-black tabular-nums ${estimated > 0 ? 'text-indigo-400' : 'text-slate-700'}`}>
+            <span className={`font-black tabular-nums ${estimated > 0 ? 'text-rose-400' : 'text-slate-700'}`}>
               ${estimated.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>

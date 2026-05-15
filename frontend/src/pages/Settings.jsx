@@ -22,7 +22,7 @@ function NeonToggle({ on, onToggle }) {
       onClick={onToggle}
       className={`relative w-11 h-6 rounded-full border transition-all duration-300 ${
         on
-          ? 'bg-indigo-600/80 border-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.4)]'
+          ? 'bg-rose-600/80 border-rose-500/50 shadow-[0_0_10px_rgba(225,29,72,0.40)]'
           : 'bg-white/[0.05] border-white/[0.10]'
       }`}
     >
@@ -38,8 +38,8 @@ function NeonToggle({ on, onToggle }) {
 function SectionHeader({ icon: Icon, title, description }) {
   return (
     <div className="flex items-start gap-3 mb-5">
-      <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0 mt-0.5">
-        <Icon size={14} className="text-indigo-400" />
+      <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0 mt-0.5">
+        <Icon size={14} className="text-rose-400" />
       </div>
       <div>
         <h2 className="text-sm font-bold text-white">{title}</h2>
@@ -49,7 +49,7 @@ function SectionHeader({ icon: Icon, title, description }) {
   )
 }
 
-const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl py-2.5 placeholder-slate-700 focus:outline-none focus:border-indigo-500/60 focus:shadow-[0_0_14px_rgba(99,102,241,0.14)] transition-all duration-200'
+const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl py-2.5 placeholder-slate-700 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200'
 
 export default function Settings() {
   const [prefs, setPrefs] = useState({
@@ -78,7 +78,7 @@ export default function Settings() {
 
           <div className="flex items-center gap-4 mb-5">
             <div className="relative">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-xl font-black text-white shrink-0 select-none shadow-[0_0_20px_rgba(99,102,241,0.35)]">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-600 to-red-700 flex items-center justify-center text-xl font-black text-white shrink-0 select-none shadow-[0_0_20px_rgba(225,29,72,0.30)]">
                 A
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0a1628]" />
@@ -86,7 +86,7 @@ export default function Settings() {
             <div>
               <p className="text-sm font-black text-white">Alpha User</p>
               <p className="text-xs text-slate-600 font-medium">user@alphavision.app</p>
-              <span className="inline-block mt-1.5 text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-black">
+              <span className="inline-block mt-1.5 text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-full font-black">
                 Pro Plan
               </span>
             </div>
@@ -128,7 +128,7 @@ export default function Settings() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              className="px-5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-black rounded-xl transition-all shadow-[0_0_14px_rgba(99,102,241,0.25)]"
+              className="px-5 py-2 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-xs font-black rounded-xl transition-all shadow-[0_0_14px_rgba(225,29,72,0.28)]"
             >
               Save changes
             </motion.button>
@@ -225,7 +225,7 @@ export default function Settings() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-bold text-white">{item.label}</p>
                     {item.badge && (
-                      <span className="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded-lg font-black">
+                      <span className="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-1.5 py-0.5 rounded-lg font-black">
                         {item.badge}
                       </span>
                     )}
