@@ -139,18 +139,3 @@ body {
 .ripple-btn:active::after {
   animation: ripple 0.55s ease-out forwards;
 }
-
-/* Bull image pulsating glow — rose/red theme (Home.jsx public zone) */
-@keyframes bullPulse {
-  0%, 100% {
-    filter:
-      drop-shadow(0 0 28px rgba(225, 29, 72, 0.55))
-      drop-shadow(0 0 60px rgba(220, 38, 38, 0.22));
-  }
-  50% {
-    filter:
-      drop-shadow(0 0 44px rgba(251, 191, 36, 0.46))
-      drop-shadow(0 0 82px rgba(255, 100, 60, 0.22));
-  }
-}
-.bull-glow { animation: bullPulse 3.2s ease-in-out infinite; }
