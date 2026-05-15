@@ -3,14 +3,32 @@ import { Outlet, NavLink } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, PieChart, Newspaper, MessageSquare, TrendingUp,
-  FlaskConical, Bot, Settings, LogOut, Zap, Menu, X, Bell, ChevronRight,
+  FlaskConical, Bot, Settings, LogOut, Menu, X, Bell, ChevronRight,
 } from 'lucide-react'
 
+// ── Logo SVG inline — cohérent avec Home.jsx (zone publique) ──────────────────
+function LogoMark({ size = 22 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 34 34" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="lgSb" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#e11d48" />
+          <stop offset="100%" stopColor="#dc2626" />
+        </linearGradient>
+      </defs>
+      <polygon points="17,2 32,31 2,31" fill="url(#lgSb)" />
+      <polygon points="17,10 26,29 8,29" fill="#040710" />
+      <rect x="10" y="21" width="14" height="2.5" fill="url(#lgSb)" />
+    </svg>
+  )
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
 const NAV_MAIN = [
-  { to: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-  { to: '/portfolio', label: 'Portfolio',   icon: PieChart        },
-  { to: '/trading',   label: 'Trading',     icon: TrendingUp      },
-  { to: '/news',      label: 'News',        icon: Newspaper       },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/portfolio', label: 'Portfolio', icon: PieChart        },
+  { to: '/trading',   label: 'Trading',   icon: TrendingUp      },
+  { to: '/news',      label: 'News',      icon: Newspaper       },
 ]
 
 const NAV_TOOLS = [
@@ -28,23 +46,26 @@ function NavItem({ to, label, icon: Icon, onClick }) {
       className={({ isActive }) =>
         `group relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 overflow-hidden ${
           isActive
-            ? 'bg-gradient-to-r from-indigo-500/14 to-violet-500/5 text-indigo-300 border border-indigo-500/25 shadow-[0_0_20px_rgba(99,102,241,0.09)]'
-            : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent'
+            ? 'bg-gradient-to-r from-indigo-500/16 to-violet-500/6 text-indigo-300 border border-indigo-500/28 shadow-[0_0_22px_rgba(99,102,241,0.12)]'
+            : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.045] border border-transparent hover:border-white/[0.05]'
         }`
       }
     >
       {({ isActive }) => (
         <>
+          {/* Barre active à gauche */}
           {isActive && (
-            <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.9)]" />
+            <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-indigo-400 shadow-[0_0_10px_rgba(99,102,241,1)]" />
           )}
           <Icon
             size={16}
             className={`shrink-0 transition-all duration-200 ${
-              isActive ? 'text-indigo-400' : 'group-hover:scale-110'
+              isActive
+                ? 'text-indigo-400'
+                : 'text-slate-600 group-hover:text-indigo-400 group-hover:scale-110'
             }`}
           />
-          {label}
+          <span>{label}</span>
         </>
       )}
     </NavLink>
@@ -69,19 +90,24 @@ function NavGroup({ label, links, onLinkClick }) {
 function SidebarContent({ onLinkClick }) {
   return (
     <div className="flex flex-col h-full">
-      {/* Logo */}
+
+      {/* ── Logo ── */}
       <div className="px-5 pt-6 pb-5">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.5)]">
-              <Zap size={16} className="text-white" />
+            {/* Halo rose derrière le logo */}
+            <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-rose-500/20 to-red-700/10 blur-sm -z-10" />
+            <div className="w-9 h-9 rounded-xl bg-[#0d0118] border border-rose-500/22 flex items-center justify-center shadow-[0_0_18px_rgba(225,29,72,0.28)]">
+              <LogoMark size={22} />
             </div>
-            <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-indigo-500/30 to-violet-600/30 blur-sm -z-10" />
           </div>
+
           <div className="leading-none">
             <span className="block text-[12px] font-black tracking-[0.16em] text-white">ALPHA</span>
-            <span className="block text-[9px]  font-bold  tracking-[0.22em] text-indigo-400 mt-[2px]">VISION</span>
+            <span className="block text-[9px]  font-bold  tracking-[0.22em] text-rose-400 mt-[2px]">VISION</span>
           </div>
+
+          {/* Badge LIVE */}
           <div className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-[9px] text-emerald-400 font-black tracking-wider">LIVE</span>
@@ -89,23 +115,26 @@ function SidebarContent({ onLinkClick }) {
         </div>
       </div>
 
+      {/* Séparateur */}
       <div className="mx-5 mb-5 h-px bg-gradient-to-r from-transparent via-indigo-500/18 to-transparent" />
 
-      {/* Nav links */}
+      {/* ── Navigation ── */}
       <nav className="flex-1 px-3 space-y-5 overflow-y-auto pb-2 sidebar-scroll">
         <NavGroup label="Main"  links={NAV_MAIN}  onLinkClick={onLinkClick} />
         <NavGroup label="Tools" links={NAV_TOOLS} onLinkClick={onLinkClick} />
       </nav>
 
-      {/* User section */}
+      {/* ── User section ── */}
       <div className="px-3 py-4">
         <div className="h-px bg-gradient-to-r from-transparent via-slate-700/35 to-transparent mb-3" />
+
+        {/* Avatar card */}
         <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-2 cursor-pointer hover:bg-white/[0.05] transition-colors group">
           <div className="relative shrink-0">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-xs font-black text-white shadow-[0_0_12px_rgba(99,102,241,0.4)]">
               A
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-[1.5px] border-[#0A1628]" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-[1.5px] border-[#040710]" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white truncate">Alpha User</p>
@@ -113,6 +142,8 @@ function SidebarContent({ onLinkClick }) {
           </div>
           <ChevronRight size={12} className="text-slate-700 group-hover:text-slate-500 transition-colors shrink-0" />
         </div>
+
+        {/* Sign out */}
         <button className="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:text-red-400 hover:bg-red-500/5 border border-transparent hover:border-red-500/10 transition-all duration-200">
           <LogOut size={14} />
           Sign out
@@ -122,18 +153,25 @@ function SidebarContent({ onLinkClick }) {
   )
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
 export default function MainLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-[#070E20] text-white flex">
 
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-60 fixed inset-y-0 left-0 bg-[#0A1628]/96 border-r border-white/[0.055] backdrop-blur-2xl z-30">
+      {/* Ambient CSS-only — fond commun à toutes les pages app */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute -top-20 right-[8%]  w-[800px] h-[600px] bg-indigo-600/[0.04] rounded-full blur-[180px]" />
+        <div className="absolute bottom-0  left-[10%] w-[600px] h-[450px] bg-violet-600/[0.03] rounded-full blur-[150px]" />
+      </div>
+
+      {/* ── Sidebar desktop ── */}
+      <aside className="hidden lg:flex flex-col w-60 fixed inset-y-0 left-0 bg-[#040710]/97 border-r border-white/[0.055] backdrop-blur-2xl z-30">
         <SidebarContent />
       </aside>
 
-      {/* Mobile overlay + drawer */}
+      {/* ── Mobile overlay + drawer ── */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -152,7 +190,7 @@ export default function MainLayout() {
               animate={{ x: 0 }}
               exit={{ x: -240 }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 left-0 w-60 bg-[#0A1628] border-r border-white/[0.06] z-50 lg:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 w-60 bg-[#040710] border-r border-white/[0.06] z-50 lg:hidden flex flex-col"
             >
               <button
                 className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:text-white hover:bg-white/[0.06] transition-colors"
@@ -166,11 +204,13 @@ export default function MainLayout() {
         )}
       </AnimatePresence>
 
-      {/* Content area */}
-      <div className="flex-1 flex flex-col min-h-screen lg:ml-60 min-w-0">
+      {/* ── Zone de contenu ── */}
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-60 min-w-0 relative z-10">
 
         {/* Topbar */}
         <header className="sticky top-0 z-20 h-14 bg-[#070E20]/92 backdrop-blur-2xl border-b border-white/[0.045] px-5 flex items-center justify-between gap-4">
+
+          {/* Bouton menu mobile */}
           <button
             className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.06] transition-colors"
             onClick={() => setMobileOpen(true)}
@@ -178,25 +218,31 @@ export default function MainLayout() {
             <Menu size={18} />
           </button>
 
+          {/* Texte desktop */}
           <div className="hidden lg:flex items-center gap-2">
             <p className="text-[10px] text-slate-700 uppercase tracking-[0.14em] font-black">Alpha Vision Platform</p>
           </div>
 
+          {/* Actions droite */}
           <div className="flex items-center gap-2.5 ml-auto">
+
+            {/* Statut marché */}
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/14">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] text-emerald-400 font-bold tracking-wide">Markets open</span>
             </div>
 
+            {/* Cloche notifications */}
             <div className="relative">
               <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.05] transition-colors">
                 <Bell size={15} />
               </button>
-              <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 ring-[1.5px] ring-[#070E20]" />
+              <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 ring-[1.5px] ring-[#070E20]" />
             </div>
 
             <div className="w-px h-5 bg-slate-800" />
 
+            {/* Avatar utilisateur */}
             <div className="relative cursor-pointer">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-xs font-black select-none shadow-[0_0_12px_rgba(99,102,241,0.4)]">
                 A
@@ -206,7 +252,7 @@ export default function MainLayout() {
           </div>
         </header>
 
-        {/* Page content */}
+        {/* Contenu de la page */}
         <main className="flex-1 p-4 sm:p-6 lg:p-7 overflow-x-hidden">
           <Outlet />
         </main>
