@@ -11,7 +11,7 @@ import RecentTrades     from '../components/dashboard/RecentTrades'
 const stats = [
   { icon: Wallet,     label: 'Portfolio Value', value: '$24,856.40', sub: '+$1,234 today (+5.2%)', subUp: true,  accentColor: 'rose'    },
   { icon: TrendingUp, label: 'Total Profit',    value: '+$3,241.20', sub: '+15.8% all time',       subUp: true,  accentColor: 'emerald' },
-  { icon: Target,     label: 'Win Rate',         value: '72.4%',      sub: '48 trades completed',   subUp: true,  accentColor: 'violet'  },
+  { icon: Target,     label: 'Win Rate',         value: '72.4%',      sub: '48 trades completed',   subUp: true,  accentColor: 'cyan'    },
   { icon: Cpu,        label: 'Active Bot',        value: 'RUNNING',    sub: 'SOL/USDT · SMA strategy', subUp: true, accentColor: 'amber'  },
 ]
 

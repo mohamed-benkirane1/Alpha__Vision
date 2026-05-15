@@ -158,7 +158,7 @@ export default function MainLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-[#070E20] text-white flex">
+    <div className="min-h-screen bg-[#06020c] text-white flex">
 
       {/* Ambient CSS-only — fond commun à toutes les pages app */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
@@ -247,7 +247,7 @@ export default function MainLayout() {
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-600 to-red-700 flex items-center justify-center text-xs font-black select-none shadow-[0_0_12px_rgba(225,29,72,0.35)]">
                 A
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-[1.5px] border-[#070E20]" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-[1.5px] border-[#06020c]" />
             </div>
           </div>
         </header>

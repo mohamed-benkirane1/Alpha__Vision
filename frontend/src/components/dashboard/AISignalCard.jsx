@@ -66,8 +66,8 @@ export default function AISignalCard() {
       {/* AI analysis block */}
       <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3.5 mt-4">
         <div className="flex items-center gap-1.5 mb-2">
-          <Activity size={11} className="text-indigo-400" />
-          <span className="text-[10px] font-black text-indigo-400 uppercase tracking-wider">AI Analysis</span>
+          <Activity size={11} className="text-rose-400" />
+          <span className="text-[10px] font-black text-rose-400 uppercase tracking-wider">AI Analysis</span>
         </div>
         <p className="text-xs text-slate-500 leading-relaxed">
           BTC showing strong momentum. RSI at 62, MACD bullish crossover, volume surge confirmed. Key support held at $65,800.

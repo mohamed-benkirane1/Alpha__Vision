@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Cpu } from 'lucide-react'
 import BotControlPanel from '../components/bot/BotControlPanel'
@@ -29,6 +29,8 @@ export default function TradingBot() {
   const [bot, setBot]               = useState(DEFAULT_BOT)
   const [signalHistory, setHistory] = useState([])
   const intervalRef                 = useRef(null)
+
+  useEffect(() => () => clearInterval(intervalRef.current), [])
 
   function handleStart(symbol, strategy) {
     setBot((prev) => ({ ...prev, running: true, symbol, strategy }))
