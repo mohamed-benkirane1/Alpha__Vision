@@ -46,7 +46,7 @@ function NavItem({ to, label, icon: Icon, onClick }) {
       className={({ isActive }) =>
         `group relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 overflow-hidden ${
           isActive
-            ? 'bg-gradient-to-r from-indigo-500/16 to-violet-500/6 text-indigo-300 border border-indigo-500/28 shadow-[0_0_22px_rgba(99,102,241,0.12)]'
+            ? 'bg-gradient-to-r from-rose-500/12 to-red-500/5 text-rose-300 border border-rose-500/22 shadow-[0_0_22px_rgba(225,29,72,0.10)]'
             : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.045] border border-transparent hover:border-white/[0.05]'
         }`
       }
@@ -55,14 +55,14 @@ function NavItem({ to, label, icon: Icon, onClick }) {
         <>
           {/* Barre active à gauche */}
           {isActive && (
-            <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-indigo-400 shadow-[0_0_10px_rgba(99,102,241,1)]" />
+            <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-rose-400 shadow-[0_0_10px_rgba(225,29,72,0.90)]" />
           )}
           <Icon
             size={16}
             className={`shrink-0 transition-all duration-200 ${
               isActive
-                ? 'text-indigo-400'
-                : 'text-slate-600 group-hover:text-indigo-400 group-hover:scale-110'
+                ? 'text-rose-400'
+                : 'text-slate-600 group-hover:text-rose-400 group-hover:scale-110'
             }`}
           />
           <span>{label}</span>
@@ -75,7 +75,7 @@ function NavItem({ to, label, icon: Icon, onClick }) {
 function NavGroup({ label, links, onLinkClick }) {
   return (
     <div>
-      <p className="px-4 mb-1.5 text-[10px] bg-gradient-to-r from-indigo-400/55 to-violet-400/55 bg-clip-text text-transparent uppercase tracking-[0.16em] font-black">
+      <p className="px-4 mb-1.5 text-[10px] bg-gradient-to-r from-rose-400/55 to-red-400/45 bg-clip-text text-transparent uppercase tracking-[0.16em] font-black">
         {label}
       </p>
       <div className="space-y-0.5">
@@ -116,7 +116,7 @@ function SidebarContent({ onLinkClick }) {
       </div>
 
       {/* Séparateur */}
-      <div className="mx-5 mb-5 h-px bg-gradient-to-r from-transparent via-indigo-500/18 to-transparent" />
+      <div className="mx-5 mb-5 h-px bg-gradient-to-r from-transparent via-rose-500/16 to-transparent" />
 
       {/* ── Navigation ── */}
       <nav className="flex-1 px-3 space-y-5 overflow-y-auto pb-2 sidebar-scroll">
@@ -131,7 +131,7 @@ function SidebarContent({ onLinkClick }) {
         {/* Avatar card */}
         <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-2 cursor-pointer hover:bg-white/[0.05] transition-colors group">
           <div className="relative shrink-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-xs font-black text-white shadow-[0_0_12px_rgba(99,102,241,0.4)]">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-600 to-red-700 flex items-center justify-center text-xs font-black text-white shadow-[0_0_12px_rgba(225,29,72,0.35)]">
               A
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-[1.5px] border-[#040710]" />
@@ -162,8 +162,8 @@ export default function MainLayout() {
 
       {/* Ambient CSS-only — fond commun à toutes les pages app */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-20 right-[8%]  w-[800px] h-[600px] bg-indigo-600/[0.04] rounded-full blur-[180px]" />
-        <div className="absolute bottom-0  left-[10%] w-[600px] h-[450px] bg-violet-600/[0.03] rounded-full blur-[150px]" />
+        <div className="absolute -top-20 right-[8%]  w-[800px] h-[600px] bg-rose-600/[0.03] rounded-full blur-[180px]" />
+        <div className="absolute bottom-0  left-[10%] w-[600px] h-[450px] bg-red-700/[0.02] rounded-full blur-[150px]" />
       </div>
 
       {/* ── Sidebar desktop ── */}
@@ -244,7 +244,7 @@ export default function MainLayout() {
 
             {/* Avatar utilisateur */}
             <div className="relative cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-xs font-black select-none shadow-[0_0_12px_rgba(99,102,241,0.4)]">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-600 to-red-700 flex items-center justify-center text-xs font-black select-none shadow-[0_0_12px_rgba(225,29,72,0.35)]">
                 A
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-[1.5px] border-[#070E20]" />
