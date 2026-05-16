@@ -64,12 +64,16 @@ function PasswordStrength({ value }) {
 // ── Plan tier card ─────────────────────────────────────────────────────────────
 function PlanBadge({ label, highlight }) {
   return (
-    <div className={`flex-1 py-2.5 px-3 rounded-xl border text-center cursor-pointer transition-all duration-200 ${
+    <div className={`relative flex-1 py-3 px-3 rounded-xl border text-center cursor-pointer transition-all duration-200 overflow-hidden ${
       highlight
-        ? 'bg-rose-500/10 border-rose-500/30 shadow-[0_0_16px_rgba(225,29,72,0.10)]'
-        : 'bg-white/[0.02] border-white/[0.06] hover:border-white/[0.10]'
+        ? 'bg-rose-500/12 border-rose-500/35 shadow-[0_0_22px_rgba(225,29,72,0.16)]'
+        : 'bg-white/[0.02] border-white/[0.07] hover:border-rose-500/20 hover:bg-white/[0.04]'
     }`}>
-      <p className={`text-[11px] font-black ${highlight ? 'text-rose-300' : 'text-slate-500'}`}>{label}</p>
+      {highlight && (
+        <div className="absolute inset-0 bg-gradient-to-b from-rose-500/6 to-transparent pointer-events-none" />
+      )}
+      <p className={`text-[11px] font-black relative z-10 ${highlight ? 'text-rose-300' : 'text-slate-500'}`}>{label}</p>
+      {highlight && <p className="text-[9px] text-rose-400/60 font-bold mt-0.5 relative z-10 tracking-widest">POPULAR</p>}
     </div>
   )
 }
@@ -122,7 +126,7 @@ export default function Signup() {
         ? 'border-rose-500/50 focus:border-rose-500/70 focus:shadow-[0_0_12px_rgba(225,29,72,0.14)]'
         : isValid(field)
         ? 'border-emerald-500/40 focus:border-emerald-500/60 focus:shadow-[0_0_12px_rgba(16,185,129,0.12)]'
-        : 'border-white/[0.09] focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.10)]'
+        : 'border-white/[0.09] focus:border-rose-500/50 focus:shadow-[0_0_18px_rgba(225,29,72,0.16)]'
     } text-white text-sm rounded-xl py-2.5 placeholder-slate-700 focus:outline-none transition-all duration-200 ${extra}`
 
   return (
@@ -133,9 +137,10 @@ export default function Signup() {
 
         {/* Ambient */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute -top-32 -left-24 w-[520px] h-[520px] bg-rose-600/[0.09] rounded-full blur-[110px]" />
-          <div className="absolute bottom-0 right-[-10%] w-[400px] h-[400px] bg-red-700/[0.07] rounded-full blur-[90px]" />
-          <div className="absolute inset-0 home-grid opacity-40" />
+          <div className="absolute -top-32 -left-24 w-[540px] h-[540px] bg-rose-600/[0.12] rounded-full blur-[110px]" />
+          <div className="absolute bottom-0 right-[-10%] w-[420px] h-[420px] bg-red-700/[0.09] rounded-full blur-[90px]" />
+          <div className="absolute top-1/2 -translate-y-1/2 left-[30%] w-[300px] h-[300px] bg-rose-500/[0.05] rounded-full blur-[80px]" />
+          <div className="absolute inset-0 home-grid opacity-45" />
           <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-[#06020c] to-transparent" />
         </div>
 
@@ -207,9 +212,11 @@ export default function Signup() {
       {/* ── Right panel — form ────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 relative overflow-y-auto">
 
-        {/* Mobile ambient */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden lg:hidden" aria-hidden="true">
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-rose-600/[0.07] rounded-full blur-[90px]" />
+        {/* Ambient orbs — all viewports */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[560px] h-[560px] bg-rose-600/[0.08] rounded-full blur-[110px]" />
+          <div className="absolute bottom-0 right-[-8%] w-[380px] h-[380px] bg-red-700/[0.06] rounded-full blur-[90px]" />
+          <div className="absolute top-1/2 -translate-y-1/2 left-[-6%] w-[240px] h-[240px] bg-rose-500/[0.04] rounded-full blur-[70px]" />
         </div>
 
         {/* Vertical separator — desktop only */}
@@ -219,7 +226,7 @@ export default function Signup() {
           initial="hidden"
           animate="visible"
           variants={stagger}
-          className="relative z-10 w-full max-w-sm"
+          className="relative z-10 w-full max-w-sm bg-[#0a0d16]/80 border border-white/[0.08] rounded-2xl p-8 backdrop-blur-2xl shadow-[0_8px_60px_rgba(0,0,0,0.50),0_0_40px_rgba(225,29,72,0.06),0_0_0_1px_rgba(225,29,72,0.05)]"
         >
           {/* Mobile logo */}
           <motion.div variants={fadeUp} className="flex items-center gap-3 mb-8 lg:hidden">
@@ -234,6 +241,10 @@ export default function Signup() {
 
           {/* Heading */}
           <motion.div variants={fadeUp} className="mb-7">
+            <div className="inline-flex items-center gap-1.5 bg-rose-500/8 border border-rose-500/20 rounded-full px-3 py-1 mb-4">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+              <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase">Free 14-day trial</span>
+            </div>
             <h1 className="text-2xl font-black text-white tracking-tight">Create your account</h1>
             <p className="text-xs text-slate-500 font-medium mt-1">Start your 14-day free trial — no card required</p>
           </motion.div>

@@ -64,15 +64,16 @@ export default function ForgotPassword() {
 
       {/* Ambient orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-rose-600/[0.07] rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-8%] right-[15%] w-[360px] h-[360px] bg-red-700/[0.05] rounded-full blur-[80px]" />
-        <div className="absolute inset-0 home-grid opacity-30" />
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[580px] h-[580px] bg-rose-600/[0.10] rounded-full blur-[110px]" />
+        <div className="absolute bottom-[-8%] right-[15%] w-[400px] h-[400px] bg-red-700/[0.07] rounded-full blur-[90px]" />
+        <div className="absolute top-[35%] left-[-4%] w-[260px] h-[260px] bg-rose-500/[0.05] rounded-full blur-[70px]" />
+        <div className="absolute inset-0 home-grid opacity-35" />
       </div>
 
       {/* Back link */}
       <div className="w-full max-w-sm mb-6 relative z-10">
-        <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-white transition-colors font-medium">
-          <ArrowLeft size={13} /> Back to sign in
+        <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-400 transition-colors font-bold group">
+          <ArrowLeft size={13} className="transition-transform duration-200 group-hover:-translate-x-0.5" /> Back to sign in
         </Link>
       </div>
 
@@ -81,7 +82,7 @@ export default function ForgotPassword() {
         initial="hidden"
         animate="visible"
         variants={stagger}
-        className="relative z-10 w-full max-w-sm bg-[#0a0d16]/88 border border-white/[0.08] rounded-2xl p-8 backdrop-blur-2xl shadow-[0_8px_60px_rgba(0,0,0,0.55),0_0_0_1px_rgba(225,29,72,0.05)]"
+        className="relative z-10 w-full max-w-sm bg-[#0a0d16]/88 border border-white/[0.08] rounded-2xl p-8 backdrop-blur-2xl shadow-[0_8px_60px_rgba(0,0,0,0.55),0_0_50px_rgba(225,29,72,0.08),0_0_0_1px_rgba(225,29,72,0.07)]"
       >
         {!sent ? (
           <>
@@ -99,6 +100,10 @@ export default function ForgotPassword() {
 
             {/* Heading */}
             <motion.div variants={fadeUp} className="text-center mb-7">
+              <div className="inline-flex items-center gap-1.5 bg-rose-500/8 border border-rose-500/20 rounded-full px-3 py-1 mb-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase">Account Recovery</span>
+              </div>
               <h1 className="text-[1.4rem] font-black text-white mb-1.5 tracking-tight">Reset Password</h1>
               <p className="text-xs text-slate-500 font-medium">Enter your email and we&apos;ll send you a reset link</p>
             </motion.div>

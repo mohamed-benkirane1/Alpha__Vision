@@ -77,7 +77,7 @@ export default function Login() {
         ? 'border-rose-500/50 focus:border-rose-500/70 focus:shadow-[0_0_12px_rgba(225,29,72,0.14)]'
         : isValid(field)
         ? 'border-emerald-500/40 focus:border-emerald-500/60 focus:shadow-[0_0_12px_rgba(16,185,129,0.12)]'
-        : 'border-white/[0.09] focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.10)]'
+        : 'border-white/[0.09] focus:border-rose-500/50 focus:shadow-[0_0_18px_rgba(225,29,72,0.16)]'
     } text-white text-sm rounded-xl py-2.5 placeholder-slate-700 focus:outline-none transition-all duration-200 ${extra}`
 
   return (
@@ -88,10 +88,11 @@ export default function Login() {
 
         {/* Ambient orbs */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute -top-32 -left-24 w-[520px] h-[520px] bg-rose-600/[0.09] rounded-full blur-[110px]" />
-          <div className="absolute bottom-0 right-[-10%] w-[400px] h-[400px] bg-red-700/[0.07] rounded-full blur-[90px]" />
+          <div className="absolute -top-32 -left-24 w-[540px] h-[540px] bg-rose-600/[0.12] rounded-full blur-[110px]" />
+          <div className="absolute bottom-0 right-[-10%] w-[420px] h-[420px] bg-red-700/[0.09] rounded-full blur-[90px]" />
+          <div className="absolute top-1/2 -translate-y-1/2 left-[30%] w-[300px] h-[300px] bg-rose-500/[0.05] rounded-full blur-[80px]" />
           {/* Grid */}
-          <div className="absolute inset-0 home-grid opacity-40" />
+          <div className="absolute inset-0 home-grid opacity-45" />
           {/* Subtle right edge fade */}
           <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-[#06020c] to-transparent" />
         </div>
@@ -151,9 +152,11 @@ export default function Login() {
       {/* ── Right panel — form ────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 relative">
 
-        {/* Mobile ambient */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden lg:hidden" aria-hidden="true">
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-rose-600/[0.07] rounded-full blur-[90px]" />
+        {/* Ambient orbs — all viewports */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[560px] h-[560px] bg-rose-600/[0.08] rounded-full blur-[110px]" />
+          <div className="absolute bottom-0 right-[-8%] w-[380px] h-[380px] bg-red-700/[0.06] rounded-full blur-[90px]" />
+          <div className="absolute top-1/2 -translate-y-1/2 left-[-6%] w-[240px] h-[240px] bg-rose-500/[0.04] rounded-full blur-[70px]" />
         </div>
 
         {/* Vertical separator — desktop only */}
@@ -163,7 +166,7 @@ export default function Login() {
           initial="hidden"
           animate="visible"
           variants={stagger}
-          className="relative z-10 w-full max-w-sm"
+          className="relative z-10 w-full max-w-sm bg-[#0a0d16]/80 border border-white/[0.08] rounded-2xl p-8 backdrop-blur-2xl shadow-[0_8px_60px_rgba(0,0,0,0.50),0_0_40px_rgba(225,29,72,0.06),0_0_0_1px_rgba(225,29,72,0.05)]"
         >
           {/* Mobile logo */}
           <motion.div variants={fadeUp} className="flex items-center gap-3 mb-8 lg:hidden">
@@ -178,6 +181,10 @@ export default function Login() {
 
           {/* Heading */}
           <motion.div variants={fadeUp} className="mb-7">
+            <div className="inline-flex items-center gap-1.5 bg-rose-500/8 border border-rose-500/20 rounded-full px-3 py-1 mb-4">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+              <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase">Secure Login</span>
+            </div>
             <h1 className="text-2xl font-black text-white tracking-tight">Welcome back</h1>
             <p className="text-xs text-slate-500 font-medium mt-1">Sign in to your Alpha Vision account</p>
           </motion.div>
