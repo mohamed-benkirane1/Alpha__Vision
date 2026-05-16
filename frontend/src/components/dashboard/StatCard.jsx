@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 
 const accents = {
   rose: {
@@ -50,6 +50,7 @@ const accents = {
 
 export default function StatCard({ icon: Icon, label, value, sub, subUp, accentColor = 'rose' }) {
   const c = accents[accentColor] ?? accents.rose
+  const shouldReduce = useReducedMotion()
 
   return (
     <motion.div
@@ -68,7 +69,20 @@ export default function StatCard({ icon: Icon, label, value, sub, subUp, accentC
       </div>
 
       <p className="text-[10px] text-slate-600 mb-1.5 uppercase tracking-[0.13em] font-black">{label}</p>
-      <p className="text-[1.6rem] font-black text-white leading-none tracking-tight tabular-nums">{value}</p>
+      <p className="text-[1.6rem] font-black text-white leading-none tracking-tight tabular-nums overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={String(value)}
+            initial={{ opacity: 0, y: shouldReduce ? 0 : 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: shouldReduce ? 0 : -6 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="inline-block"
+          >
+            {value}
+          </motion.span>
+        </AnimatePresence>
+      </p>
 
       {sub && (
         <p className={`text-xs mt-2 font-semibold flex items-center gap-1 ${subUp ? 'text-emerald-400' : 'text-red-400'}`}>

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Cpu, TrendingUp, TrendingDown, Minus, Zap } from 'lucide-react'
 
 const SIGNAL_CONFIG = {
@@ -10,6 +10,7 @@ const SIGNAL_CONFIG = {
 export default function BotStatusCard({ bot }) {
   const sc = SIGNAL_CONFIG[bot.lastSignal] || SIGNAL_CONFIG.HOLD
   const SignalIcon = sc.icon
+  const shouldReduce = useReducedMotion()
 
   const pnlColor = bot.profit > 0 ? 'text-emerald-400' : bot.profit < 0 ? 'text-rose-400' : 'text-white'
   const pnlValue = bot.profit > 0
@@ -21,18 +22,44 @@ export default function BotStatusCard({ bot }) {
   return (
     <motion.div
       whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
-      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      animate={bot.running && !shouldReduce ? {
+        boxShadow: [
+          '0 4px 28px rgba(0,0,0,0.32)',
+          '0 4px 28px rgba(0,0,0,0.32), 0 0 24px rgba(16,185,129,0.09)',
+          '0 4px 28px rgba(0,0,0,0.32)',
+        ],
+      } : { boxShadow: '0 4px 28px rgba(0,0,0,0.32)' }}
+      transition={{ boxShadow: { duration: 3.5, repeat: Infinity, ease: 'easeInOut' } }}
+      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-colors duration-300 relative overflow-hidden"
     >
+      {/* Scan line — visible only when running */}
+      {bot.running && !shouldReduce && (
+        <motion.div
+          className="absolute bottom-0 left-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/45 to-transparent pointer-events-none"
+          style={{ width: '40%' }}
+          animate={{ x: ['-120%', '340%'] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+        />
+      )}
+
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <Cpu size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Bot Status</h2>
         </div>
-        <div className={`flex items-center gap-1.5 text-[10px] font-black px-3 py-1 rounded-full border tracking-wider ${
+        <div className={`relative flex items-center gap-1.5 text-[10px] font-black px-3 py-1 rounded-full border tracking-wider ${
           bot.running
             ? 'bg-emerald-500/10 border-emerald-500/22 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
             : 'bg-white/[0.04] border-white/[0.07] text-slate-600'
         }`}>
+          {/* Pulsing halo ring around badge when running */}
+          {bot.running && !shouldReduce && (
+            <motion.span
+              className="absolute inset-0 rounded-full border border-emerald-500/40 pointer-events-none"
+              animate={{ opacity: [0.9, 0, 0.9], scale: [1, 1.28, 1] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          )}
           {bot.running && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
           {bot.running ? 'RUNNING' : 'STOPPED'}
         </div>

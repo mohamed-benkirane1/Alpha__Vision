@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react'
-import { ShoppingCart, ChevronDown } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { ShoppingCart, ChevronDown, CheckCircle } from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
 
 const SYMBOLS = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL']
 
 const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 placeholder-slate-700 appearance-none'
 
 export default function OrderForm({ prices, selectedSymbol, onTrade }) {
-  const [symbol, setSymbol] = useState(selectedSymbol || 'BTC')
-  const [type, setType]     = useState('BUY')
-  const [qty, setQty]       = useState('')
+  const [symbol, setSymbol]       = useState(selectedSymbol || 'BTC')
+  const [type, setType]           = useState('BUY')
+  const [qty, setQty]             = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const shouldReduce = useReducedMotion()
 
   useEffect(() => { if (selectedSymbol) setSymbol(selectedSymbol) }, [selectedSymbol])
+
+  // Auto-clear submitted feedback with cleanup on unmount
+  useEffect(() => {
+    if (!submitted) return
+    const t = setTimeout(() => setSubmitted(false), 1800)
+    return () => clearTimeout(t)
+  }, [submitted])
 
   const price     = prices[symbol]?.price || 0
   const estimated = qty && parseFloat(qty) > 0 ? parseFloat(qty) * price : 0
@@ -21,6 +30,7 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
     if (!qty || parseFloat(qty) <= 0) return
     onTrade({ symbol, type, qty: parseFloat(qty), price, estimated })
     setQty('')
+    setSubmitted(true)
   }
 
   return (
@@ -101,16 +111,30 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
 
         <motion.button
           type="submit"
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.98 }}
-          className={`ripple-btn w-full py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all duration-200 ${
+          whileHover={submitted ? {} : { scale: 1.01 }}
+          whileTap={submitted ? {} : { scale: 0.98 }}
+          className={`ripple-btn w-full py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all duration-300 ${
             type === 'BUY'
-              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-[0_0_18px_rgba(16,185,129,0.22)]'
-              : 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-[0_0_18px_rgba(244,63,94,0.22)]'
+              ? `bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white ${submitted ? 'shadow-[0_0_32px_rgba(16,185,129,0.55)]' : 'shadow-[0_0_18px_rgba(16,185,129,0.22)]'}`
+              : `bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white ${submitted ? 'shadow-[0_0_32px_rgba(225,29,72,0.55)]' : 'shadow-[0_0_18px_rgba(244,63,94,0.22)]'}`
           }`}
         >
-          <ShoppingCart size={14} />
-          Place {type} Order
+          {submitted ? (
+            <motion.span
+              initial={{ opacity: 0, scale: shouldReduce ? 1 : 0.82 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center gap-2"
+            >
+              <CheckCircle size={14} />
+              Order Placed
+            </motion.span>
+          ) : (
+            <>
+              <ShoppingCart size={14} />
+              Place {type} Order
+            </>
+          )}
         </motion.button>
       </form>
     </motion.div>
