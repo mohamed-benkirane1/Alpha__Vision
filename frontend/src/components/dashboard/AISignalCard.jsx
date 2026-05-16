@@ -1,14 +1,38 @@
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Bot, TrendingUp, Activity, Zap, ChevronUp } from 'lucide-react'
 
 const CONFIDENCE = 87
 
 export default function AISignalCard() {
+  const shouldReduce = useReducedMotion()
+
   return (
     <motion.div
       whileHover={{ borderColor: 'rgba(225,29,72,0.18)' }}
-      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl flex flex-col h-full shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      animate={!shouldReduce ? {
+        boxShadow: [
+          '0 4px 28px rgba(0,0,0,0.32)',
+          '0 4px 28px rgba(0,0,0,0.32), 0 0 32px rgba(99,102,241,0.07)',
+          '0 4px 28px rgba(0,0,0,0.32)',
+        ],
+      } : {}}
+      transition={{ boxShadow: { duration: 6, repeat: Infinity, ease: 'easeInOut' } }}
+      className="relative bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl flex flex-col h-full shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-colors duration-300"
     >
+      {/* AI scan overlay — clips scan to card bounds */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
+        {!shouldReduce && (
+          <motion.div
+            className="absolute left-0 right-0"
+            style={{ top: 0 }}
+            animate={{ y: [-6, 520] }}
+            transition={{ duration: 5.5, repeat: Infinity, ease: 'linear', repeatDelay: 3 }}
+          >
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-indigo-400/22 to-transparent" />
+            <div className="h-14 w-full bg-gradient-to-b from-indigo-400/5 to-transparent" />
+          </motion.div>
+        )}
+      </div>
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">

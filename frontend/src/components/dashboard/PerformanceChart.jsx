@@ -1,5 +1,6 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
-import { motion } from 'framer-motion'
+import { motion, useInView, useReducedMotion } from 'framer-motion'
+import { useRef } from 'react'
 import { TrendingUp } from 'lucide-react'
 
 const data = [
@@ -25,11 +26,46 @@ function CustomTooltip({ active, payload, label }) {
   )
 }
 
-export default function PerformanceChart() {
+function ChartSkeleton() {
+  return (
+    <div className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)]">
+      <div className="flex items-center justify-between mb-5">
+        <div className="space-y-2">
+          <div className="h-3.5 w-40 bg-white/[0.06] rounded-lg" />
+          <div className="h-2.5 w-24 bg-white/[0.04] rounded-lg" />
+        </div>
+        <div className="h-6 w-32 bg-white/[0.04] rounded-lg" />
+      </div>
+      <div className="relative h-[200px] bg-white/[0.025] rounded-xl overflow-hidden">
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.055] to-transparent"
+          animate={{ x: ['-100%', '100%'] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
+        />
+        <div className="absolute bottom-4 left-4 right-4 space-y-2">
+          <div className="h-1.5 w-full bg-white/[0.04] rounded-full" />
+          <div className="h-1.5 w-4/5 bg-white/[0.03] rounded-full" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function PerformanceChart({ loading = false }) {
+  const ref         = useRef(null)
+  const inView      = useInView(ref, { once: true, margin: '-40px' })
+  const shouldReduce = useReducedMotion()
+
+  if (loading) return <ChartSkeleton />
+
   return (
     <motion.div
+      ref={ref}
       whileHover={{ borderColor: 'rgba(225,29,72,0.14)' }}
-      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      initial={{ opacity: 0, y: shouldReduce ? 0 : 14 }}
+      animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : (shouldReduce ? 0 : 14) }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-colors duration-300"
     >
       <div className="flex items-center justify-between mb-5">
         <div>

@@ -31,14 +31,24 @@ export default function RecentTrades() {
         {trades.map((t, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.06 }}
-            whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
-            className="grid grid-cols-3 sm:grid-cols-5 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-xs gap-2 sm:gap-0"
+            initial={{ opacity: 0, x: -10 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-20px' }}
+            transition={{ delay: i * 0.07, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            whileHover={{ x: 1.5, backgroundColor: t.up ? 'rgba(16,185,129,0.035)' : 'rgba(225,29,72,0.035)' }}
+            className="relative grid grid-cols-3 sm:grid-cols-5 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-xs gap-2 sm:gap-0 overflow-hidden"
           >
+            {/* Left accent bar — profit/loss indicator */}
+            <div className={`absolute left-0 top-2 bottom-2 w-[2.5px] rounded-r-full opacity-40 ${
+              t.up ? 'bg-emerald-400' : 'bg-red-400'
+            }`} />
+
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.07] flex items-center justify-center text-[10px] font-black text-slate-400 shrink-0">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${
+                t.type === 'BUY'
+                  ? 'bg-emerald-500/8 border border-emerald-500/16 text-emerald-400'
+                  : 'bg-rose-500/8 border border-rose-500/16 text-rose-400'
+              }`}>
                 {t.symbol.slice(0, 2)}
               </div>
               <span className="text-white font-bold">{t.symbol}</span>
