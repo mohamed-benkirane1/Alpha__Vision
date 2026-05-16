@@ -9,6 +9,9 @@ export default function CustomCursor() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    // Skip custom cursor entirely when user prefers reduced motion
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
     const checkPointer = (e) => {
       if (e.pointerType === 'mouse') {
         setReady(true)
