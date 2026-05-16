@@ -40,15 +40,15 @@ body {
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: rgba(99, 102, 241, 0.28); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
+::-webkit-scrollbar-thumb  { background: rgba(225, 29, 72, 0.28); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(225, 29, 72, 0.5); }
 
 /* Sidebar (even thinner) */
 .sidebar-scroll::-webkit-scrollbar       { width: 2px; }
-.sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.15); }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(225, 29, 72, 0.15); }
 
 /* ── Text selection ────────────────────────────────────────────────────────── */
-::selection { background: rgba(99, 102, 241, 0.28); color: #fff; }
+::selection { background: rgba(225, 29, 72, 0.28); color: #fff; }
 
 /* ────────────────────────────────────────────────────────────────────────────
    KEYFRAMES
@@ -82,8 +82,8 @@ body {
 
 /* Neon border glow */
 @keyframes neonGlow {
-  0%, 100% { box-shadow: 0 0 6px  rgba(99,102,241,0.35), 0 0 18px rgba(99,102,241,0.15); }
-  50%       { box-shadow: 0 0 14px rgba(99,102,241,0.75), 0 0 36px rgba(99,102,241,0.32); }
+  0%, 100% { box-shadow: 0 0 6px  rgba(225,29,72,0.35), 0 0 18px rgba(225,29,72,0.15); }
+  50%       { box-shadow: 0 0 14px rgba(225,29,72,0.75), 0 0 36px rgba(225,29,72,0.32); }
 }
 .animate-neon { animation: neonGlow 2.4s ease-in-out infinite; }
 

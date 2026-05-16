@@ -45,8 +45,8 @@ export default function CustomCursor() {
       if (el && ringRef.current) {
         ringRef.current.style.width       = '42px'
         ringRef.current.style.height      = '42px'
-        ringRef.current.style.borderColor = 'rgba(99,102,241,0.65)'
-        ringRef.current.style.background  = 'rgba(99,102,241,0.06)'
+        ringRef.current.style.borderColor = 'rgba(225,29,72,0.65)'
+        ringRef.current.style.background  = 'rgba(225,29,72,0.06)'
         ringRef.current.style.marginLeft  = '-3px'
         ringRef.current.style.marginTop   = '-3px'
       }
@@ -55,7 +55,7 @@ export default function CustomCursor() {
       if (ringRef.current) {
         ringRef.current.style.width       = '36px'
         ringRef.current.style.height      = '36px'
-        ringRef.current.style.borderColor = 'rgba(99,102,241,0.28)'
+        ringRef.current.style.borderColor = 'rgba(225,29,72,0.28)'
         ringRef.current.style.background  = 'transparent'
         ringRef.current.style.marginLeft  = '0'
         ringRef.current.style.marginTop   = '0'
@@ -85,9 +85,9 @@ export default function CustomCursor() {
         style={{
           position: 'fixed', top: 0, left: 0, zIndex: 99999,
           width: '8px', height: '8px', borderRadius: '50%',
-          background: 'rgba(99,102,241,0.95)',
+          background: 'rgba(225,29,72,0.95)',
           pointerEvents: 'none', willChange: 'transform',
-          boxShadow: '0 0 8px rgba(99,102,241,0.9), 0 0 20px rgba(99,102,241,0.4)',
+          boxShadow: '0 0 8px rgba(225,29,72,0.9), 0 0 20px rgba(225,29,72,0.4)',
         }}
       />
       <div
@@ -95,7 +95,7 @@ export default function CustomCursor() {
         style={{
           position: 'fixed', top: 0, left: 0, zIndex: 99998,
           width: '36px', height: '36px', borderRadius: '50%',
-          border: '1.5px solid rgba(99,102,241,0.28)',
+          border: '1.5px solid rgba(225,29,72,0.28)',
           background: 'transparent',
           pointerEvents: 'none', willChange: 'transform',
           transition: 'width 0.22s ease, height 0.22s ease, border-color 0.22s ease, background 0.22s ease, margin 0.22s ease',
