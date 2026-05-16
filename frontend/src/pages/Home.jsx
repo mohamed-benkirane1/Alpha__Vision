@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   ChevronRight, Play, ArrowRight, TrendingUp, Shield,
   Zap, Brain, BarChart3, Activity, Check, Users,
-  Target, Clock, LineChart, Bot, Star, FlaskConical,
+  Target, Clock, LineChart, Bot, Star, FlaskConical, Mail,
 } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import PriceTicker from '../components/ambient/PriceTicker'
@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { label: 'How it Works', href: '#how'      },
   { label: 'Pricing',      href: '#pricing'  },
   { label: 'About',        href: '#about'    },
+  { label: 'Contact',      href: '#contact'  },
 ]
 
 const STATS = [
@@ -524,18 +525,24 @@ export default function Home() {
                 <FadeUp key={f.title} delay={i * 0.08}>
                   <motion.div
                     whileHover={{ y: -4, borderColor: `${f.color}40` }}
-                    className="group bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 backdrop-blur-xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300 h-full"
+                    className="group relative bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 backdrop-blur-xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] hover:shadow-[0_8px_40px_rgba(0,0,0,0.40)] transition-all duration-300 h-full overflow-hidden"
                   >
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
-                      style={{ background: `${f.color}18`, border: `1px solid ${f.color}28`, boxShadow: `0 0 14px ${f.glow}22` }}>
-                      <f.icon size={18} style={{ color: f.color }} />
+                    <div className="absolute top-0 left-6 right-6 h-px opacity-40 group-hover:opacity-80 transition-opacity duration-300 pointer-events-none"
+                      style={{ background: `linear-gradient(90deg, transparent, ${f.color}, transparent)` }} />
+                    <div className="absolute top-0 inset-x-0 h-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                      style={{ background: `radial-gradient(ellipse at 50% 0%, ${f.glow.replace('0.5)', '0.10)')}, transparent 70%)` }} />
+                    <div className="relative z-10">
+                      <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                        style={{ background: `${f.color}18`, border: `1px solid ${f.color}30`, boxShadow: `0 0 20px ${f.glow.replace('0.5)', '0.30)')}` }}>
+                        <f.icon size={18} style={{ color: f.color }} />
+                      </div>
+                      <span className="inline-block text-[10px] font-black px-2 py-0.5 rounded-full mb-3"
+                        style={{ background: `${f.color}14`, border: `1px solid ${f.color}28`, color: f.color }}>
+                        {f.badge}
+                      </span>
+                      <h3 className="text-sm font-black text-white mb-2">{f.title}</h3>
+                      <p className="text-xs text-slate-500 leading-relaxed font-medium">{f.desc}</p>
                     </div>
-                    <span className="inline-block text-[10px] font-black px-2 py-0.5 rounded-full mb-3"
-                      style={{ background: `${f.color}14`, border: `1px solid ${f.color}25`, color: f.color }}>
-                      {f.badge}
-                    </span>
-                    <h3 className="text-sm font-black text-white mb-2">{f.title}</h3>
-                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{f.desc}</p>
                   </motion.div>
                 </FadeUp>
               ))}
@@ -742,7 +749,8 @@ export default function Home() {
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: 0.08 + i * 0.06 }}
-                      className="flex items-center gap-3 px-4 py-3 bg-white/[0.025] border border-white/[0.06] rounded-xl"
+                      whileHover={{ x: 2, backgroundColor: 'rgba(255,255,255,0.04)' }}
+                      className="flex items-center gap-3 px-4 py-3 bg-white/[0.025] border border-white/[0.06] hover:border-rose-500/15 rounded-xl transition-colors duration-200 cursor-default"
                     >
                       <div className="w-5 h-5 rounded-full bg-rose-500/15 border border-rose-500/28 flex items-center justify-center shrink-0">
                         <Check size={10} className="text-rose-400" />
@@ -775,16 +783,20 @@ export default function Home() {
               {PRICING.map((plan, i) => (
                 <FadeUp key={plan.name} delay={i * 0.1}>
                   <motion.div
-                    whileHover={{ y: -4 }}
-                    className={`relative flex flex-col rounded-2xl p-6 backdrop-blur-xl h-full transition-all duration-300 ${
+                    whileHover={{ y: plan.featured ? -6 : -4 }}
+                    className={`relative flex flex-col rounded-2xl p-6 backdrop-blur-xl h-full transition-all duration-300 overflow-hidden ${
                       plan.featured
-                        ? 'border-2 shadow-[0_0_40px_rgba(225,29,72,0.18)]'
+                        ? 'border-2 shadow-[0_0_60px_rgba(225,29,72,0.24),0_4px_28px_rgba(0,0,0,0.40)]'
                         : 'bg-white/[0.03] border border-white/[0.07] shadow-[0_4px_28px_rgba(0,0,0,0.32)]'
                     }`}
-                    style={plan.featured ? { background: 'rgba(225,29,72,0.06)', borderColor: 'rgba(225,29,72,0.45)' } : {}}
+                    style={plan.featured ? { background: 'rgba(225,29,72,0.07)', borderColor: 'rgba(225,29,72,0.45)' } : {}}
                   >
                     {plan.featured && (
-                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-black tracking-widest uppercase text-white bg-gradient-to-r from-rose-600 to-red-700 px-4 py-1 rounded-full shadow-[0_0_16px_rgba(225,29,72,0.4)]">
+                      <div className="absolute top-0 inset-x-0 h-32 pointer-events-none"
+                        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(225,29,72,0.16), transparent 70%)' }} />
+                    )}
+                    {plan.featured && (
+                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-black tracking-widest uppercase text-white bg-gradient-to-r from-rose-600 to-red-700 px-4 py-1 rounded-full shadow-[0_0_20px_rgba(225,29,72,0.50)] z-10">
                         Most Popular
                       </div>
                     )}
@@ -821,6 +833,58 @@ export default function Home() {
                 </FadeUp>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── CONTACT ────────────────────────────────────────────────────── */}
+        <section id="contact" className="relative py-24 px-6 sm:px-8">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-rose-950/12 rounded-full blur-[130px]" />
+          </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <FadeUp className="text-center mb-14">
+              <SectionBadge><Mail size={10} /> Get in touch</SectionBadge>
+              <h2 className="text-4xl font-black text-white tracking-tight mb-4">
+                Have Questions?<br />
+                <span className="bg-gradient-to-r from-rose-400 to-red-400 bg-clip-text text-transparent">
+                  We&apos;re Here to Help
+                </span>
+              </h2>
+              <p className="text-slate-500 text-sm font-medium max-w-md mx-auto leading-relaxed">
+                Our team responds within 24 hours. Whether it&apos;s a technical question or a partnership inquiry — we&apos;d love to hear from you.
+              </p>
+            </FadeUp>
+            <FadeUp delay={0.1}>
+              <div className="max-w-xl mx-auto bg-[#0a0d16]/80 border border-white/[0.08] rounded-2xl p-8 backdrop-blur-2xl shadow-[0_8px_60px_rgba(0,0,0,0.50),0_0_0_1px_rgba(225,29,72,0.04)]">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Name</label>
+                      <input type="text" placeholder="Your name"
+                        className="w-full bg-[#06020c]/70 border border-white/[0.09] text-white text-sm rounded-xl px-4 py-2.5 placeholder-slate-700 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_16px_rgba(225,29,72,0.14)] transition-all duration-200" />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Email</label>
+                      <input type="email" placeholder="your@email.com"
+                        className="w-full bg-[#06020c]/70 border border-white/[0.09] text-white text-sm rounded-xl px-4 py-2.5 placeholder-slate-700 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_16px_rgba(225,29,72,0.14)] transition-all duration-200" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Message</label>
+                    <textarea rows={4} placeholder="Tell us how we can help…"
+                      className="w-full bg-[#06020c]/70 border border-white/[0.09] text-white text-sm rounded-xl px-4 py-2.5 placeholder-slate-700 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_16px_rgba(225,29,72,0.14)] transition-all duration-200 resize-none" />
+                  </div>
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.01, boxShadow: '0 0 28px rgba(225,29,72,0.42)' }}
+                    whileTap={{ scale: 0.98 }}
+                    className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_22px_rgba(225,29,72,0.28)]"
+                  >
+                    Send Message <ArrowRight size={15} />
+                  </motion.button>
+                </div>
+              </div>
+            </FadeUp>
           </div>
         </section>
 
