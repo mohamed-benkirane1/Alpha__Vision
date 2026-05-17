@@ -1,8 +1,9 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
+const passport = require('../config/passport');
 
 router.post('/signup', async (req, res) => {
   try {
@@ -41,5 +42,17 @@ router.get('/me', auth, async (req, res) => {
     res.json(user);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
+// Routes Google OAuth
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
+);
+
+router.get('/google/callback',
+  passport.authenticate('google', { session: false, failureRedirect: 'http://localhost:5171/login' }),
+  (req, res) => {
+    const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.redirect(`http://localhost:5171/auth/callback?token=${token}`);
+  }
+);
 
 module.exports = router;

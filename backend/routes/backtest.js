@@ -1,8 +1,10 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
+const { checkPlan } = require('../middleware/checkPlan');
 const { runBacktest } = require('../services/backtestEngine');
 
-router.post('/', auth, async (req, res) => {
+// Backtesting nécessite plan Pro ou Elite
+router.post('/', auth, checkPlan('pro'), async (req, res) => {
   try {
     const { symbol, strategy, startDate, endDate, initialCapital, positionSize, stopLoss, takeProfit } = req.body;
     
@@ -25,6 +27,12 @@ router.post('/', auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+});
+
+router.get('/strategies', auth, async (req, res) => {
+  res.json({
+    strategies: ['rsi', 'macd', 'bollinger', 'multi']
+  });
 });
 
 module.exports = router;
