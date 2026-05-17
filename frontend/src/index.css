@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import "tailwindcss";
+
+/* ── Design Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Zone publique — Home, Login, Signup */
+  --public-bg:      #06020c;
+  --accent-rose:    #e11d48;
+  --accent-red:     #dc2626;
+
+  /* Zone app — Dashboard, Portfolio, Trading… */
+  --app-bg:         #070E20;
+  --accent-indigo:  #6366f1;
+  --accent-violet:  #8b5cf6;
+  --accent-emerald: #10b981;
+  --accent-amber:   #f59e0b;
+
+  /* Glassmorphism */
+  --card-bg:        rgba(10, 22, 40, 0.88);
+  --card-border:    rgba(255, 255, 255, 0.07);
+  --glass-blur:     24px;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+body {
+  background-color: var(--app-bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Home hero grid ────────────────────────────────────────────────────────── */
+.home-grid {
+  background-image:
+    linear-gradient(rgba(225, 29, 72, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(225, 29, 72, 0.04) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: rgba(99, 102, 241, 0.28); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
+
+/* Sidebar (even thinner) */
+.sidebar-scroll::-webkit-scrollbar       { width: 2px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.15); }
+
+/* ── Text selection ────────────────────────────────────────────────────────── */
+::selection { background: rgba(99, 102, 241, 0.28); color: #fff; }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   KEYFRAMES
+────────────────────────────────────────────────────────────────────────────── */
+
+/* Horizontal price ticker */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-ticker       { animation: ticker 34s linear infinite; }
+.animate-ticker:hover { animation-play-state: paused; }
+
+/* Slow float */
+@keyframes float {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-8px); }
+}
+.animate-float { animation: float 4.5s ease-in-out infinite; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #0f1c33 0%, #192d4c 50%, #0f1c33 100%);
+  background-size: 400px 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Neon border glow */
+@keyframes neonGlow {
+  0%, 100% { box-shadow: 0 0 6px  rgba(99,102,241,0.35), 0 0 18px rgba(99,102,241,0.15); }
+  50%       { box-shadow: 0 0 14px rgba(99,102,241,0.75), 0 0 36px rgba(99,102,241,0.32); }
+}
+.animate-neon { animation: neonGlow 2.4s ease-in-out infinite; }
+
+/* Expanding ring */
+@keyframes ringPulse {
+  0%   { transform: scale(1);   opacity: 0.65; }
+  100% { transform: scale(2.2); opacity: 0;    }
+}
+.animate-ring { animation: ringPulse 2.2s ease-out infinite; }
+
+/* Brightness/saturation glow pulse */
+@keyframes glowPulse {
+  0%, 100% { filter: brightness(1)   saturate(1.0); }
+  50%       { filter: brightness(1.6) saturate(1.4); }
+}
+.animate-glow-pulse { animation: glowPulse 2.4s ease-in-out infinite; }
+
+/* SVG path draw-on */
+@keyframes drawSvg {
+  from { stroke-dashoffset: 3000; opacity: 0.2; }
+  to   { stroke-dashoffset: 0;    opacity: 1;   }
+}
+.animate-draw { animation: drawSvg 2.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Chart area drift */
+@keyframes chartDrift {
+  0%   { transform: translateX(0px)   scaleY(1.00); }
+  50%  { transform: translateX(-18px) scaleY(1.04); }
+  100% { transform: translateX(0px)   scaleY(1.00); }
+}
+.animate-chart-drift { animation: chartDrift 9s ease-in-out infinite; }
+
+/* Ripple on click */
+@keyframes ripple {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 0.45; }
+  100% { transform: translate(-50%,-50%) scale(5); opacity: 0;    }
+}
+.ripple-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.ripple-btn::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  transform: translate(-50%,-50%) scale(0);
+  opacity: 0;
+}
+.ripple-btn:active::after {
+  animation: ripple 0.55s ease-out forwards;
+}
