@@ -4,6 +4,10 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  googleId: { type: String, sparse: true },
+  balance: { type: Number, default: 0 },        // ← NOUVEAU
+  plan: { type: String, enum: ['free', 'pro', 'elite'], default: 'free' }, // ← NOUVEAU
+  planExpiresAt: { type: Date, default: null }, // ← NOUVEAU
   createdAt: { type: Date, default: Date.now }
 });
 
