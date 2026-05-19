@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../models/user');
 
 // Vérifier si l'utilisateur a le plan requis
 function checkPlan(requiredPlan) {

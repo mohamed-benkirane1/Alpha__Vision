@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
-const User = require('../models/User');
+const User = require('../models/user');
 const Transaction = require('../models/Transaction');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');

@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
-const Portfolio = require('../models/Portfolio');
+const Portfolio = require('../models/portfolio');
 const { getPrice } = require('../services/marketService');
 
 router.get('/', auth, async (req, res) => {

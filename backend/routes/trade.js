@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
-const Trade = require('../models/Trade');
-const Portfolio = require('../models/Portfolio');
-const User = require('../models/User');
+const Trade = require('../models/trade');
+const Portfolio = require('../models/portfolio');
+const User = require('../models/user');
 const { getPrice } = require('../services/marketService');
 
 // Limites par plan

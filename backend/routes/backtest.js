@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
-const { checkPlan } = require('../middleware/checkPlan');
+const { checkPlan } = require('../middleware/CheckPlan');
 const { runBacktest } = require('../services/backtestEngine');
 
 // Backtesting nécessite plan Pro ou Elite

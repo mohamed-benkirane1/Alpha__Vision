@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
-const { checkPlan } = require('../middleware/checkPlan');
+const { checkPlan } = require('../middleware/CheckPlan');
 const { getPrice } = require('../services/marketService');
 const { getSignalForBot } = require('../services/botService');
 
