@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
 
-const assets = [
+const defaultAssets = [
   { symbol: 'BTC',  name: 'Bitcoin',  price: '$67,432.00', change: '+2.4%', up: true,  color: '#f97316' },
   { symbol: 'ETH',  name: 'Ethereum', price: '$3,847.20',  change: '+1.8%', up: true,  color: '#6366f1' },
   { symbol: 'SOL',  name: 'Solana',   price: '$178.32',    change: '+4.1%', up: true,  color: '#8b5cf6' },
@@ -10,7 +10,61 @@ const assets = [
   { symbol: 'NDX',  name: 'NASDAQ',   price: '18,234.10',  change: '+0.8%', up: true,  color: '#06b6d4' },
 ]
 
-export default function MarketOverview() {
+const assetNames = {
+  BTC: 'Bitcoin',
+  ETH: 'Ethereum',
+  SOL: 'Solana',
+  XAU: 'Gold',
+  XAG: 'Silver',
+  AAPL: 'Apple',
+  TSLA: 'Tesla',
+  NVDA: 'NVIDIA',
+  MSFT: 'Microsoft',
+  GOOGL: 'Alphabet',
+  IXIC: 'NASDAQ Composite',
+  SPX: 'S&P 500',
+  DJI: 'Dow Jones',
+}
+
+const assetColors = ['#f97316', '#6366f1', '#8b5cf6', '#eab308', '#64748b', '#06b6d4']
+
+const formatPrice = (price) => {
+  const number = Number(price)
+  if (!Number.isFinite(number)) return '$0.00'
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: number >= 1000 ? 0 : 2,
+  }).format(number)
+}
+
+const formatChange = (change) => {
+  const number = Number(change)
+  if (!Number.isFinite(number)) return '+0.0%'
+  return `${number >= 0 ? '+' : ''}${number.toFixed(1)}%`
+}
+
+const normalizeMarkets = (markets) => {
+  if (!Array.isArray(markets) || markets.length === 0) return defaultAssets
+
+  return markets.slice(0, 6).map((market, index) => {
+    const change = market.change24h ?? market.changePercent ?? 0
+    const symbol = market.symbol || 'N/A'
+
+    return {
+      symbol,
+      name: market.name || assetNames[symbol] || market.type || 'Market asset',
+      price: formatPrice(market.price),
+      change: formatChange(change),
+      up: Number(change) >= 0,
+      color: assetColors[index % assetColors.length],
+    }
+  })
+}
+
+export default function MarketOverview({ markets = [], loading = false }) {
+  const assets = normalizeMarkets(markets)
+
   return (
     <motion.div
       whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
@@ -21,7 +75,7 @@ export default function MarketOverview() {
           <Activity size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Market Overview</h2>
         </div>
-        <span className="text-[10px] text-slate-700 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-full font-bold">Simulated</span>
+        <span className="text-[10px] text-slate-700 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-full font-bold">{loading ? 'Loading' : 'Live'}</span>
       </div>
 
       <div className="space-y-1.5">
