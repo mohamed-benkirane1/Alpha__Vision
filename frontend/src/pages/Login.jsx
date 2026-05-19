@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
-import { setToken } from '../services/api'
-import { login } from '../services/authService'
+import { useAuth } from '../context/useAuth'
+import { login as loginRequest } from '../services/authService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
@@ -42,6 +42,7 @@ function Feature({ icon: Icon, title, desc }) {
 
 export default function Login() {
   const navigate = useNavigate()
+  const { login: authLogin } = useAuth()
   const [form, setForm]           = useState({ email: '', password: '' })
   const [errors, setErrors]       = useState({})
   const [success, setSuccess]     = useState('')
@@ -68,13 +69,12 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const { data } = await login({
+      const { data } = await loginRequest({
         email: form.email.trim(),
         password: form.password,
       })
 
-      if (data?.token) setToken(data.token)
-      if (data?.user) localStorage.setItem('user', JSON.stringify(data.user))
+      authLogin(data?.user, data?.token)
 
       setSuccess('Signed in successfully. Redirecting...')
       setTimeout(() => navigate('/dashboard'), 500)

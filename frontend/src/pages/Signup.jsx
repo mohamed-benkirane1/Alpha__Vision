@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react'
-import { setToken } from '../services/api'
+import { useAuth } from '../context/useAuth'
 import { signup } from '../services/authService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
@@ -82,6 +82,7 @@ function PlanBadge({ label, highlight }) {
 
 export default function Signup() {
   const navigate = useNavigate()
+  const { login: authLogin } = useAuth()
   const [form, setForm]       = useState({ name: '', email: '', password: '', confirm: '' })
   const [errors, setErrors]   = useState({})
   const [success, setSuccess] = useState('')
@@ -123,8 +124,7 @@ export default function Signup() {
         password: form.password,
       })
 
-      if (data?.token) setToken(data.token)
-      if (data?.user) localStorage.setItem('user', JSON.stringify(data.user))
+      authLogin(data?.user, data?.token)
 
       setSuccess('Account created successfully. Redirecting...')
       setTimeout(() => navigate('/dashboard'), 500)
