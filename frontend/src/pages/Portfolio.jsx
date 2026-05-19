@@ -1,48 +1,219 @@
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Wallet, TrendingUp, Star, Layers, Lightbulb, AlertTriangle, CheckCircle } from 'lucide-react'
 
 import PortfolioCard  from '../components/portfolio/PortfolioCard'
 import HoldingsTable  from '../components/portfolio/HoldingsTable'
 import PortfolioChart from '../components/portfolio/PortfolioChart'
-
-const summaryCards = [
-  { icon: Wallet,     label: 'Total Value',  value: '$25,135.51', sub: '+$1,456 today (+6.1%)',    subUp: true,  accentColor: 'rose'    },
-  { icon: TrendingUp, label: 'Total Profit', value: '+$2,455.38', sub: '+10.8% overall return',   subUp: true,  accentColor: 'emerald' },
-  { icon: Star,       label: 'Best Asset',   value: 'SOL',        sub: '+15.0% unrealized gain',  subUp: true,  accentColor: 'violet'  },
-  { icon: Layers,     label: 'Assets Held',  value: '5',          sub: 'Crypto, stocks & commodities', subUp: true, accentColor: 'amber' },
-]
-
-const insights = [
-  {
-    icon: AlertTriangle,
-    title: 'High BTC concentration',
-    body: 'BTC represents 61.7% of your portfolio. Consider rebalancing into ETH or SOL to reduce single-asset risk.',
-    accent: { icon: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/22', hover: 'rgba(245,158,11,0.12)' },
-  },
-  {
-    icon: TrendingUp,
-    title: 'SOL momentum strong',
-    body: 'Solana is your best-performing asset this week with +15% unrealized gains and strong on-chain activity.',
-    accent: { icon: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/22', hover: 'rgba(16,185,129,0.12)' },
-  },
-  {
-    icon: CheckCircle,
-    title: 'AAPL underperforming',
-    body: 'Apple stock is slightly in the red (-2.8%). Monitor earnings announcements before adding more exposure.',
-    accent: { icon: 'text-rose-400',   bg: 'bg-rose-500/10',   border: 'border-rose-500/20',  hover: 'rgba(225,29,72,0.12)'  },
-  },
-]
+import { getPortfolio } from '../services/portfolioService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
 
+const getValidNumber = (value) => {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+const toNumber = (value) => {
+  const number = getValidNumber(value)
+  return number ?? 0
+}
+
+const formatCurrency = (value, { sign = false } = {}) => {
+  const number = getValidNumber(value)
+  if (number === null) return '--'
+
+  const formatted = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(number))
+
+  if (!sign) return formatted
+  return `${number >= 0 ? '+' : '-'}${formatted}`
+}
+
+const formatPercent = (value) => {
+  const number = getValidNumber(value)
+  if (number === null) return 'N/A'
+
+  return `${number >= 0 ? '+' : ''}${number.toFixed(1)}%`
+}
+
+const getResponseData = (response) => response?.data ?? response
+
+const getPortfolioErrorMessage = (error) => {
+  if (error?.status === 401) {
+    return 'Votre session a expiré. Veuillez vous reconnecter.'
+  }
+
+  return 'Impossible de charger votre portfolio pour le moment. Veuillez réessayer.'
+}
+
+function buildSummaryCards(portfolio, loading) {
+  const holdings = Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
+  const hasPortfolio = Boolean(portfolio)
+  const totalProfit = getValidNumber(portfolio?.totalProfit)
+  const bestHolding = holdings.reduce((best, holding) => {
+    const profitPercent = getValidNumber(holding.profitPercent)
+    if (profitPercent === null) return best
+    if (!best) return holding
+
+    return profitPercent > toNumber(best.profitPercent) ? holding : best
+  }, null)
+  const bestProfitPercent = getValidNumber(bestHolding?.profitPercent)
+
+  return [
+    {
+      icon: Wallet,
+      label: 'Total Value',
+      value: loading ? 'Loading...' : (hasPortfolio ? formatCurrency(portfolio.totalValue) : '--'),
+      sub: 'Daily change not available yet',
+      subUp: true,
+      accentColor: 'rose',
+    },
+    {
+      icon: TrendingUp,
+      label: 'Total Profit',
+      value: loading ? 'Loading...' : (hasPortfolio ? formatCurrency(portfolio.totalProfit, { sign: true }) : '--'),
+      sub: hasPortfolio ? `${formatPercent(portfolio.totalProfitPercent)} overall return` : 'Overall return N/A',
+      subUp: totalProfit === null ? true : totalProfit >= 0,
+      accentColor: 'emerald',
+    },
+    {
+      icon: Star,
+      label: 'Best Asset',
+      value: loading ? 'Loading...' : (bestHolding?.symbol || '--'),
+      sub: bestHolding ? `${formatPercent(bestHolding.profitPercent)} unrealized return` : 'No valid asset data',
+      subUp: bestProfitPercent === null ? true : bestProfitPercent >= 0,
+      accentColor: 'violet',
+    },
+    {
+      icon: Layers,
+      label: 'Assets Held',
+      value: loading ? 'Loading...' : String(holdings.length),
+      sub: holdings.length > 0 ? 'Live backend holdings' : 'No holdings yet',
+      subUp: true,
+      accentColor: 'amber',
+    },
+  ]
+}
+
+function buildInsights(portfolio) {
+  const holdings = Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
+  const totalValue = toNumber(portfolio?.totalValue)
+  if (!holdings.length || totalValue <= 0) return []
+
+  const byAllocation = holdings
+    .map((holding) => ({
+      ...holding,
+      allocationPct: totalValue > 0 ? (toNumber(holding.currentValue) / totalValue) * 100 : 0,
+    }))
+    .sort((a, b) => b.allocationPct - a.allocationPct)
+
+  const largest = byAllocation[0]
+  const best = [...holdings].sort((a, b) => toNumber(b.profitPercent) - toNumber(a.profitPercent))[0]
+  const weakest = [...holdings].sort((a, b) => toNumber(a.profitPercent) - toNumber(b.profitPercent))[0]
+
+  const insights = []
+
+  if (largest?.allocationPct >= 50) {
+    insights.push({
+      icon: AlertTriangle,
+      title: `High ${largest.symbol} concentration`,
+      body: `${largest.symbol} represents ${largest.allocationPct.toFixed(1)}% of your portfolio. Consider reviewing concentration risk before adding more exposure.`,
+      accent: { icon: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/22', hover: 'rgba(245,158,11,0.12)' },
+    })
+  }
+
+  if (best && toNumber(best.profitPercent) > 0) {
+    insights.push({
+      icon: TrendingUp,
+      title: `${best.symbol} leads performance`,
+      body: `${best.symbol} is your best-performing asset with ${formatPercent(best.profitPercent)} unrealized return.`,
+      accent: { icon: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/22', hover: 'rgba(16,185,129,0.12)' },
+    })
+  }
+
+  if (weakest && toNumber(weakest.profitPercent) < 0) {
+    insights.push({
+      icon: AlertTriangle,
+      title: `${weakest.symbol} is underperforming`,
+      body: `${weakest.symbol} is currently at ${formatPercent(weakest.profitPercent)} unrealized return. Review the position before increasing allocation.`,
+      accent: { icon: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', hover: 'rgba(225,29,72,0.12)' },
+    })
+  }
+
+  if (insights.length === 0) {
+    insights.push({
+      icon: CheckCircle,
+      title: 'Portfolio data loaded',
+      body: 'Your holdings are connected. More advanced risk insights need historical performance and risk endpoints.',
+      accent: { icon: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/22', hover: 'rgba(16,185,129,0.12)' },
+    })
+  }
+
+  return insights.slice(0, 3)
+}
+
 export default function Portfolio() {
+  const [portfolio, setPortfolio] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadPortfolio() {
+      setLoading(true)
+      setError('')
+
+      try {
+        const response = await getPortfolio()
+        if (!isMounted) return
+        setPortfolio(getResponseData(response))
+      } catch (err) {
+        if (!isMounted) return
+        console.error('Portfolio load failed:', err)
+        setPortfolio(null)
+        setError(getPortfolioErrorMessage(err))
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    loadPortfolio()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const holdings = useMemo(() => (
+    Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
+  ), [portfolio])
+
+  const summaryCards = useMemo(
+    () => buildSummaryCards(portfolio, loading),
+    [portfolio, loading],
+  )
+
+  const insights = useMemo(
+    () => buildInsights(portfolio),
+    [portfolio],
+  )
+
   return (
     <div className="space-y-5">
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <h1 className="text-2xl font-black text-white">Portfolio</h1>
         <p className="text-xs text-slate-500 mt-0.5 font-medium">Track your assets, performance and allocation</p>
+        {error && (
+          <p className="text-[11px] text-amber-400/80 mt-2 font-semibold">{error}</p>
+        )}
       </motion.div>
 
       <motion.div initial="hidden" animate="visible" variants={stagger}
@@ -57,10 +228,10 @@ export default function Portfolio() {
       <motion.div initial="hidden" animate="visible" variants={stagger}
         className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         <motion.div variants={fadeUp} className="lg:col-span-2">
-          <HoldingsTable />
+          <HoldingsTable holdings={holdings} loading={loading} />
         </motion.div>
         <motion.div variants={fadeUp}>
-          <PortfolioChart />
+          <PortfolioChart holdings={holdings} totalValue={portfolio?.totalValue} loading={loading} />
         </motion.div>
       </motion.div>
 
@@ -71,22 +242,32 @@ export default function Portfolio() {
           <h2 className="text-sm font-bold text-white">Portfolio Insights</h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          {insights.map((ins) => (
-            <motion.div
-              key={ins.title}
-              variants={fadeUp}
-              whileHover={{ y: -2, borderColor: ins.accent.hover }}
-              className={`bg-[#0a1628]/88 border ${ins.accent.border} rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)] transition-all duration-300`}
-            >
-              <div className={`w-8 h-8 rounded-xl ${ins.accent.bg} border ${ins.accent.border} flex items-center justify-center mb-3.5`}>
-                <ins.icon size={14} className={ins.accent.icon} />
-              </div>
-              <p className="text-sm font-bold text-white mb-1.5">{ins.title}</p>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">{ins.body}</p>
-            </motion.div>
-          ))}
-        </div>
+        {insights.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            {insights.map((ins) => (
+              <motion.div
+                key={ins.title}
+                variants={fadeUp}
+                whileHover={{ y: -2, borderColor: ins.accent.hover }}
+                className={`bg-[#0a1628]/88 border ${ins.accent.border} rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)] transition-all duration-300`}
+              >
+                <div className={`w-8 h-8 rounded-xl ${ins.accent.bg} border ${ins.accent.border} flex items-center justify-center mb-3.5`}>
+                  <ins.icon size={14} className={ins.accent.icon} />
+                </div>
+                <p className="text-sm font-bold text-white mb-1.5">{ins.title}</p>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">{ins.body}</p>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            variants={fadeUp}
+            className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-6 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)]"
+          >
+            <p className="text-sm text-slate-500 font-bold">No portfolio insights yet</p>
+            <p className="text-xs text-slate-700 mt-1 font-medium">Insights will appear after real trades create holdings. Risk score and performance history need backend endpoints.</p>
+          </motion.div>
+        )}
       </motion.div>
 
     </div>
