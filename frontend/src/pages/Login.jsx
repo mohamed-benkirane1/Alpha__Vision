@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
+import { setToken } from '../services/api'
+import { login } from '../services/authService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
@@ -39,8 +41,10 @@ function Feature({ icon: Icon, title, desc }) {
 }
 
 export default function Login() {
+  const navigate = useNavigate()
   const [form, setForm]           = useState({ email: '', password: '' })
   const [errors, setErrors]       = useState({})
+  const [success, setSuccess]     = useState('')
   const [showPassword, setShowPw] = useState(false)
   const [loading, setLoading]     = useState(false)
 
@@ -55,18 +59,43 @@ export default function Login() {
     return e
   }
 
-  const handleSubmit = (ev) => {
+  const handleSubmit = async (ev) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
     setErrors({})
+    setSuccess('')
     setLoading(true)
-    setTimeout(() => setLoading(false), 1200)
+
+    try {
+      const { data } = await login({
+        email: form.email.trim(),
+        password: form.password,
+      })
+
+      if (data?.token) setToken(data.token)
+      if (data?.user) localStorage.setItem('user', JSON.stringify(data.user))
+
+      setSuccess('Signed in successfully. Redirecting...')
+      setTimeout(() => navigate('/dashboard'), 500)
+    } catch (err) {
+      setErrors({
+        submit: err.message || 'Unable to sign in. Please try again.',
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleChange = (field) => (ev) => {
     setForm((f) => ({ ...f, [field]: ev.target.value }))
-    if (errors[field]) setErrors((e) => { const n = { ...e }; delete n[field]; return n })
+    if (success) setSuccess('')
+    if (errors[field] || errors.submit) setErrors((e) => {
+      const n = { ...e }
+      delete n[field]
+      delete n.submit
+      return n
+    })
   }
 
   const isValid = (field) => form[field] && !errors[field]
@@ -251,6 +280,19 @@ export default function Login() {
                 Forgot password?
               </Link>
             </div>
+
+            {(errors.submit || success) && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`text-[11px] mt-1.5 flex items-center gap-1 font-medium ${
+                  success ? 'text-emerald-400' : 'text-rose-400'
+                }`}
+              >
+                {success ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                {success || errors.submit}
+              </motion.p>
+            )}
 
             {/* Submit */}
             <motion.button
