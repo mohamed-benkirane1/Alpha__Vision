@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
@@ -42,6 +42,7 @@ function Feature({ icon: Icon, title, desc }) {
 
 export default function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login: authLogin } = useAuth()
   const [form, setForm]           = useState({ email: '', password: '' })
   const [errors, setErrors]       = useState({})
@@ -76,8 +77,9 @@ export default function Login() {
 
       authLogin(data?.user, data?.token)
 
+      const redirectTo = location.state?.from?.pathname || '/dashboard'
       setSuccess('Signed in successfully. Redirecting...')
-      setTimeout(() => navigate('/dashboard'), 500)
+      setTimeout(() => navigate(redirectTo, { replace: true }), 500)
     } catch (err) {
       setErrors({
         submit: err.message || 'Unable to sign in. Please try again.',

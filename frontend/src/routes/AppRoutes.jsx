@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import MainLayout from '../components/layout/MainLayout'
+import ProtectedRoute from '../components/ProtectedRoute'
 
 // ── Lazy-loaded pages — each becomes its own JS chunk ─────────────────────────
 const Home           = lazy(() => import('../pages/Home'))
@@ -49,15 +50,17 @@ function AppRoutes() {
         <Route path="/signup"          element={<Signup />}         />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        <Route element={<MainLayout />}>
-          <Route path="/dashboard"   element={<Dashboard />}   />
-          <Route path="/portfolio"   element={<Portfolio />}   />
-          <Route path="/news"        element={<News />}        />
-          <Route path="/chatbot"     element={<Chatbot />}    />
-          <Route path="/trading"     element={<Trading />}    />
-          <Route path="/backtesting" element={<Backtesting />}/>
-          <Route path="/bot"         element={<TradingBot />} />
-          <Route path="/settings"    element={<Settings />}   />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<MainLayout />}>
+            <Route path="/dashboard"   element={<Dashboard />}   />
+            <Route path="/portfolio"   element={<Portfolio />}   />
+            <Route path="/news"        element={<News />}        />
+            <Route path="/chatbot"     element={<Chatbot />}    />
+            <Route path="/trading"     element={<Trading />}    />
+            <Route path="/backtesting" element={<Backtesting />}/>
+            <Route path="/bot"         element={<TradingBot />} />
+            <Route path="/settings"    element={<Settings />}   />
+          </Route>
         </Route>
 
         <Route path="*" element={<NotFound />} />
