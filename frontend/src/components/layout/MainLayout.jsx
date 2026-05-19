@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, PieChart, Newspaper, MessageSquare, TrendingUp,
   FlaskConical, Bot, Settings, LogOut, Menu, X, Bell, ChevronRight,
 } from 'lucide-react'
+import { useAuth } from '../../context/useAuth'
 
 // ── Logo SVG inline — cohérent avec Home.jsx (zone publique) ──────────────────
 function LogoMark({ size = 22 }) {
@@ -87,7 +88,12 @@ function NavGroup({ label, links, onLinkClick }) {
   )
 }
 
-function SidebarContent({ onLinkClick }) {
+const getInitial = (name) => (name?.trim()?.[0] || 'A').toUpperCase()
+
+function SidebarContent({ onLinkClick, onLogout, user }) {
+  const displayName = user?.name || 'Alpha User'
+  const planLabel = user?.plan ? `${user.plan} Plan - Active` : 'Active'
+
   return (
     <div className="flex flex-col h-full">
 
@@ -132,19 +138,23 @@ function SidebarContent({ onLinkClick }) {
         <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-2 cursor-pointer hover:bg-white/[0.05] transition-colors group">
           <div className="relative shrink-0">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-600 to-red-700 flex items-center justify-center text-xs font-black text-white shadow-[0_0_12px_rgba(225,29,72,0.35)]">
-              A
+              {getInitial(displayName)}
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-[1.5px] border-[#040710]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">Alpha User</p>
-            <p className="text-[10px] text-slate-600 truncate">Pro Plan · Active</p>
+            <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+            <p className="text-[10px] text-slate-600 truncate">{planLabel}</p>
           </div>
           <ChevronRight size={12} className="text-slate-700 group-hover:text-slate-500 transition-colors shrink-0" />
         </div>
 
         {/* Sign out */}
-        <button className="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:text-red-400 hover:bg-red-500/5 border border-transparent hover:border-red-500/10 transition-all duration-200">
+        <button
+          type="button"
+          onClick={onLogout}
+          className="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:text-red-400 hover:bg-red-500/5 border border-transparent hover:border-red-500/10 transition-all duration-200"
+        >
           <LogOut size={14} />
           Sign out
         </button>
@@ -157,6 +167,14 @@ function SidebarContent({ onLinkClick }) {
 export default function MainLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { logout, user } = useAuth()
+
+  const handleLogout = () => {
+    logout()
+    setMobileOpen(false)
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="min-h-screen bg-[#06020c] text-white flex">
@@ -169,7 +187,7 @@ export default function MainLayout() {
 
       {/* ── Sidebar desktop ── */}
       <aside className="hidden lg:flex flex-col w-60 fixed inset-y-0 left-0 bg-[#040710]/97 border-r border-white/[0.055] backdrop-blur-2xl z-30">
-        <SidebarContent />
+        <SidebarContent onLogout={handleLogout} user={user} />
       </aside>
 
       {/* ── Mobile overlay + drawer ── */}
@@ -199,7 +217,7 @@ export default function MainLayout() {
               >
                 <X size={14} />
               </button>
-              <SidebarContent onLinkClick={() => setMobileOpen(false)} />
+              <SidebarContent onLinkClick={() => setMobileOpen(false)} onLogout={handleLogout} user={user} />
             </motion.aside>
           </>
         )}
@@ -246,7 +264,7 @@ export default function MainLayout() {
             {/* Avatar utilisateur */}
             <div className="relative cursor-pointer">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-600 to-red-700 flex items-center justify-center text-xs font-black select-none shadow-[0_0_12px_rgba(225,29,72,0.35)]">
-                A
+                {getInitial(user?.name)}
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-[1.5px] border-[#06020c]" />
             </div>

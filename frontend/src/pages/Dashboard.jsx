@@ -51,6 +51,8 @@ const getFirstName = (name) => {
   return name.trim().split(' ')[0] || 'Trader'
 }
 
+const responseData = (result) => result.value?.data ?? result.value
+
 function buildStats({ portfolio, trades, bot, loading }) {
   const totalValue = portfolio?.totalValue
   const totalProfit = portfolio?.totalProfit
@@ -120,10 +122,16 @@ export default function Dashboard() {
 
       if (!isMounted) return
 
-      if (portfolioResult.status === 'fulfilled') setPortfolio(portfolioResult.value)
-      if (tradesResult.status === 'fulfilled') setTrades(Array.isArray(tradesResult.value) ? tradesResult.value : [])
-      if (marketsResult.status === 'fulfilled') setMarkets(Array.isArray(marketsResult.value) ? marketsResult.value : [])
-      if (botResult.status === 'fulfilled') setBot(botResult.value)
+      if (portfolioResult.status === 'fulfilled') setPortfolio(responseData(portfolioResult))
+      if (tradesResult.status === 'fulfilled') {
+        const data = responseData(tradesResult)
+        setTrades(Array.isArray(data) ? data : [])
+      }
+      if (marketsResult.status === 'fulfilled') {
+        const data = responseData(marketsResult)
+        setMarkets(Array.isArray(data) ? data : [])
+      }
+      if (botResult.status === 'fulfilled') setBot(responseData(botResult))
 
       const failed = [portfolioResult, tradesResult, marketsResult, botResult].some((result) => result.status === 'rejected')
       if (failed) setError('Some dashboard data could not be refreshed. Showing the latest available view.')

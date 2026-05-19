@@ -4,12 +4,13 @@ import {
   User, Mail, Lock, Globe, Bell, Shield, Cpu, AlertTriangle,
   CheckCircle, Zap, ChevronRight,
 } from 'lucide-react'
+import { API_BASE_URL } from '../services/api'
 
 const fadeUp  = { hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
 
 const API_STATUS = [
-  { label: 'Backend API',  endpoint: 'localhost:5001/api',   status: 'connected', latency: '12ms'  },
+  { label: 'Backend API',  endpoint: API_BASE_URL,           status: 'connected', latency: '12ms'  },
   { label: 'Market Data',  endpoint: 'binance.com/api/v3',   status: 'connected', latency: '45ms'  },
   { label: 'News Service', endpoint: 'gnews.io/api/v4',      status: 'connected', latency: '78ms'  },
   { label: 'AI Service',   endpoint: 'ai.alphavision.local', status: 'active',    latency: '120ms' },
