@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react'
+import { setToken } from '../services/api'
+import { signup } from '../services/authService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
@@ -79,8 +81,10 @@ function PlanBadge({ label, highlight }) {
 }
 
 export default function Signup() {
+  const navigate = useNavigate()
   const [form, setForm]       = useState({ name: '', email: '', password: '', confirm: '' })
   const [errors, setErrors]   = useState({})
+  const [success, setSuccess] = useState('')
   const [showPw, setShowPw]   = useState(false)
   const [showCf, setShowCf]   = useState(false)
   const [loading, setLoading] = useState(false)
@@ -104,18 +108,44 @@ export default function Signup() {
     return e
   }
 
-  const handleSubmit = (ev) => {
+  const handleSubmit = async (ev) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
     setErrors({})
+    setSuccess('')
     setLoading(true)
-    setTimeout(() => setLoading(false), 1200)
+
+    try {
+      const { data } = await signup({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+      })
+
+      if (data?.token) setToken(data.token)
+      if (data?.user) localStorage.setItem('user', JSON.stringify(data.user))
+
+      setSuccess('Account created successfully. Redirecting...')
+      setTimeout(() => navigate('/dashboard'), 500)
+    } catch (err) {
+      setErrors({
+        submit: err.message || 'Unable to create your account. Please try again.',
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleChange = (field) => (ev) => {
     setForm((f) => ({ ...f, [field]: ev.target.value }))
-    if (errors[field]) setErrors((e) => { const n = { ...e }; delete n[field]; return n })
+    if (success) setSuccess('')
+    if (errors[field] || errors.submit) setErrors((e) => {
+      const n = { ...e }
+      delete n[field]
+      delete n.submit
+      return n
+    })
   }
 
   const isValid = (field) => form[field] && !errors[field]
@@ -355,6 +385,19 @@ export default function Signup() {
                 <button type="button" className="text-rose-400 hover:text-rose-300 transition-colors font-black">Privacy Policy</button>
               </span>
             </label>
+
+            {(errors.submit || success) && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`text-[11px] mt-1.5 flex items-center gap-1 font-medium ${
+                  success ? 'text-emerald-400' : 'text-rose-400'
+                }`}
+              >
+                {success ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                {success || errors.submit}
+              </motion.p>
+            )}
 
             {/* Submit */}
             <motion.button
