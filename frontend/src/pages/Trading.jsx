@@ -80,6 +80,7 @@ export default function Trading() {
         </motion.div>
         <motion.div variants={fadeUp}>
           <OrderForm
+            key={selectedSymbol}
             prices={PRICE_MAP}
             selectedSymbol={selectedSymbol}
             onTrade={handleTrade}

@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { Bot, TrendingUp, Activity, Zap, ChevronUp } from 'lucide-react'
+import { TrendingUp, Activity, Zap, ChevronUp } from 'lucide-react'
 
 const CONFIDENCE = 87
 

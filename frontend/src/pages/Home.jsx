@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ChevronRight, Play, ArrowRight, TrendingUp, Shield,
+  Play, ArrowRight, TrendingUp, Shield,
   Zap, Brain, BarChart3, Activity, Check, Users,
-  Target, Clock, LineChart, Bot, Star, FlaskConical, Mail,
+  Target, Clock, LineChart, Bot, Star, Mail,
 } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import PriceTicker from '../components/ambient/PriceTicker'

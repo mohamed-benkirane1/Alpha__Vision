@@ -13,8 +13,6 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
   const [submitted, setSubmitted] = useState(false)
   const shouldReduce = useReducedMotion()
 
-  useEffect(() => { if (selectedSymbol) setSymbol(selectedSymbol) }, [selectedSymbol])
-
   // Auto-clear submitted feedback with cleanup on unmount
   useEffect(() => {
     if (!submitted) return

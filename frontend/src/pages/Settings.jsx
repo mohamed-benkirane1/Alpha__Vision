@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  User, Mail, Lock, Globe, Bell, Shield, Cpu, AlertTriangle,
-  CheckCircle, Zap, ChevronRight,
+  User, Mail, Lock, Globe, Shield, Cpu, AlertTriangle,
+  ChevronRight,
 } from 'lucide-react'
 import { API_BASE_URL } from '../services/api'
 
