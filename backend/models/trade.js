@@ -6,6 +6,7 @@ const TradeSchema = new mongoose.Schema({
   type: { type: String, enum: ['BUY', 'SELL'], required: true },
   quantity: { type: Number, required: true },
   price: { type: Number, required: true },
+  total: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
 
