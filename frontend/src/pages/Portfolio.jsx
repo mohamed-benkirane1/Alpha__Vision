@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, TrendingUp, Star, Layers, Lightbulb, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Wallet, TrendingUp, Star, Layers, Lightbulb, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react'
 
 import PortfolioCard  from '../components/portfolio/PortfolioCard'
 import HoldingsTable  from '../components/portfolio/HoldingsTable'
@@ -161,38 +161,56 @@ function buildInsights(portfolio) {
 export default function Portfolio() {
   const [portfolio, setPortfolio] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refetching, setRefetching] = useState(false)
   const [error, setError] = useState('')
+  const mountedRef = useRef(false)
 
-  useEffect(() => {
-    let isMounted = true
-
-    async function loadPortfolio() {
+  const loadPortfolio = useCallback(async ({ refresh = false } = {}) => {
+    if (refresh) {
+      setRefetching(true)
+    } else {
       setLoading(true)
-      setError('')
-
-      try {
-        const response = await getPortfolio()
-        if (!isMounted) return
-        setPortfolio(getResponseData(response))
-      } catch (err) {
-        if (!isMounted) return
-        console.error('Portfolio load failed:', err)
-        setPortfolio(null)
-        setError(getPortfolioErrorMessage(err))
-      } finally {
-        if (isMounted) setLoading(false)
-      }
     }
+    setError('')
 
-    loadPortfolio()
-
-    return () => {
-      isMounted = false
+    try {
+      const response = await getPortfolio()
+      if (!mountedRef.current) return
+      setPortfolio(getResponseData(response))
+    } catch (err) {
+      if (!mountedRef.current) return
+      console.error('Portfolio load failed:', err)
+      if (!refresh) setPortfolio(null)
+      setError(getPortfolioErrorMessage(err))
+    } finally {
+      if (mountedRef.current) {
+        if (refresh) {
+          setRefetching(false)
+        } else {
+          setLoading(false)
+        }
+      }
     }
   }, [])
 
+  useEffect(() => {
+    mountedRef.current = true
+    const timer = window.setTimeout(() => {
+      loadPortfolio()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timer)
+      mountedRef.current = false
+    }
+  }, [loadPortfolio])
+
   const holdings = useMemo(() => (
     Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
+  ), [portfolio])
+
+  const warnings = useMemo(() => (
+    Array.isArray(portfolio?.warnings) ? portfolio.warnings.filter(Boolean) : []
   ), [portfolio])
 
   const summaryCards = useMemo(
@@ -209,10 +227,33 @@ export default function Portfolio() {
     <div className="space-y-5">
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <h1 className="text-2xl font-black text-white">Portfolio</h1>
-        <p className="text-xs text-slate-500 mt-0.5 font-medium">Track your assets, performance and allocation</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-black text-white">Portfolio</h1>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">Track your assets, performance and allocation</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => loadPortfolio({ refresh: true })}
+            disabled={loading || refetching}
+            className="shrink-0 h-9 w-9 rounded-xl border border-white/[0.07] bg-[#0a1628]/88 text-slate-500 hover:text-white hover:border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+            title="Refresh portfolio"
+            aria-label="Refresh portfolio"
+          >
+            <RefreshCw size={14} className={refetching ? 'animate-spin text-rose-400' : ''} />
+          </button>
+        </div>
         {error && (
           <p className="text-[11px] text-amber-400/80 mt-2 font-semibold">{error}</p>
+        )}
+        {warnings.length > 0 && !error && (
+          <div className="mt-2 flex items-start gap-2 text-[11px] text-amber-400/80 font-semibold">
+            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+            <p>
+              Some prices are temporarily unavailable.
+              <span className="text-slate-600 font-medium"> {warnings.length} warning{warnings.length > 1 ? 's' : ''} returned.</span>
+            </p>
+          </div>
         )}
       </motion.div>
 

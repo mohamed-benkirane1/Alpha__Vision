@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { TrendingUp, TrendingDown, BarChart2 } from 'lucide-react'
+import { AlertTriangle, TrendingUp, TrendingDown, BarChart2 } from 'lucide-react'
 
 const getValidNumber = (value) => {
   const number = Number(value)
@@ -57,8 +57,10 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
       <div className="space-y-1.5">
         {hasHoldings ? (
           holdings.map((h, i) => {
+            const priceAvailable = h.priceAvailable !== false
             const profit = getValidNumber(h.profit)
-            const up = profit === null ? true : profit >= 0
+            const hasProfit = priceAvailable && profit !== null
+            const up = hasProfit ? profit >= 0 : true
             const color = assetColors[h.symbol] || '#6366f1'
             const quantity = getValidNumber(h.quantity)
             const rowKey = h._id || `${h.symbol || 'holding'}-${i}`
@@ -80,24 +82,43 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                     {(h.symbol || '--').slice(0, 2)}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">{h.symbol || '--'}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-bold text-white">{h.symbol || '--'}</p>
+                      {!priceAvailable && (
+                        <AlertTriangle
+                          size={11}
+                          className="text-amber-400/80 shrink-0"
+                          aria-label="Price unavailable"
+                        />
+                      )}
+                    </div>
                     <p className="text-[10px] text-slate-700 font-medium">
                       {quantity === null ? '--' : quantity} {h.symbol || ''}
                     </p>
+                    {!priceAvailable && (
+                      <p className="text-[10px] text-amber-400/70 font-semibold md:hidden">
+                        Price unavailable
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <span className="hidden md:block text-xs text-slate-600 text-right tabular-nums font-medium">{fmt(h.avgPrice)}</span>
-                <span className="text-xs text-slate-300 text-right font-bold col-span-1 tabular-nums">{fmt(h.currentPrice)}</span>
-                <span className="hidden md:block text-xs text-white font-black text-right tabular-nums">{fmt(h.currentValue)}</span>
+                <span
+                  className={`text-xs text-right font-bold col-span-1 tabular-nums ${priceAvailable ? 'text-slate-300' : 'text-amber-400/75'}`}
+                  title={!priceAvailable ? h.warning || 'Price unavailable' : undefined}
+                >
+                  {priceAvailable ? fmt(h.currentPrice) : '--'}
+                </span>
+                <span className="hidden md:block text-xs text-white font-black text-right tabular-nums">{priceAvailable ? fmt(h.currentValue) : '--'}</span>
 
                 <div className="flex flex-col items-end col-span-1">
-                  <span className={`text-xs font-black flex items-center gap-0.5 tabular-nums ${up ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                    {profit === null ? '--' : fmt(Math.abs(profit))}
+                  <span className={`text-xs font-black flex items-center gap-0.5 tabular-nums ${hasProfit ? (up ? 'text-emerald-400' : 'text-rose-400') : 'text-slate-600'}`}>
+                    {hasProfit && (up ? <TrendingUp size={10} /> : <TrendingDown size={10} />)}
+                    {hasProfit ? fmt(Math.abs(profit)) : '--'}
                   </span>
-                  <span className={`text-[10px] font-bold ${up ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
-                    {fmtP(h.profitPercent)}
+                  <span className={`text-[10px] font-bold ${hasProfit ? (up ? 'text-emerald-500/80' : 'text-rose-500/80') : 'text-slate-700'}`}>
+                    {hasProfit ? fmtP(h.profitPercent) : '--'}
                   </span>
                 </div>
               </motion.div>

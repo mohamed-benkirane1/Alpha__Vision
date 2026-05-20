@@ -30,7 +30,9 @@ const buildAllocation = (holdings, totalValue) => {
   const total = getValidNumber(totalValue)
   if (!Array.isArray(holdings) || holdings.length === 0 || total <= 0) return []
 
-  return holdings.flatMap((holding, index) => {
+  const pricedHoldings = holdings.filter((holding) => holding.priceAvailable !== false)
+
+  return pricedHoldings.flatMap((holding, index) => {
     const value = getValidNumber(holding.currentValue)
     if (value === null || value <= 0) return []
 
@@ -62,6 +64,8 @@ function CustomTooltip({ active, payload }) {
 
 export default function PortfolioChart({ holdings = [], totalValue = 0, loading = false }) {
   const allocation = buildAllocation(holdings, totalValue)
+  const hasHoldings = Array.isArray(holdings) && holdings.length > 0
+  const hasUnavailablePrices = hasHoldings && holdings.some((holding) => holding.priceAvailable === false)
 
   return (
     <motion.div
@@ -132,10 +136,14 @@ export default function PortfolioChart({ holdings = [], totalValue = 0, loading 
             <PieIcon size={16} className="text-slate-700" />
           </div>
           <p className="text-xs text-slate-600 font-medium">
-            {loading ? 'Loading allocation...' : 'No allocation yet'}
+            {loading ? 'Loading allocation...' : (hasUnavailablePrices ? 'No priced allocation' : 'No allocation yet')}
           </p>
           <p className="text-[11px] text-slate-700 mt-1 max-w-[220px]">
-            {loading ? 'Portfolio allocation is being loaded.' : 'Allocation will be calculated from real holdings with valid values.'}
+            {loading
+              ? 'Portfolio allocation is being loaded.'
+              : (hasUnavailablePrices
+                  ? 'Some prices are temporarily unavailable.'
+                  : 'Allocation will be calculated from real holdings with valid values.')}
           </p>
         </div>
       )}
