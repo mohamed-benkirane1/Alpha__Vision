@@ -1,32 +1,110 @@
 const axios = require('axios');
 const NodeCache = require('node-cache');
-const cache = new NodeCache({ stdTTL: 300 }); // Cache 5 minutes
 
-// ============================================================
-// API GNews - NEWS UNIQUEMENT FINANCIÈRES
-// ============================================================
-// Pour obtenir une clé gratuite : https://gnews.io/
-// 100 requêtes/jour gratuit
-// ============================================================
+const cache = new NodeCache({ stdTTL: 300 });
+const GNEWS_PROVIDER = 'GNews';
+const GNEWS_SOURCE = 'gnews';
+const FALLBACK_PROVIDER = 'static-fallback';
 
-const GNEWS_API_KEY = process.env.GNEWS_API_KEY || '';
+function nowIso() {
+  return new Date().toISOString();
+}
 
-async function getFinancialNews() {
-  const cached = cache.get('financial_news');
-  if (cached) return cached;
-  
-  // Si pas de clé GNews, utiliser les news simulées
-  if (!GNEWS_API_KEY || GNEWS_API_KEY === '') {
-    console.log('⚠️ GNews API key not configured, using simulated financial news');
-    return getSimulatedFinancialNews();
+function analyzeFinancialSentiment(text = '') {
+  const lowerText = String(text).toLowerCase();
+  const bullish = [
+    'surge', 'rally', 'gain', 'bullish', 'growth', 'up', 'high', 'record',
+    'breakout', 'positive', 'profit', 'rise', 'increasing', 'green',
+    'opportunity', 'strong', 'upgrade', 'beat', 'exceeds'
+  ];
+  const bearish = [
+    'drop', 'fall', 'decline', 'bearish', 'loss', 'down', 'low', 'crash',
+    'negative', 'risk', 'warning', 'sell', 'decreasing', 'red',
+    'concern', 'weak', 'downgrade', 'miss', 'below'
+  ];
+
+  const bullishCount = bullish.filter((word) => lowerText.includes(word)).length;
+  const bearishCount = bearish.filter((word) => lowerText.includes(word)).length;
+
+  if (bullishCount > bearishCount) return 'bullish';
+  if (bearishCount > bullishCount) return 'bearish';
+  return 'neutral';
+}
+
+function normalizeArticle(article = {}) {
+  const sourceName = article.source?.name || 'Unknown source';
+  const textForSentiment = `${article.title || ''} ${article.description || ''}`;
+
+  return {
+    title: article.title || 'Untitled market news',
+    description: article.description || '',
+    url: article.url || null,
+    image: article.image || null,
+    publishedAt: article.publishedAt || null,
+    source: sourceName,
+    provider: GNEWS_PROVIDER,
+    fallback: false,
+    symbol: null,
+    category: 'financial-markets',
+    sentiment: analyzeFinancialSentiment(textForSentiment)
+  };
+}
+
+function createSuccessResponse(articles) {
+  const data = Array.isArray(articles) ? articles : [];
+  return {
+    success: true,
+    timestamp: nowIso(),
+    provider: GNEWS_PROVIDER,
+    source: GNEWS_SOURCE,
+    fallback: false,
+    count: data.length,
+    data,
+    warnings: []
+  };
+}
+
+function createFallbackResponse(reason) {
+  return {
+    success: true,
+    timestamp: nowIso(),
+    provider: FALLBACK_PROVIDER,
+    source: 'fallback',
+    fallback: true,
+    count: 0,
+    data: [],
+    warnings: [reason || 'News provider unavailable or API key missing.']
+  };
+}
+
+function createErrorResponse(error) {
+  return {
+    success: false,
+    timestamp: nowIso(),
+    provider: GNEWS_PROVIDER,
+    source: GNEWS_SOURCE,
+    fallback: false,
+    error: error?.message || 'Unable to load market news',
+    data: [],
+    warnings: []
+  };
+}
+
+async function getNews() {
+  const cached = cache.get('financial_news_response');
+  if (cached) return { ...cached, cached: true };
+
+  const apiKey = process.env.GNEWS_API_KEY || '';
+  if (!apiKey) {
+    const response = createFallbackResponse('GNews API key is not configured. No demo news are shown as real news.');
+    cache.set('financial_news_response', response);
+    return response;
   }
-  
+
   try {
-    console.log('📰 Fetching REAL financial news from GNews...');
-    
     const response = await axios.get('https://gnews.io/api/v4/search', {
       params: {
-        apikey: GNEWS_API_KEY,
+        apikey: apiKey,
         q: 'stock market OR finance OR trading OR cryptocurrency OR investing OR economy',
         lang: 'en',
         country: 'us',
@@ -35,124 +113,16 @@ async function getFinancialNews() {
       },
       timeout: 8000
     });
-    
-    const articles = response.data.articles.map(article => ({
-      title: article.title,
-      description: article.description,
-      source: article.source.name,
-      url: article.url,
-      image: article.image,
-      publishedAt: article.publishedAt,
-      sentiment: analyzeFinancialSentiment(article.title + ' ' + (article.description || ''))
-    }));
-    
-    cache.set('financial_news', articles);
-    return articles;
-    
+
+    const articles = Array.isArray(response.data?.articles)
+      ? response.data.articles.map(normalizeArticle)
+      : [];
+    const normalized = createSuccessResponse(articles);
+    cache.set('financial_news_response', normalized);
+    return normalized;
   } catch (error) {
-    console.log('❌ GNews API error:', error.message);
-    return getSimulatedFinancialNews();
+    return createErrorResponse(error);
   }
-}
-
-// ============================================================
-// ANALYSE DE SENTIMENT POUR NEWS FINANCIÈRES
-// ============================================================
-
-function analyzeFinancialSentiment(text) {
-  const lowerText = text.toLowerCase();
-  
-  const bullish = [
-    'surge', 'rally', 'gain', 'bullish', 'growth', 'up', 'high', 'record',
-    'breakout', 'positive', 'profit', 'rise', 'increasing', 'green',
-    'opportunity', 'strong', 'upgrade', 'beat', 'exceeds'
-  ];
-  
-  const bearish = [
-    'drop', 'fall', 'decline', 'bearish', 'loss', 'down', 'low', 'crash',
-    'negative', 'risk', 'warning', 'sell', 'decreasing', 'red',
-    'concern', 'weak', 'downgrade', 'miss', 'below'
-  ];
-  
-  let bullishCount = bullish.filter(word => lowerText.includes(word)).length;
-  let bearishCount = bearish.filter(word => lowerText.includes(word)).length;
-  
-  if (bullishCount > bearishCount) return 'bullish';
-  if (bearishCount > bullishCount) return 'bearish';
-  return 'neutral';
-}
-
-// ============================================================
-// SIMULATION DE NEWS FINANCIÈRES (FALLBACK)
-// ============================================================
-
-function getSimulatedFinancialNews() {
-  return [
-    {
-      title: 'Bitcoin Surges Past $75,000 as Institutional Inflows Continue',
-      description: 'Bitcoin reaches new all-time high amid growing institutional adoption and ETF inflows.',
-      source: 'CryptoDaily',
-      sentiment: 'bullish',
-      publishedAt: new Date().toISOString()
-    },
-    {
-      title: 'Federal Reserve Signals Potential Rate Cuts in Second Half of 2025',
-      description: 'Fed officials indicate possible monetary policy easing as inflation cools.',
-      source: 'Financial Times',
-      sentiment: 'bullish',
-      publishedAt: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-      title: 'Tesla Reports Record Deliveries, Stock Jumps 8%',
-      description: 'EV manufacturer exceeds analyst expectations with strong Q2 delivery numbers.',
-      source: 'MarketWatch',
-      sentiment: 'bullish',
-      publishedAt: new Date(Date.now() - 7200000).toISOString()
-    },
-    {
-      title: 'Ethereum Upgrade Set to Reduce Gas Fees by 40%',
-      description: 'The upcoming network upgrade promises significant improvements in transaction costs.',
-      source: 'BlockchainNews',
-      sentiment: 'bullish',
-      publishedAt: new Date(Date.now() - 10800000).toISOString()
-    },
-    {
-      title: 'Gold Hits New High as Dollar Weakens',
-      description: 'Precious metal reaches record levels amid currency market volatility.',
-      source: 'Reuters',
-      sentiment: 'bullish',
-      publishedAt: new Date(Date.now() - 14400000).toISOString()
-    },
-    {
-      title: 'Apple Unveils New AI Features at WWDC',
-      description: 'Tech giant announces major AI integration across its product lineup.',
-      source: 'TechCrunch',
-      sentiment: 'bullish',
-      publishedAt: new Date(Date.now() - 18000000).toISOString()
-    },
-    {
-      title: 'Inflation Data Coming in Higher Than Expected',
-      description: 'CPI figures exceed forecasts, raising concerns about future rate hikes.',
-      source: 'Bloomberg',
-      sentiment: 'bearish',
-      publishedAt: new Date(Date.now() - 21600000).toISOString()
-    },
-    {
-      title: 'Solana Overtakes Ethereum in Daily Active Users',
-      description: 'High-performance blockchain sees surge in adoption and DeFi activity.',
-      source: 'CoinDesk',
-      sentiment: 'bullish',
-      publishedAt: new Date(Date.now() - 25200000).toISOString()
-    }
-  ];
-}
-
-// ============================================================
-// FONCTION PRINCIPALE EXPORTÉE
-// ============================================================
-
-async function getNews() {
-  return await getFinancialNews();
 }
 
 module.exports = { getNews };

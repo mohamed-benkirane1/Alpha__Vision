@@ -1,64 +1,146 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Newspaper, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Newspaper, TrendingUp, TrendingDown, Minus, RefreshCw, AlertTriangle } from 'lucide-react'
 
-import NewsCard    from '../components/news/NewsCard'
+import NewsCard from '../components/news/NewsCard'
 import NewsFilters from '../components/news/NewsFilters'
+import { getMarketNews } from '../services/newsService'
 
-const articles = [
-  { id: 1, title: 'Bitcoin breaks above $67K as institutional demand surges to record highs',     description: 'Major asset managers report increased Bitcoin allocations as spot ETF inflows hit $1.2B this week, pushing BTC to its highest level in six months.',    source: 'CoinDesk',       sentiment: 'bullish', publishedAt: '2 hours ago' },
-  { id: 2, title: 'Federal Reserve signals potential rate cuts in Q3 — markets rally on the news', description: 'Fed Chair remarks suggest easing conditions ahead, with equity markets surging 1.8% and crypto markets following with double-digit gains.',             source: 'Reuters',        sentiment: 'bullish', publishedAt: '4 hours ago' },
-  { id: 3, title: 'Ethereum ETF inflows hit record $450M in a single week across all issuers',    description: 'Institutional appetite for Ethereum exposure continues to grow as ETF products attract nearly half a billion dollars in a single trading week.',        source: 'Bloomberg',      sentiment: 'bullish', publishedAt: '6 hours ago' },
-  { id: 4, title: 'DeFi total value locked surpasses $100B for the first time in 2025',           description: 'Decentralized finance protocols have collectively crossed the $100B TVL milestone, driven by liquid staking and restaking protocols.',               source: 'DeFi Pulse',     sentiment: 'bullish', publishedAt: '8 hours ago' },
-  { id: 5, title: 'Solana network congestion raises scalability concerns ahead of major launch',   description: 'Transaction failure rates spiked to 12% during peak hours as multiple high-traffic applications launched simultaneously on the Solana network.',      source: 'The Block',      sentiment: 'bearish', publishedAt: '10 hours ago' },
-  { id: 6, title: 'Tech stocks decline as inflation data disappoints analysts across Wall Street', description: 'CPI figures came in higher than expected at 3.4%, triggering a broad sell-off in growth stocks and pushing NASDAQ down 1.2% intraday.',               source: 'CNBC',           sentiment: 'bearish', publishedAt: '12 hours ago' },
-  { id: 7, title: 'Gold holds steady near $2,345 amid ongoing geopolitical uncertainty',          description: 'The precious metal is trading sideways as investors weigh safe-haven demand against a stronger dollar. Analysts see a tight range ahead.',              source: 'MarketWatch',    sentiment: 'neutral', publishedAt: '14 hours ago' },
-  { id: 8, title: 'NASDAQ recovers earlier losses after mixed Q1 earnings season concludes',      description: 'The tech-heavy index ended the week flat as strong cloud earnings offset weakness in semiconductor stocks. Analysts remain cautiously optimistic.',     source: 'Financial Times', sentiment: 'neutral', publishedAt: '1 day ago' },
-]
-
-const sentimentOverview = [
-  {
-    key: 'bullish', label: 'Bullish', icon: TrendingUp,   count: 4, pct: 50,
-    accent: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/22', bar: 'bg-emerald-500' },
-  },
-  {
-    key: 'bearish', label: 'Bearish', icon: TrendingDown, count: 2, pct: 25,
-    accent: { text: 'text-rose-400',   bg: 'bg-rose-500/10',    border: 'border-rose-500/22',    bar: 'bg-rose-500'    },
-  },
-  {
-    key: 'neutral', label: 'Neutral', icon: Minus,        count: 2, pct: 25,
-    accent: { text: 'text-slate-400',  bg: 'bg-white/[0.04]',   border: 'border-white/[0.08]',   bar: 'bg-slate-600'   },
-  },
-]
-
-const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
+const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
+const AUTO_REFRESH_MS = 120000
+
+const sentimentConfig = {
+  bullish: { label: 'Bullish', icon: TrendingUp, accent: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/22', bar: 'bg-emerald-500' } },
+  bearish: { label: 'Bearish', icon: TrendingDown, accent: { text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/22', bar: 'bg-rose-500' } },
+  neutral: { label: 'Neutral', icon: Minus, accent: { text: 'text-slate-400', bg: 'bg-white/[0.04]', border: 'border-white/[0.08]', bar: 'bg-slate-600' } },
+}
+
+const formatDateTime = (value) => {
+  if (!value) return '--'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--'
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+function buildSentimentOverview(articles) {
+  const total = articles.length
+  return ['bullish', 'bearish', 'neutral'].map((key) => {
+    const count = articles.filter((article) => article.sentiment === key).length
+    return {
+      key,
+      ...sentimentConfig[key],
+      count,
+      pct: total > 0 ? Math.round((count / total) * 100) : 0,
+    }
+  })
+}
 
 export default function News() {
   const [activeFilter, setActiveFilter] = useState('all')
+  const [news, setNews] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState('')
+  const loadingRef = useRef(false)
 
-  const filtered = activeFilter === 'all' ? articles : articles.filter((a) => a.sentiment === activeFilter)
-  const counts = {
-    all:     articles.length,
-    bullish: articles.filter((a) => a.sentiment === 'bullish').length,
-    bearish: articles.filter((a) => a.sentiment === 'bearish').length,
-    neutral: articles.filter((a) => a.sentiment === 'neutral').length,
-  }
+  const loadNews = useCallback(async ({ refresh = false } = {}) => {
+    if (loadingRef.current) return
+    loadingRef.current = true
+    if (refresh) setRefreshing(true)
+    else setLoading(true)
+    setError('')
+
+    try {
+      const response = await getMarketNews()
+      setNews(response)
+      if (!response.success && response.error) setError(response.error)
+    } catch (err) {
+      console.error('News load failed:', err)
+      setError(err?.message || 'Unable to load market news.')
+    } finally {
+      loadingRef.current = false
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => loadNews(), 0)
+    const interval = window.setInterval(() => loadNews({ refresh: true }), AUTO_REFRESH_MS)
+    return () => {
+      window.clearTimeout(timer)
+      window.clearInterval(interval)
+    }
+  }, [loadNews])
+
+  const articles = useMemo(() => (Array.isArray(news?.articles) ? news.articles : []), [news])
+  const filtered = useMemo(() => (
+    activeFilter === 'all' ? articles : articles.filter((article) => article.sentiment === activeFilter)
+  ), [activeFilter, articles])
+
+  const counts = useMemo(() => ({
+    all: articles.length,
+    bullish: articles.filter((article) => article.sentiment === 'bullish').length,
+    bearish: articles.filter((article) => article.sentiment === 'bearish').length,
+    neutral: articles.filter((article) => article.sentiment === 'neutral').length,
+  }), [articles])
+
+  const sentimentOverview = useMemo(() => buildSentimentOverview(articles), [articles])
+  const warnings = Array.isArray(news?.warnings) ? news.warnings : []
 
   return (
     <div className="space-y-5">
-
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <div className="flex items-center gap-2.5 mb-1">
-          <Newspaper size={16} className="text-rose-400" />
-          <h1 className="text-2xl font-black text-white">Market News</h1>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2.5 mb-1">
+              <Newspaper size={16} className="text-rose-400" />
+              <h1 className="text-2xl font-black text-white">Market News</h1>
+            </div>
+            <p className="text-xs text-slate-500 font-medium">Financial news from backend provider</p>
+            <p className="text-[11px] text-slate-700 mt-1 font-medium">
+              Provider <span className="text-slate-500">{news?.provider || '--'}</span>
+              {' '}· Source <span className="text-slate-500">{news?.source || '--'}</span>
+              {' '}· Updated <span className="text-slate-500">{formatDateTime(news?.timestamp)}</span>
+              {refreshing && <span className="text-rose-400/80 font-bold"> · Refreshing...</span>}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-black px-3 py-1.5 rounded-full border ${news?.fallback ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'}`}>
+              {loading ? 'SYNCING' : news?.fallback ? 'FALLBACK' : 'BACKEND NEWS'}
+            </span>
+            <button
+              type="button"
+              onClick={() => loadNews({ refresh: true })}
+              disabled={loading || refreshing}
+              className="h-9 w-9 rounded-xl border border-white/[0.07] bg-[#0a1628]/88 text-slate-500 hover:text-white hover:border-rose-500/20 disabled:opacity-50 transition-all flex items-center justify-center"
+              title="Refresh news"
+              aria-label="Refresh news"
+            >
+              <RefreshCw size={14} className={refreshing ? 'animate-spin text-rose-400' : ''} />
+            </button>
+          </div>
         </div>
-        <p className="text-xs text-slate-500 font-medium">Stay updated with financial market sentiment</p>
+
+        {(error || warnings.length > 0 || news?.fallback) && (
+          <div className="mt-3 flex items-start gap-2 text-[11px] text-amber-400/85 font-semibold">
+            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+            <div>
+              {error && <p>{error}</p>}
+              {news?.fallback && <p>News provider fallback is active. No demo articles are shown as real news.</p>}
+              {warnings.map((warning) => <p key={warning} className="text-slate-500">{warning}</p>)}
+            </div>
+          </div>
+        )}
       </motion.div>
 
-      {/* Sentiment overview */}
-      <motion.div initial="hidden" animate="visible" variants={stagger}
-        className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         {sentimentOverview.map((s) => (
           <motion.div
             key={s.key}
@@ -83,24 +165,20 @@ export default function News() {
                 className={`h-full rounded-full ${s.accent.bar}`}
               />
             </div>
-            <p className="text-[10px] text-slate-600 mt-1.5 font-medium">{s.pct}% of today's news</p>
+            <p className="text-[10px] text-slate-600 mt-1.5 font-medium">{s.pct}% of loaded backend news</p>
           </motion.div>
         ))}
       </motion.div>
 
-      {/* Filters */}
-      <motion.div initial="hidden" animate="visible" variants={fadeUp}
-        className="flex items-center justify-between gap-4 flex-wrap">
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex items-center justify-between gap-4 flex-wrap">
         <NewsFilters active={activeFilter} onChange={setActiveFilter} counts={counts} />
         <span className="text-[11px] text-slate-600 font-bold">
-          {filtered.length} article{filtered.length !== 1 ? 's' : ''}
+          {loading ? 'Loading...' : `${filtered.length} article${filtered.length !== 1 ? 's' : ''}`}
         </span>
       </motion.div>
 
-      {/* Articles */}
       {filtered.length > 0 ? (
-        <motion.div key={activeFilter} initial="hidden" animate="visible" variants={stagger}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+        <motion.div key={activeFilter} initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
           {filtered.map((article, i) => (
             <motion.div key={article.id} variants={fadeUp}>
               <NewsCard article={article} index={i} />
@@ -108,9 +186,18 @@ export default function News() {
           ))}
         </motion.div>
       ) : (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="py-16 text-center">
-          <p className="text-slate-600 text-sm font-medium">No articles found for this filter.</p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 text-center bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl">
+          <Newspaper size={18} className="text-slate-700 mx-auto mb-3" />
+          <p className="text-slate-500 text-sm font-bold">
+            {loading ? 'Loading market news...' : news?.fallback ? 'News provider unavailable' : 'No articles found'}
+          </p>
+          <p className="text-slate-700 text-xs mt-1 font-medium">
+            {loading
+              ? 'News are being requested from the backend.'
+              : news?.fallback
+                ? 'Configure GNEWS_API_KEY on the backend to load real articles.'
+                : 'Try refreshing or changing the sentiment filter.'}
+          </p>
         </motion.div>
       )}
     </div>
