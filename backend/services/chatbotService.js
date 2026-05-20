@@ -1,45 +1,140 @@
 const axios = require('axios');
 
-async function chat(message) {
-  const API_KEY = process.env.DEEPSEEK_API_KEY;
-  if (!API_KEY || API_KEY === 'sk_placeholder') {
-    return getSimulatedResponse(message);
+const PROVIDER = 'DeepSeek';
+const SOURCE = 'deepseek';
+const MODEL = 'deepseek-chat';
+const FALLBACK_PROVIDER = 'static-fallback';
+const FALLBACK_SOURCE = 'fallback';
+const SYSTEM_PROMPT = [
+  'You are Alpha Vision AI, an expert trading assistant.',
+  'Only answer questions about trading, crypto markets, stock markets, technical analysis, risk management, and portfolio optimization.',
+  'If the user asks about unrelated topics, say you can only answer questions about trading, cryptocurrencies, stocks, and financial markets.',
+  'Do not claim to know private account data unless it is explicitly provided in the conversation context.',
+].join(' ');
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function cleanMessage(message) {
+  return typeof message === 'string' ? message.trim() : '';
+}
+
+function createSuccessResponse(answer, { model = MODEL, usage = null } = {}) {
+  return {
+    success: true,
+    timestamp: nowIso(),
+    provider: PROVIDER,
+    source: SOURCE,
+    fallback: false,
+    data: {
+      answer,
+      message: answer,
+      model,
+      usage,
+    },
+    warnings: [],
+    error: null,
+  };
+}
+
+function createFallbackResponse(reason) {
+  const answer = 'Assistant temporarily unavailable.';
+
+  return {
+    success: true,
+    timestamp: nowIso(),
+    provider: FALLBACK_PROVIDER,
+    source: FALLBACK_SOURCE,
+    fallback: true,
+    data: {
+      answer,
+      message: answer,
+      model: null,
+      usage: null,
+    },
+    warnings: [reason || 'AI provider unavailable or API key missing. This response is fallback.'],
+    error: null,
+  };
+}
+
+function createErrorResponse(error) {
+  return {
+    success: false,
+    timestamp: nowIso(),
+    provider: PROVIDER,
+    source: SOURCE,
+    fallback: false,
+    data: null,
+    warnings: [],
+    error: error || 'Unable to contact AI provider.',
+  };
+}
+
+function mapConversationHistory(history = []) {
+  if (!Array.isArray(history)) return [];
+
+  return history
+    .slice(-20)
+    .map((item) => {
+      const role = item?.role === 'assistant' ? 'assistant' : 'user';
+      const content = cleanMessage(item?.content);
+      return content ? { role, content } : null;
+    })
+    .filter(Boolean);
+}
+
+async function chat(message, history = []) {
+  const userMessage = cleanMessage(message);
+  if (!userMessage) {
+    return createErrorResponse('Message required.');
   }
-  
+
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey || apiKey === 'sk_placeholder') {
+    return createFallbackResponse('DeepSeek API key is not configured. This response is fallback.');
+  }
+
   try {
-    const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
-      model: 'deepseek-chat',
-      messages: [
-        { 
-          role: 'system', 
-          content: `You are Alpha Vision AI, an expert trading assistant. ONLY answer questions about trading, crypto markets, stock markets, technical analysis (RSI, MACD, Bollinger Bands), risk management, and portfolio optimization. If the user asks about sports, politics, entertainment, or anything NOT related to trading, respond with: "I can only answer questions about trading, cryptocurrencies, stocks, and financial markets."` 
-        },
-        { role: 'user', content: message }
-      ],
-      max_tokens: 500
-    }, {
-      headers: { 'Authorization': `Bearer ${API_KEY}` }
+    const response = await axios.post(
+      'https://api.deepseek.com/v1/chat/completions',
+      {
+        model: MODEL,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...mapConversationHistory(history),
+          { role: 'user', content: userMessage },
+        ],
+        max_tokens: 500,
+      },
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        timeout: 15000,
+      },
+    );
+
+    const answer = cleanMessage(response.data?.choices?.[0]?.message?.content);
+    if (!answer) {
+      return createErrorResponse('AI provider returned an empty response.');
+    }
+
+    return createSuccessResponse(answer, {
+      model: response.data?.model || MODEL,
+      usage: response.data?.usage || null,
     });
-    return response.data.choices[0].message.content;
-  } catch {
-    return getSimulatedResponse(message);
+  } catch (error) {
+    const status = error?.response?.status;
+    const providerMessage = error?.response?.data?.error?.message || error?.message;
+    const message = status
+      ? `AI provider error (${status}): ${providerMessage || 'request failed'}`
+      : providerMessage || 'Unable to contact AI provider.';
+
+    return createErrorResponse(message);
   }
 }
 
-function getSimulatedResponse(message) {
-  const msg = message.toLowerCase();
-  
-  if (msg.includes('btc') || msg.includes('bitcoin')) {
-    return "Bitcoin is currently consolidating between $42,000 and $45,000. RSI is at 48 (neutral).";
-  }
-  if (msg.includes('eth') || msg.includes('ethereum')) {
-    return "Ethereum is showing strength above $2,200. Support at $2,150, resistance at $2,400.";
-  }
-  if (msg.includes('foot') || msg.includes('sport') || msg.includes('politique') || msg.includes('film')) {
-    return "❌ I can only answer questions about trading, cryptocurrencies, stocks, and financial markets.";
-  }
-  
-  return "📈 I'm Alpha Vision, your trading assistant. I can help with technical analysis, trading strategies, risk management, and portfolio allocation.";
-}
-
-module.exports = { chat };
+module.exports = {
+  chat,
+  createErrorResponse,
+  createFallbackResponse,
+};

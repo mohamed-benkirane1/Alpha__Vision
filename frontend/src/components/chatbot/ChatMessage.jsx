@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Bot, User } from 'lucide-react'
+import { AlertTriangle, Bot, Clock, Server, User } from 'lucide-react'
 
 function ThinkingDots() {
   return (
@@ -26,6 +26,8 @@ export default function ChatMessage({ message }) {
   if (message.isThinking) return <ThinkingDots />
 
   const isUser = message.role === 'user'
+  const hasMeta = !isUser && (message.provider || message.source || message.providerTimestamp || message.fallback)
+  const warnings = Array.isArray(message.warnings) ? message.warnings.filter(Boolean) : []
 
   return (
     <motion.div
@@ -51,6 +53,38 @@ export default function ChatMessage({ message }) {
           : 'bg-[#0a1628]/88 border border-white/[0.08] text-slate-200 rounded-bl-sm backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]'
       }`}>
         {message.content}
+        {warnings.length > 0 && (
+          <div className="mt-3 space-y-1">
+            {warnings.map((warning) => (
+              <div key={warning} className="flex items-start gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/8 px-2 py-1.5 text-[10px] font-semibold text-amber-300">
+                <AlertTriangle size={10} className="mt-0.5 shrink-0" />
+                <span>{warning}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {hasMeta && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {message.fallback && (
+              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300">
+                <AlertTriangle size={9} />
+                Fallback
+              </span>
+            )}
+            {(message.provider || message.source) && (
+              <span className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                <Server size={9} />
+                {[message.provider, message.source].filter(Boolean).join(' / ')}
+              </span>
+            )}
+            {message.providerTimestamp && (
+              <span className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                <Clock size={9} />
+                {message.providerTimestamp}
+              </span>
+            )}
+          </div>
+        )}
         <p className={`text-[10px] mt-2 select-none ${isUser ? 'text-rose-200/70 text-right' : 'text-slate-700'}`}>
           {message.timestamp}
         </p>
