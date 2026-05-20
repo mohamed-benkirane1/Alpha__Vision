@@ -5,10 +5,12 @@ import { Wallet, TrendingUp, Star, Layers, Lightbulb, AlertTriangle, CheckCircle
 import PortfolioCard  from '../components/portfolio/PortfolioCard'
 import HoldingsTable  from '../components/portfolio/HoldingsTable'
 import PortfolioChart from '../components/portfolio/PortfolioChart'
-import { getPortfolio } from '../services/portfolioService'
+import { demoDeposit, getPortfolio } from '../services/portfolioService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
+const DEMO_DEPOSIT_AMOUNT = 10000
+const showDemoFunding = import.meta.env.DEV || import.meta.env.VITE_ALLOW_DEMO_FUNDING === 'true'
 
 const getValidNumber = (value) => {
   const number = Number(value)
@@ -162,6 +164,8 @@ export default function Portfolio() {
   const [portfolio, setPortfolio] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refetching, setRefetching] = useState(false)
+  const [funding, setFunding] = useState(false)
+  const [fundingMessage, setFundingMessage] = useState('')
   const [error, setError] = useState('')
   const mountedRef = useRef(false)
 
@@ -193,6 +197,31 @@ export default function Portfolio() {
     }
   }, [])
 
+  const handleDemoDeposit = useCallback(async () => {
+    setFunding(true)
+    setFundingMessage('')
+    setError('')
+
+    try {
+      const response = await demoDeposit(DEMO_DEPOSIT_AMOUNT)
+      if (!mountedRef.current) return
+
+      const data = getResponseData(response)
+      if (!data?.success) {
+        throw new Error(data?.message || 'Demo funding failed')
+      }
+
+      setFundingMessage('Demo balance added.')
+      await loadPortfolio({ refresh: true })
+    } catch (err) {
+      if (!mountedRef.current) return
+      setFundingMessage('')
+      setError(err?.response?.data?.message || err?.message || 'Demo funding failed.')
+    } finally {
+      if (mountedRef.current) setFunding(false)
+    }
+  }, [loadPortfolio])
+
   useEffect(() => {
     mountedRef.current = true
     const timer = window.setTimeout(() => {
@@ -213,6 +242,8 @@ export default function Portfolio() {
     Array.isArray(portfolio?.warnings) ? portfolio.warnings.filter(Boolean) : []
   ), [portfolio])
 
+  const balanceLabel = loading ? 'Loading...' : formatCurrency(portfolio?.balance)
+
   const summaryCards = useMemo(
     () => buildSummaryCards(portfolio, loading),
     [portfolio, loading],
@@ -231,20 +262,38 @@ export default function Portfolio() {
           <div>
             <h1 className="text-2xl font-black text-white">Portfolio</h1>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">Track your assets, performance and allocation</p>
+            <p className="text-[11px] text-slate-600 mt-1 font-bold tabular-nums">
+              Cash balance <span className="text-slate-300">{balanceLabel}</span>
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => loadPortfolio({ refresh: true })}
-            disabled={loading || refetching}
-            className="shrink-0 h-9 w-9 rounded-xl border border-white/[0.07] bg-[#0a1628]/88 text-slate-500 hover:text-white hover:border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
-            title="Refresh portfolio"
-            aria-label="Refresh portfolio"
-          >
-            <RefreshCw size={14} className={refetching ? 'animate-spin text-rose-400' : ''} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {showDemoFunding && (
+              <button
+                type="button"
+                onClick={handleDemoDeposit}
+                disabled={loading || refetching || funding}
+                className="h-9 px-3 rounded-xl border border-white/[0.07] bg-[#0a1628]/88 text-[11px] text-slate-500 font-black hover:text-white hover:border-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {funding ? 'Adding...' : 'Add demo funds'}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => loadPortfolio({ refresh: true })}
+              disabled={loading || refetching || funding}
+              className="h-9 w-9 rounded-xl border border-white/[0.07] bg-[#0a1628]/88 text-slate-500 hover:text-white hover:border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+              title="Refresh portfolio"
+              aria-label="Refresh portfolio"
+            >
+              <RefreshCw size={14} className={refetching ? 'animate-spin text-rose-400' : ''} />
+            </button>
+          </div>
         </div>
         {error && (
           <p className="text-[11px] text-amber-400/80 mt-2 font-semibold">{error}</p>
+        )}
+        {fundingMessage && !error && (
+          <p className="text-[11px] text-emerald-400/80 mt-2 font-semibold">{fundingMessage}</p>
         )}
         {warnings.length > 0 && !error && (
           <div className="mt-2 flex items-start gap-2 text-[11px] text-amber-400/80 font-semibold">

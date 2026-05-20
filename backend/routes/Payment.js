@@ -2,7 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const User = require('../models/user');
 const Transaction = require('../models/Transaction');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const createStripeClient = require('stripe');
 const express = require('express');
 
 const PLANS = {
@@ -11,9 +11,86 @@ const PLANS = {
   elite: { price: 9999, features: ['Unlimited API calls', '1000 trades/jour', 'AI Assistant', 'Trading bot'] }
 };
 
+const MAX_DEMO_DEPOSIT = 100000;
+
+function isDemoFundingAllowed() {
+  return process.env.ALLOW_DEMO_FUNDING === 'true';
+}
+
+function parseDemoDepositAmount(body) {
+  const amount = Number(body?.amount);
+
+  if (!Number.isFinite(amount)) {
+    return { error: 'amount is required and must be numeric' };
+  }
+
+  if (amount <= 0) {
+    return { error: 'amount must be greater than 0' };
+  }
+
+  if (amount > MAX_DEMO_DEPOSIT) {
+    return { error: `amount must be less than or equal to ${MAX_DEMO_DEPOSIT}` };
+  }
+
+  return { amount: Number(amount.toFixed(2)) };
+}
+
+function getStripeClient() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    const error = new Error('Stripe is not configured');
+    error.statusCode = 503;
+    throw error;
+  }
+
+  return createStripeClient(process.env.STRIPE_SECRET_KEY);
+}
+
 // 1. Obtenir les plans disponibles
 router.get('/plans', (req, res) => {
   res.json(PLANS);
+});
+
+// Demo funding for PFA/dev environments only. This is not a real payment.
+router.post('/demo-deposit', auth, async (req, res) => {
+  try {
+    if (!isDemoFundingAllowed()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Demo funding is disabled'
+      });
+    }
+
+    const input = parseDemoDepositAmount(req.body);
+    if (input.error) {
+      return res.status(400).json({
+        success: false,
+        message: input.error
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const currentBalance = Number(user.balance);
+    user.balance = Number(((Number.isFinite(currentBalance) ? currentBalance : 0) + input.amount).toFixed(2));
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Demo balance added',
+      balance: user.balance
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message || 'Server error'
+    });
+  }
 });
 
 // 2. Créer une session de paiement Stripe
@@ -74,11 +151,12 @@ router.post('/create-checkout-session', auth, async (req, res) => {
       return res.status(400).json({ message: 'Paramètres invalides' });
     }
     
+    const stripe = getStripeClient();
     const session = await stripe.checkout.sessions.create(sessionConfig);
     res.json({ id: session.id, url: session.url });
     
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(err.statusCode || 500).json({ message: err.message });
   }
 });
 
@@ -88,6 +166,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   let event;
   
   try {
+    const stripe = getStripeClient();
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -135,10 +214,11 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 // 4. Vérifier le statut d'une transaction
 router.get('/check-session/:sessionId', auth, async (req, res) => {
   try {
+    const stripe = getStripeClient();
     const session = await stripe.checkout.sessions.retrieve(req.params.sessionId);
     res.json({ status: session.payment_status });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(err.statusCode || 500).json({ message: err.message });
   }
 });
 

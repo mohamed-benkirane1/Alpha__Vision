@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const Portfolio = require('../models/portfolio');
+const User = require('../models/user');
 const { getPrice } = require('../services/marketService');
 
 function roundMoney(value) {
@@ -79,6 +80,19 @@ async function enrichHolding(holding) {
 
 router.get('/', auth, async (req, res) => {
   try {
+    const user = await User.findById(req.user.id).select('balance');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        holdings: [],
+        totalValue: 0,
+        totalProfit: 0,
+        totalProfitPercent: 0,
+        warnings: []
+      });
+    }
+
     const holdings = await Portfolio.find({ userId: req.user.id });
 
     const enriched = await Promise.all(holdings.map(enrichHolding));
@@ -116,6 +130,7 @@ router.get('/', auth, async (req, res) => {
 
     res.json({
       success: true,
+      balance: roundMoney(user.balance),
       holdings: holdingsWithAllocation,
       totalValue: formatMoney(totalValue),
       totalProfit: formatMoney(totalProfit),
