@@ -1,99 +1,125 @@
 const router = require('express').Router();
-const { 
-  getPrice, 
-  getAllPrices, 
-  getTopCryptos, 
-  getSpecificCryptos 
+const {
+  getPrice,
+  getAllPrices,
+  getTopCryptos,
+  getPricesForSymbols,
+  computeDataQuality,
+  normalizeSymbol
 } = require('../services/marketService');
 
-// ============================================================
-// ROUTES EXISTANTES
-// ============================================================
+function marketTimestamp() {
+  return new Date().toISOString();
+}
 
-// Récupérer le prix d'un seul actif (ex: /api/market/price/BTC)
+function createListResponse(quotes) {
+  const data = Array.isArray(quotes) ? quotes : [];
+  return {
+    success: true,
+    count: data.length,
+    timestamp: marketTimestamp(),
+    dataQuality: computeDataQuality(data),
+    data
+  };
+}
+
+function createSingleResponse(quote) {
+  return {
+    success: true,
+    timestamp: marketTimestamp(),
+    data: quote
+  };
+}
+
+function createErrorResponse(message, statusCode = 500) {
+  return {
+    statusCode,
+    body: {
+      success: false,
+      timestamp: marketTimestamp(),
+      error: message,
+      data: []
+    }
+  };
+}
+
 router.get('/price/:symbol', async (req, res) => {
   try {
-    const result = await getPrice(req.params.symbol.toUpperCase());
-    res.json(result);
+    const quote = await getPrice(req.params.symbol);
+    res.json(createSingleResponse(quote));
   } catch (err) {
-    res.status(404).json({ message: err.message });
+    const response = createErrorResponse(err.message);
+    res.status(response.statusCode).json(response.body);
   }
 });
 
-// Récupérer tous les prix (BTC, ETH, SOL, BNB, XRP)
 router.get('/prices', async (req, res) => {
   try {
-    const result = await getAllPrices();
-    res.json(result);
+    const quotes = await getAllPrices();
+    res.json(createListResponse(quotes));
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const response = createErrorResponse(err.message);
+    res.status(response.statusCode).json(response.body);
   }
 });
 
-// ============================================================
-// NOUVELLES ROUTES
-// ============================================================
-
-// Récupérer le TOP X cryptos (ex: /api/market/top?limit=100)
 router.get('/top', async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const maxLimit = Math.min(limit, 200); // Maximum 200 cryptos
-    const cryptos = await getTopCryptos(maxLimit);
+    const limit = Number.parseInt(req.query.limit, 10) || 50;
+    const maxLimit = Math.min(Math.max(limit, 1), 200);
+    const quotes = await getTopCryptos(maxLimit);
     res.json({
-      total: cryptos.length,
-      limit: maxLimit,
-      cryptos: cryptos,
-      timestamp: new Date().toISOString()
+      ...createListResponse(quotes),
+      limit: maxLimit
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const response = createErrorResponse(err.message);
+    res.status(response.statusCode).json(response.body);
   }
 });
 
-// Récupérer des cryptos spécifiques (POST avec body)
 router.post('/specific', async (req, res) => {
   try {
     const { symbols } = req.body;
-    
+
     if (!symbols || !Array.isArray(symbols)) {
-      return res.status(400).json({ 
-        message: 'symbols array required. Example: {"symbols": ["BTC", "ETH", "SOL"]}' 
-      });
+      const response = createErrorResponse('symbols array required. Example: {"symbols": ["BTC", "ETH", "SOL"]}', 400);
+      return res.status(response.statusCode).json(response.body);
     }
-    
-    if (symbols.length === 0) {
-      return res.status(400).json({ message: 'symbols array cannot be empty' });
+
+    const normalizedSymbols = symbols.map(normalizeSymbol).filter(Boolean);
+    if (normalizedSymbols.length === 0) {
+      const response = createErrorResponse('symbols array cannot be empty', 400);
+      return res.status(response.statusCode).json(response.body);
     }
-    
-    const cryptos = await getSpecificCryptos(symbols);
-    res.json({
-      total: cryptos.length,
-      cryptos: cryptos,
-      timestamp: new Date().toISOString()
-    });
+
+    const quotes = await getPricesForSymbols(normalizedSymbols);
+    return res.json(createListResponse(quotes));
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const response = createErrorResponse(err.message);
+    return res.status(response.statusCode).json(response.body);
   }
 });
 
-// Route pour récupérer le prix de plusieurs cryptos en GET (ex: /api/market/multi?symbols=BTC,ETH,SOL)
 router.get('/multi', async (req, res) => {
   try {
     const symbolsParam = req.query.symbols;
     if (!symbolsParam) {
-      return res.status(400).json({ message: 'symbols parameter required. Example: ?symbols=BTC,ETH,SOL' });
+      const response = createErrorResponse('symbols parameter required. Example: ?symbols=BTC,ETH,SOL', 400);
+      return res.status(response.statusCode).json(response.body);
     }
-    
-    const symbols = symbolsParam.split(',').map(s => s.toUpperCase());
-    const cryptos = await getSpecificCryptos(symbols);
-    res.json({
-      total: cryptos.length,
-      cryptos: cryptos,
-      timestamp: new Date().toISOString()
-    });
+
+    const symbols = symbolsParam.split(',').map(normalizeSymbol).filter(Boolean);
+    if (symbols.length === 0) {
+      const response = createErrorResponse('symbols parameter cannot be empty', 400);
+      return res.status(response.statusCode).json(response.body);
+    }
+
+    const quotes = await getPricesForSymbols(symbols);
+    return res.json(createListResponse(quotes));
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const response = createErrorResponse(err.message);
+    return res.status(response.statusCode).json(response.body);
   }
 });
 

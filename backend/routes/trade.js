@@ -26,20 +26,50 @@ function parseTradeInput(body) {
   return { symbol, type, quantity };
 }
 
-async function resolveTradePrice(symbol) {
+function createPriceStatus(quote = {}, symbol) {
+  const statusQuote = quote || {};
+  return {
+    symbol: statusQuote.symbol || symbol,
+    price: statusQuote.price ?? null,
+    priceAvailable: statusQuote.priceAvailable === true,
+    source: statusQuote.source || null,
+    provider: statusQuote.provider || null,
+    timestamp: statusQuote.timestamp || null,
+    cached: statusQuote.cached === true,
+    fallback: statusQuote.fallback === true,
+    stale: statusQuote.stale === true,
+    error: statusQuote.error || null
+  };
+}
+
+function rejectTradeForQuote(message, quote, symbol) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  error.priceStatus = createPriceStatus(quote, symbol);
+  return error;
+}
+
+async function resolveTradeQuote(symbol) {
   try {
     const quote = await getPrice(symbol);
     const price = Number(quote?.price);
 
-    if (!Number.isFinite(price) || price <= 0) {
-      const error = new Error(`No valid market price available for ${symbol}`);
-      error.statusCode = 400;
-      throw error;
+    if (quote?.priceAvailable === false || quote?.price === null || !Number.isFinite(price) || price <= 0) {
+      throw rejectTradeForQuote(`Price unavailable for ${symbol}. Trade rejected.`, quote, symbol);
     }
 
-    return price;
+    if (quote?.fallback === true) {
+      throw rejectTradeForQuote(`Fallback price detected for ${symbol}. Trade rejected.`, quote, symbol);
+    }
+
+    if (quote?.stale === true) {
+      throw rejectTradeForQuote(`Stale price detected for ${symbol}. Trade rejected.`, quote, symbol);
+    }
+
+    return { quote, price };
   } catch (err) {
     err.statusCode = err.statusCode || 400;
+    err.priceStatus = err.priceStatus || createPriceStatus(null, symbol);
     throw err;
   }
 }
@@ -51,6 +81,38 @@ function roundMoney(value) {
 
 function serializeHolding(holding) {
   return holding ? holding.toObject() : null;
+}
+
+function createExecutionPayload({ symbol, type, quantity, price, total, quote }) {
+  return {
+    symbol,
+    action: type,
+    quantity,
+    executedPrice: price,
+    total,
+    priceSource: quote.source || null,
+    priceProvider: quote.provider || null,
+    priceTimestamp: quote.timestamp || null,
+    priceCached: quote.cached === true,
+    priceFallback: quote.fallback === true,
+    priceStale: quote.stale === true,
+    priceError: quote.error || null
+  };
+}
+
+function serializeTrade(trade) {
+  const data = trade.toObject ? trade.toObject() : trade;
+  return {
+    ...data,
+    executedPrice: data.executedPrice ?? data.price ?? null,
+    priceSource: data.priceSource ?? null,
+    priceProvider: data.priceProvider ?? null,
+    priceTimestamp: data.priceTimestamp ?? null,
+    priceCached: data.priceCached ?? null,
+    priceFallback: data.priceFallback ?? null,
+    priceStale: data.priceStale ?? null,
+    priceError: data.priceError ?? null
+  };
 }
 
 router.post('/', auth, async (req, res) => {
@@ -98,7 +160,7 @@ router.post('/', auth, async (req, res) => {
       }
     }
 
-    const price = await resolveTradePrice(symbol);
+    const { quote, price } = await resolveTradeQuote(symbol);
     const total = roundMoney(quantity * price);
 
     if (type === 'BUY') {
@@ -151,13 +213,29 @@ router.post('/', auth, async (req, res) => {
       type,
       quantity,
       price,
+      executedPrice: price,
+      priceSource: quote.source || null,
+      priceProvider: quote.provider || null,
+      priceTimestamp: quote.timestamp ? new Date(quote.timestamp) : null,
+      priceCached: quote.cached === true,
+      priceFallback: quote.fallback === true,
+      priceStale: quote.stale === true,
+      priceError: quote.error || null,
       total
     });
+
+    const execution = createExecutionPayload({ symbol, type, quantity, price, total, quote });
 
     res.status(201).json({
       success: true,
       message: `${type} ${quantity} ${symbol} at $${price}`,
-      trade,
+      trade: serializeTrade(trade),
+      execution,
+      portfolio: {
+        balance: user.balance,
+        holding: serializeHolding(portfolio),
+        holdingRemoved
+      },
       balance: user.balance,
       holding: serializeHolding(portfolio),
       holdingRemoved
@@ -165,7 +243,8 @@ router.post('/', auth, async (req, res) => {
   } catch (err) {
     res.status(err.statusCode || 500).json({
       success: false,
-      message: err.message || 'Server error'
+      message: err.message || 'Server error',
+      ...(err.priceStatus ? { priceStatus: err.priceStatus } : {})
     });
   }
 });
@@ -173,7 +252,7 @@ router.post('/', auth, async (req, res) => {
 router.get('/history', auth, async (req, res) => {
   try {
     const trades = await Trade.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(50);
-    res.json(trades);
+    res.json(trades.map(serializeTrade));
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
