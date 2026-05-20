@@ -14,17 +14,16 @@ const fmt = (value) => {
 }
 
 export default function TradingPanel({ symbol, price, type }) {
-  const isLong     = type !== 'SELL'
+  const normalizedType = type === 'SELL' ? 'SELL' : 'BUY'
+  const isLong     = normalizedType !== 'SELL'
   const validPrice = getValidNumber(price)
   const stopLoss   = validPrice === null ? null : (isLong ? validPrice * 0.97 : validPrice * 1.03)
   const takeProfit = validPrice === null ? null : (isLong ? validPrice * 1.06 : validPrice * 0.94)
 
   const rows = [
-    { label: 'Entry Price', value: fmt(price),      icon: TrendingUp,    color: 'text-white'      },
-    { label: 'Stop Loss',   value: fmt(stopLoss),   icon: AlertTriangle, color: 'text-rose-400'   },
-    { label: 'Take Profit', value: fmt(takeProfit), icon: Target,        color: 'text-emerald-400' },
-    { label: 'Risk',        value: '-3.0%',         icon: null,          color: 'text-rose-400'   },
-    { label: 'Reward',      value: '+6.0%',         icon: null,          color: 'text-emerald-400' },
+    { label: 'Estimated Entry', value: fmt(price),      icon: TrendingUp,    color: 'text-white'      },
+    { label: 'Indicative Stop', value: fmt(stopLoss),   icon: AlertTriangle, color: 'text-rose-400'   },
+    { label: 'Indicative Target', value: fmt(takeProfit), icon: Target,      color: 'text-emerald-400' },
   ]
 
   return (
@@ -40,7 +39,7 @@ export default function TradingPanel({ symbol, price, type }) {
             ? 'bg-emerald-500/12 text-emerald-400 border border-emerald-500/22'
             : 'bg-rose-500/12 text-rose-400 border border-rose-500/22'
         }`}>
-          {type} — {symbol}
+          {normalizedType} - {symbol}
         </span>
       </div>
 
@@ -63,18 +62,9 @@ export default function TradingPanel({ symbol, price, type }) {
       </div>
 
       <div className="mt-4 pt-4 border-t border-white/[0.05]">
-        <div className="flex justify-between text-xs mb-2">
-          <span className="text-slate-600 font-medium">Risk / Reward</span>
-          <span className="text-white font-black">1 : 2</span>
-        </div>
-        <div className="h-2 rounded-full overflow-hidden bg-slate-800/80 flex gap-px">
-          <div className="bg-rose-500/75 h-full rounded-l-full" style={{ width: '33%' }} />
-          <div className="bg-emerald-500/75 h-full rounded-r-full" style={{ width: '67%' }} />
-        </div>
-        <div className="flex justify-between text-[10px] mt-1.5">
-          <span className="text-rose-500/70 font-bold">Risk 33%</span>
-          <span className="text-emerald-500/70 font-bold">Reward 67%</span>
-        </div>
+        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+          Indicative preview only. Final execution price is calculated by backend.
+        </p>
       </div>
     </motion.div>
   )

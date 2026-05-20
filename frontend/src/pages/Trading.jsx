@@ -64,6 +64,7 @@ const formatCurrency = (value) => {
 
 export default function Trading() {
   const [selectedSymbol, setSelectedSymbol] = useState('BTC')
+  const [orderType, setOrderType] = useState('BUY')
   const [assets, setAssets] = useState([])
   const [trades, setTrades] = useState([])
   const [balance, setBalance] = useState(null)
@@ -293,7 +294,7 @@ export default function Trading() {
           <TradingPanel
             symbol={currentAsset.symbol}
             price={currentAsset.price}
-            type="BUY"
+            type={orderType}
           />
           <TradeHistory
             trades={trades}
@@ -308,6 +309,8 @@ export default function Trading() {
             prices={priceMap}
             symbols={symbols}
             selectedSymbol={selectedSymbol}
+            selectedType={orderType}
+            onTypeChange={setOrderType}
             onTrade={handleTrade}
             loading={submitting}
             successMessage={tradeMessage}

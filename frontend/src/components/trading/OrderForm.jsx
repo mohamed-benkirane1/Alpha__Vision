@@ -8,17 +8,19 @@ export default function OrderForm({
   prices,
   symbols = [],
   selectedSymbol,
+  selectedType = 'BUY',
+  onTypeChange,
   onTrade,
   loading = false,
   successMessage = '',
   errorMessage = '',
 }) {
   const [symbol, setSymbol]       = useState(selectedSymbol || 'BTC')
-  const [type, setType]           = useState('BUY')
   const [qty, setQty]             = useState('')
   const [quantityError, setQuantityError] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const shouldReduce = useReducedMotion()
+  const type = selectedType === 'SELL' ? 'SELL' : 'BUY'
 
   // Auto-clear submitted feedback with cleanup on unmount
   useEffect(() => {
@@ -26,6 +28,10 @@ export default function OrderForm({
     const t = setTimeout(() => setSubmitted(false), 1800)
     return () => clearTimeout(t)
   }, [submitted])
+
+  const handleTypeChange = (nextType) => {
+    onTypeChange?.(nextType)
+  }
 
   const price     = Number(prices[symbol]?.price)
   const hasPrice  = Number.isFinite(price) && price > 0
@@ -82,7 +88,7 @@ export default function OrderForm({
               <button
                 key={t}
                 type="button"
-                onClick={() => setType(t)}
+                onClick={() => handleTypeChange(t)}
                 disabled={loading}
                 className={`py-2 rounded-lg text-sm font-black border transition-all duration-200 ${
                   type === t
