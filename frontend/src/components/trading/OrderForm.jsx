@@ -4,16 +4,44 @@ import { motion, useReducedMotion } from 'framer-motion'
 
 const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 placeholder-slate-700 appearance-none'
 
+const getValidNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+const formatCurrency = (value) => {
+  const number = getValidNumber(value)
+  if (number === null) return '--'
+  return `$${number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+const formatDateTime = (value) => {
+  if (!value) return '--'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--'
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
 export default function OrderForm({
   prices,
   symbols = [],
   selectedSymbol,
+  selectedQuote,
   selectedType = 'BUY',
   onTypeChange,
   onTrade,
   loading = false,
   successMessage = '',
   errorMessage = '',
+  blockingMessage = '',
+  lastExecution = null,
+  lastPriceStatus = null,
 }) {
   const [symbol, setSymbol]       = useState(selectedSymbol || 'BTC')
   const [qty, setQty]             = useState('')
@@ -33,8 +61,17 @@ export default function OrderForm({
     onTypeChange?.(nextType)
   }
 
-  const price     = Number(prices[symbol]?.price)
-  const hasPrice  = Number.isFinite(price) && price > 0
+  const quote = selectedQuote?.symbol === symbol ? selectedQuote : prices[symbol]
+  const price = getValidNumber(quote?.price)
+  const hasPrice = price !== null && price > 0 && quote?.priceAvailable !== false
+  const quoteBlocked = !hasPrice || quote?.fallback === true || quote?.stale === true
+  const quoteBlockMessage = blockingMessage || (!hasPrice
+    ? 'Selected price is unavailable. This symbol cannot be traded right now.'
+    : quote?.fallback
+      ? 'Selected quote is fallback. Backend will reject execution.'
+      : quote?.stale
+        ? 'Selected quote is stale. Backend will reject execution.'
+        : '')
   const quantity  = Number(qty)
   const estimated = Number.isFinite(quantity) && quantity > 0 && hasPrice ? quantity * price : 0
 
@@ -43,6 +80,10 @@ export default function OrderForm({
     if (loading) return
     if (!qty || !Number.isFinite(quantity) || quantity <= 0) {
       setQuantityError('Quantity must be a positive number.')
+      return
+    }
+    if (quoteBlocked) {
+      setQuantityError(quoteBlockMessage)
       return
     }
 
@@ -129,15 +170,41 @@ export default function OrderForm({
         <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl px-4 py-3 space-y-2 text-xs">
           <div className="flex justify-between">
             <span className="text-slate-600 font-medium">Current Price</span>
-            <span className="text-white font-black tabular-nums">{hasPrice ? `$${price.toLocaleString()}` : '--'}</span>
+            <span className={`font-black tabular-nums ${hasPrice ? 'text-white' : 'text-amber-400/80'}`}>{hasPrice ? formatCurrency(price) : 'Unavailable'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-600 font-medium">Estimated Value</span>
             <span className={`font-black tabular-nums ${estimated > 0 ? 'text-rose-400' : 'text-slate-700'}`}>
-              ${estimated.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(estimated)}
             </span>
           </div>
+          <p className="text-[10px] text-slate-700 font-medium">
+            Estimated price. Final execution price is confirmed by backend.
+          </p>
+          <div className="text-[10px] text-slate-700 font-medium">
+            Source <span className="text-slate-500">{quote?.source || '--'}</span> · Provider <span className="text-slate-500">{quote?.provider || '--'}</span>
+          </div>
         </div>
+
+        {quoteBlockMessage && (
+          <p className="text-[11px] text-amber-400/85 font-semibold">{quoteBlockMessage}</p>
+        )}
+
+        {lastExecution && (
+          <div className="bg-emerald-500/[0.06] border border-emerald-500/18 rounded-xl px-4 py-3 text-[11px] text-emerald-400/90 font-semibold space-y-1">
+            <p className="font-black">Executed {lastExecution.action} {lastExecution.quantity} {lastExecution.symbol}</p>
+            <p>Price {formatCurrency(lastExecution.executedPrice)} · Total {formatCurrency(lastExecution.total)}</p>
+            <p className="text-slate-500">{lastExecution.priceProvider || lastExecution.priceSource || '--'} · {formatDateTime(lastExecution.priceTimestamp)}{lastExecution.priceCached ? ' · cached' : ''}</p>
+          </div>
+        )}
+
+        {lastPriceStatus && (
+          <div className="bg-amber-500/[0.06] border border-amber-500/18 rounded-xl px-4 py-3 text-[11px] text-amber-400/90 font-semibold space-y-1">
+            <p className="font-black">Backend price check rejected {lastPriceStatus.symbol}</p>
+            <p>{lastPriceStatus.provider || lastPriceStatus.source || '--'} · {formatDateTime(lastPriceStatus.timestamp)} · fallback {lastPriceStatus.fallback ? 'yes' : 'no'} · stale {lastPriceStatus.stale ? 'yes' : 'no'}</p>
+            {lastPriceStatus.error && <p className="text-slate-500">{lastPriceStatus.error}</p>}
+          </div>
+        )}
 
         {(successMessage || errorMessage) && (
           <p className={`text-[11px] font-semibold ${errorMessage ? 'text-amber-400/85' : 'text-emerald-400/85'}`}>
@@ -147,7 +214,7 @@ export default function OrderForm({
 
         <motion.button
           type="submit"
-          disabled={loading || symbols.length === 0}
+          disabled={loading || symbols.length === 0 || quoteBlocked}
           whileHover={submitted || loading ? {} : { scale: 1.01 }}
           whileTap={submitted || loading ? {} : { scale: 0.98 }}
           className={`ripple-btn w-full py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all duration-300 ${

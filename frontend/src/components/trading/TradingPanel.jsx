@@ -2,6 +2,7 @@ import { Shield, Target, AlertTriangle, TrendingUp } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 const getValidNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null
   const number = Number(value)
   return Number.isFinite(number) && number > 0 ? number : null
 }
@@ -13,7 +14,14 @@ const fmt = (value) => {
   return `$${number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-export default function TradingPanel({ symbol, price, type }) {
+const formatDateTime = (value) => {
+  if (!value) return '--'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--'
+  return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(date)
+}
+
+export default function TradingPanel({ symbol, price, type, quote }) {
   const normalizedType = type === 'SELL' ? 'SELL' : 'BUY'
   const isLong     = normalizedType !== 'SELL'
   const validPrice = getValidNumber(price)
@@ -64,6 +72,9 @@ export default function TradingPanel({ symbol, price, type }) {
       <div className="mt-4 pt-4 border-t border-white/[0.05]">
         <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
           Indicative preview only. Final execution price is calculated by backend.
+        </p>
+        <p className="text-[10px] text-slate-700 mt-2 font-medium">
+          Quote {quote?.source || '--'} · {quote?.provider || '--'} · {formatDateTime(quote?.timestamp)}
         </p>
       </div>
     </motion.div>

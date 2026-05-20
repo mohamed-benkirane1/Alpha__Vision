@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { LineChart, RefreshCw, Zap } from 'lucide-react'
 import PriceCard    from '../components/trading/PriceCard'
@@ -11,6 +11,7 @@ import { createTrade, getTradeHistory } from '../services/tradingService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
+const AUTO_REFRESH_MS = 15000
 const assetNames = {
   BTC: 'Bitcoin',
   ETH: 'Ethereum',
@@ -32,8 +33,17 @@ const getResponseData = (response) => response?.data ?? response
 const normalizeAsset = (asset) => ({
   symbol: asset.symbol,
   name: asset.name || assetNames[asset.symbol] || asset.symbol,
-  price: Number(asset.price),
-  change: Number(asset.change24h ?? asset.changePercent ?? 0),
+  type: asset.type || 'unknown',
+  price: getValidNumber(asset.price),
+  change: getValidNumber(asset.change24h ?? asset.changePercent) ?? 0,
+  source: asset.source || null,
+  provider: asset.provider || null,
+  timestamp: asset.timestamp || null,
+  cached: asset.cached === true,
+  fallback: asset.fallback === true,
+  stale: asset.stale === true,
+  priceAvailable: asset.priceAvailable === true && getValidNumber(asset.price) !== null,
+  error: asset.error || null,
 })
 
 const getTradeErrorMessage = (error) => {
@@ -46,6 +56,7 @@ const getTradeErrorMessage = (error) => {
 }
 
 const getValidNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null
   const number = Number(value)
   return Number.isFinite(number) ? number : null
 }
@@ -77,15 +88,21 @@ export default function Trading() {
   const [submitting, setSubmitting] = useState(false)
   const [tradeMessage, setTradeMessage] = useState('')
   const [tradeError, setTradeError] = useState('')
+  const [lastExecution, setLastExecution] = useState(null)
+  const [lastPriceStatus, setLastPriceStatus] = useState(null)
+  const pricesLoadingRef = useRef(false)
 
   const loadPrices = useCallback(async () => {
+    if (pricesLoadingRef.current) return
+    pricesLoadingRef.current = true
     setPricesLoading(true)
 
     try {
       const response = await getAllPrices()
       const data = getResponseData(response)
-      const nextAssets = Array.isArray(data)
-        ? data.map(normalizeAsset).filter((asset) => asset.symbol && Number.isFinite(asset.price) && asset.price > 0)
+      const quotes = Array.isArray(data?.quotes) ? data.quotes : data
+      const nextAssets = Array.isArray(quotes)
+        ? quotes.map(normalizeAsset).filter((asset) => asset.symbol)
         : []
 
       setAssets(nextAssets)
@@ -99,6 +116,7 @@ export default function Trading() {
       console.error('Trading prices load failed:', err)
       setMarketError('Unable to load market prices.')
     } finally {
+      pricesLoadingRef.current = false
       setPricesLoading(false)
     }
   }, [])
@@ -139,6 +157,8 @@ export default function Trading() {
     setRefreshing(true)
     setTradeMessage('')
     setTradeError('')
+    setLastExecution(null)
+    setLastPriceStatus(null)
 
     try {
       await Promise.all([
@@ -193,6 +213,7 @@ export default function Trading() {
 
       const nextBalance = getValidNumber(data.balance)
       if (nextBalance !== null) setBalance(nextBalance)
+      setLastExecution(data.execution || null)
       setTradeMessage(data.message || `${normalizedType} order placed.`)
       await Promise.all([
         loadTradeHistory(),
@@ -201,7 +222,9 @@ export default function Trading() {
       ])
       return true
     } catch (err) {
-      setTradeError(getTradeErrorMessage(err))
+      const normalized = err?.normalized
+      setLastPriceStatus(normalized?.priceStatus || err?.priceStatus || null)
+      setTradeError(normalized?.message || getTradeErrorMessage(err))
       return false
     } finally {
       setSubmitting(false)
@@ -211,12 +234,29 @@ export default function Trading() {
   const priceMap = useMemo(() => Object.fromEntries(assets.map((asset) => [asset.symbol, asset])), [assets])
   const symbols = useMemo(() => assets.map((asset) => asset.symbol), [assets])
 
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      loadPrices()
+    }, AUTO_REFRESH_MS)
+
+    return () => window.clearInterval(interval)
+  }, [loadPrices])
+
   const currentAsset = assets.find((p) => p.symbol === selectedSymbol) || assets[0] || {
     symbol: selectedSymbol,
     name: selectedSymbol,
-    price: 0,
+    price: null,
     change: 0,
+    priceAvailable: false,
   }
+  const selectedQuoteBlocked = currentAsset.priceAvailable !== true || currentAsset.price === null || currentAsset.fallback || currentAsset.stale
+  const selectedQuoteWarning = currentAsset.priceAvailable !== true || currentAsset.price === null
+    ? currentAsset.error || 'Selected quote is unavailable.'
+    : currentAsset.fallback
+      ? 'Selected quote is fallback. Backend execution is blocked.'
+      : currentAsset.stale
+        ? 'Selected quote is stale. Backend execution is blocked.'
+        : ''
   const balanceLabel = balanceLoading ? 'Loading...' : formatCurrency(balance)
   const busy = pricesLoading || historyLoading || balanceLoading || refreshing
 
@@ -295,6 +335,7 @@ export default function Trading() {
             symbol={currentAsset.symbol}
             price={currentAsset.price}
             type={orderType}
+            quote={currentAsset}
           />
           <TradeHistory
             trades={trades}
@@ -309,12 +350,16 @@ export default function Trading() {
             prices={priceMap}
             symbols={symbols}
             selectedSymbol={selectedSymbol}
+            selectedQuote={currentAsset}
             selectedType={orderType}
             onTypeChange={setOrderType}
             onTrade={handleTrade}
             loading={submitting}
             successMessage={tradeMessage}
             errorMessage={tradeError}
+            blockingMessage={selectedQuoteBlocked ? selectedQuoteWarning : ''}
+            lastExecution={lastExecution}
+            lastPriceStatus={lastPriceStatus}
           />
         </motion.div>
       </motion.div>

@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ClipboardList } from 'lucide-react'
 
 const getValidNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null
   const number = Number(value)
   return Number.isFinite(number) ? number : null
 }
@@ -22,6 +23,14 @@ const fmtDate = (value) => {
     minute: '2-digit',
     second: '2-digit',
   })
+}
+
+function MetaBadge({ label, tone = 'slate' }) {
+  const tones = {
+    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    slate: 'bg-white/[0.03] border-white/[0.07] text-slate-500',
+  }
+  return <span className={`rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase ${tones[tone] || tones.slate}`}>{label}</span>
 }
 
 export default function TradeHistory({ trades = [], loading = false, error = '', onRetry }) {
@@ -83,7 +92,7 @@ export default function TradeHistory({ trades = [], loading = false, error = '',
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.25 }}
                   whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
-                  className="grid grid-cols-3 sm:grid-cols-5 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-xs gap-1 sm:gap-0"
+                  className="grid grid-cols-3 sm:grid-cols-5 items-center px-3 py-3 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-xs gap-1 sm:gap-0"
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-lg bg-white/[0.05] border border-white/[0.07] flex items-center justify-center text-[9px] font-black text-slate-400 shrink-0">
@@ -99,10 +108,22 @@ export default function TradeHistory({ trades = [], loading = false, error = '',
                     {t.type}
                   </span>
                   <span className="text-slate-500 text-right sm:text-left font-medium tabular-nums">{getValidNumber(t.quantity) ?? '--'}</span>
-                  <span className="hidden sm:block text-slate-400 text-right font-medium tabular-nums">{fmt(t.price)}</span>
+                  <span className="hidden sm:block text-slate-400 text-right font-medium tabular-nums">{fmt(t.executedPrice ?? t.price)}</span>
                   <div className="text-right">
                     <p className="text-white font-black tabular-nums">{fmt(t.total)}</p>
                     <p className="text-[10px] text-slate-700 font-medium">{fmtDate(t.createdAt)}</p>
+                  </div>
+                  <div className="col-span-3 sm:col-span-5 mt-1 pt-2 border-t border-white/[0.035] grid grid-cols-1 sm:grid-cols-4 gap-1.5 text-[10px] font-medium">
+                    <span className="text-slate-700">Provider <span className="text-slate-500">{t.priceProvider || t.priceSource || '--'}</span></span>
+                    <span className="text-slate-700">Source <span className="text-slate-500">{t.priceSource || '--'}</span></span>
+                    <span className="text-slate-700">Price time <span className="text-slate-500">{fmtDate(t.priceTimestamp)}</span></span>
+                    <span className="flex flex-wrap gap-1 justify-start sm:justify-end">
+                      {t.priceCached === true && <MetaBadge label="Cached" />}
+                      {t.priceFallback === true && <MetaBadge label="Fallback" tone="amber" />}
+                      {t.priceStale === true && <MetaBadge label="Stale" tone="amber" />}
+                      {t.priceCached !== true && t.priceFallback !== true && t.priceStale !== true && <MetaBadge label="Executed" />}
+                    </span>
+                    {t.priceError && <p className="sm:col-span-4 text-amber-400/80 font-semibold">{t.priceError}</p>}
                   </div>
                 </motion.div>
               ))}
