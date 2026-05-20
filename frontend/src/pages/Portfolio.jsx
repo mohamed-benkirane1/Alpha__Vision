@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, TrendingUp, Star, Layers, Lightbulb, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react'
+import { Wallet, TrendingUp, Layers, Lightbulb, AlertTriangle, CheckCircle, RefreshCw, Database, ShieldCheck } from 'lucide-react'
 
 import PortfolioCard  from '../components/portfolio/PortfolioCard'
 import HoldingsTable  from '../components/portfolio/HoldingsTable'
@@ -10,9 +10,11 @@ import { demoDeposit, getPortfolio } from '../services/portfolioService'
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
 const DEMO_DEPOSIT_AMOUNT = 10000
+const AUTO_REFRESH_MS = 30000
 const showDemoFunding = import.meta.env.DEV || import.meta.env.VITE_ALLOW_DEMO_FUNDING === 'true'
 
 const getValidNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null
   const number = Number(value)
   return Number.isFinite(number) ? number : null
 }
@@ -44,6 +46,19 @@ const formatPercent = (value) => {
   return `${number >= 0 ? '+' : ''}${number.toFixed(1)}%`
 }
 
+const formatDateTime = (value) => {
+  if (!value) return '--'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--'
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
 const getResponseData = (response) => response?.data ?? response
 
 const getPortfolioErrorMessage = (error) => {
@@ -57,48 +72,42 @@ const getPortfolioErrorMessage = (error) => {
 function buildSummaryCards(portfolio, loading) {
   const holdings = Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
   const hasPortfolio = Boolean(portfolio)
-  const totalProfit = getValidNumber(portfolio?.totalProfit)
-  const bestHolding = holdings.reduce((best, holding) => {
-    const profitPercent = getValidNumber(holding.profitPercent)
-    if (profitPercent === null) return best
-    if (!best) return holding
-
-    return profitPercent > toNumber(best.profitPercent) ? holding : best
-  }, null)
-  const bestProfitPercent = getValidNumber(bestHolding?.profitPercent)
+  const totals = portfolio?.totals || {}
+  const totalProfit = getValidNumber(totals.totalProfit ?? portfolio?.totalProfit)
+  const totalProfitPercent = getValidNumber(totals.totalProfitPercent ?? portfolio?.totalProfitPercent)
 
   return [
     {
       icon: Wallet,
-      label: 'Total Value',
-      value: loading ? 'Loading...' : (hasPortfolio ? formatCurrency(portfolio.totalValue) : '--'),
-      sub: 'Daily change not available yet',
+      label: 'Portfolio Value',
+      value: loading ? 'Loading...' : (hasPortfolio ? formatCurrency(totals.totalPortfolioValue) : '--'),
+      sub: `Cash ${hasPortfolio ? formatCurrency(totals.cashBalance ?? portfolio.balance) : '--'}`,
       subUp: true,
       accentColor: 'rose',
     },
     {
-      icon: TrendingUp,
-      label: 'Total Profit',
-      value: loading ? 'Loading...' : (hasPortfolio ? formatCurrency(portfolio.totalProfit, { sign: true }) : '--'),
-      sub: hasPortfolio ? `${formatPercent(portfolio.totalProfitPercent)} overall return` : 'Overall return N/A',
-      subUp: totalProfit === null ? true : totalProfit >= 0,
-      accentColor: 'emerald',
+      icon: Layers,
+      label: 'Holdings Value',
+      value: loading ? 'Loading...' : (hasPortfolio ? formatCurrency(totals.holdingsValue ?? portfolio.totalValue) : '--'),
+      sub: `${holdings.length} asset${holdings.length === 1 ? '' : 's'} tracked`,
+      subUp: true,
+      accentColor: 'amber',
     },
     {
-      icon: Star,
-      label: 'Best Asset',
-      value: loading ? 'Loading...' : (bestHolding?.symbol || '--'),
-      sub: bestHolding ? `${formatPercent(bestHolding.profitPercent)} unrealized return` : 'No valid asset data',
-      subUp: bestProfitPercent === null ? true : bestProfitPercent >= 0,
+      icon: Database,
+      label: 'Total Invested',
+      value: loading ? 'Loading...' : (hasPortfolio ? formatCurrency(totals.totalInvested) : '--'),
+      sub: 'Backend cost basis',
+      subUp: true,
       accentColor: 'violet',
     },
     {
-      icon: Layers,
-      label: 'Assets Held',
-      value: loading ? 'Loading...' : String(holdings.length),
-      sub: holdings.length > 0 ? 'Live backend holdings' : 'No holdings yet',
-      subUp: true,
-      accentColor: 'amber',
+      icon: TrendingUp,
+      label: 'Total Profit',
+      value: loading ? 'Loading...' : (hasPortfolio ? formatCurrency(totalProfit, { sign: true }) : '--'),
+      sub: hasPortfolio ? `${formatPercent(totalProfitPercent)} overall return` : 'Overall return N/A',
+      subUp: totalProfit === null ? true : totalProfit >= 0,
+      accentColor: 'emerald',
     },
   ]
 }
@@ -168,11 +177,15 @@ export default function Portfolio() {
   const [fundingMessage, setFundingMessage] = useState('')
   const [error, setError] = useState('')
   const mountedRef = useRef(false)
+  const loadingRef = useRef(false)
 
-  const loadPortfolio = useCallback(async ({ refresh = false } = {}) => {
+  const loadPortfolio = useCallback(async ({ refresh = false, silent = false } = {}) => {
+    if (loadingRef.current) return
+    loadingRef.current = true
+
     if (refresh) {
       setRefetching(true)
-    } else {
+    } else if (!silent) {
       setLoading(true)
     }
     setError('')
@@ -187,10 +200,11 @@ export default function Portfolio() {
       if (!refresh) setPortfolio(null)
       setError(getPortfolioErrorMessage(err))
     } finally {
+      loadingRef.current = false
       if (mountedRef.current) {
         if (refresh) {
           setRefetching(false)
-        } else {
+        } else if (!silent) {
           setLoading(false)
         }
       }
@@ -227,9 +241,13 @@ export default function Portfolio() {
     const timer = window.setTimeout(() => {
       loadPortfolio()
     }, 0)
+    const interval = window.setInterval(() => {
+      loadPortfolio({ refresh: true, silent: true })
+    }, AUTO_REFRESH_MS)
 
     return () => {
       window.clearTimeout(timer)
+      window.clearInterval(interval)
       mountedRef.current = false
     }
   }, [loadPortfolio])
@@ -243,6 +261,16 @@ export default function Portfolio() {
   ), [portfolio])
 
   const balanceLabel = loading ? 'Loading...' : formatCurrency(portfolio?.balance)
+  const dataQuality = portfolio?.dataQuality || {}
+  const valuationReliable = dataQuality.valuationReliable !== false
+  const lastUpdated = formatDateTime(portfolio?.lastUpdated || portfolio?.timestamp)
+  const qualityItems = [
+    ['Priced', `${toNumber(dataQuality.pricedHoldings)}/${toNumber(dataQuality.totalHoldings)}`],
+    ['Unavailable', String(toNumber(dataQuality.unpricedHoldings))],
+    ['Fallback', dataQuality.hasFallbackPrices ? 'Yes' : 'No'],
+    ['Stale', dataQuality.hasStalePrices ? 'Yes' : 'No'],
+    ['Cached', dataQuality.hasCachedPrices ? 'Yes' : 'No'],
+  ]
 
   const summaryCards = useMemo(
     () => buildSummaryCards(portfolio, loading),
@@ -264,6 +292,10 @@ export default function Portfolio() {
             <p className="text-xs text-slate-500 mt-0.5 font-medium">Track your assets, performance and allocation</p>
             <p className="text-[11px] text-slate-600 mt-1 font-bold tabular-nums">
               Cash balance <span className="text-slate-300">{balanceLabel}</span>
+            </p>
+            <p className="text-[11px] text-slate-700 mt-1 font-medium">
+              Last updated <span className="text-slate-500">{lastUpdated}</span>
+              {refetching && <span className="text-rose-400/80 font-bold"> · Refreshing...</span>}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -298,12 +330,52 @@ export default function Portfolio() {
         {warnings.length > 0 && !error && (
           <div className="mt-2 flex items-start gap-2 text-[11px] text-amber-400/80 font-semibold">
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-            <p>
-              Some prices are temporarily unavailable.
-              <span className="text-slate-600 font-medium"> {warnings.length} warning{warnings.length > 1 ? 's' : ''} returned.</span>
-            </p>
+            <div>
+              <p>
+                Some valuations need attention.
+                <span className="text-slate-600 font-medium"> {warnings.length} warning{warnings.length > 1 ? 's' : ''} returned.</span>
+              </p>
+              <ul className="mt-1 space-y-0.5">
+                {warnings.slice(0, 3).map((warning) => (
+                  <li key={warning} className="text-slate-500 font-medium">{warning}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
+      </motion.div>
+
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeUp}
+        className={`bg-[#0a1628]/88 border ${valuationReliable ? 'border-emerald-500/16' : 'border-amber-500/22'} rounded-2xl p-4 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.26)]`}
+      >
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${valuationReliable ? 'bg-emerald-500/10 border-emerald-500/22 text-emerald-400' : 'bg-amber-500/10 border-amber-500/22 text-amber-400'}`}>
+              {valuationReliable ? <ShieldCheck size={15} /> : <AlertTriangle size={15} />}
+            </div>
+            <div>
+              <p className="text-sm text-white font-black">
+                {valuationReliable ? 'Valuation reliable' : 'Valuation reliability warning'}
+              </p>
+              <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                {valuationReliable
+                  ? 'All priced holdings are using available non-stale market data.'
+                  : 'Certaines valorisations ne sont pas fiables à cause de prix indisponibles, fallback ou stale.'}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {qualityItems.map(([label, value]) => (
+              <div key={label} className="min-w-20 rounded-xl bg-white/[0.025] border border-white/[0.055] px-3 py-2">
+                <p className="text-[9px] text-slate-700 uppercase tracking-[0.1em] font-black">{label}</p>
+                <p className="text-xs text-slate-300 font-black mt-0.5 tabular-nums">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </motion.div>
 
       <motion.div initial="hidden" animate="visible" variants={stagger}
@@ -321,7 +393,7 @@ export default function Portfolio() {
           <HoldingsTable holdings={holdings} loading={loading} />
         </motion.div>
         <motion.div variants={fadeUp}>
-          <PortfolioChart holdings={holdings} totalValue={portfolio?.totalValue} loading={loading} />
+          <PortfolioChart holdings={holdings} totalValue={portfolio?.totals?.holdingsValue ?? portfolio?.totalValue} loading={loading} />
         </motion.div>
       </motion.div>
 

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { AlertTriangle, TrendingUp, TrendingDown, BarChart2 } from 'lucide-react'
 
 const getValidNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null
   const number = Number(value)
   return Number.isFinite(number) ? number : null
 }
@@ -25,9 +26,43 @@ const fmtP = (value) => {
   return `${number > 0 ? '+' : ''}${number.toFixed(1)}%`
 }
 
+const formatDateTime = (value) => {
+  if (!value) return '--'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--'
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+const formatNumber = (value) => {
+  const number = getValidNumber(value)
+  if (number === null) return '--'
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 8 }).format(number)
+}
+
 const assetColors = {
   BTC: '#f97316', ETH: '#6366f1', SOL: '#8b5cf6',
   XAU: '#eab308', AAPL: '#64748b',
+}
+
+function StatusBadge({ label, tone = 'slate' }) {
+  const tones = {
+    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+    amber: 'bg-amber-500/10 border-amber-500/22 text-amber-400',
+    rose: 'bg-rose-500/10 border-rose-500/22 text-rose-400',
+    slate: 'bg-white/[0.03] border-white/[0.07] text-slate-500',
+  }
+
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] ${tones[tone] || tones.slate}`}>
+      {label}
+    </span>
+  )
 }
 
 export default function HoldingsTable({ holdings = [], loading = false }) {
@@ -63,6 +98,9 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
             const up = hasProfit ? profit >= 0 : true
             const color = assetColors[h.symbol] || '#6366f1'
             const quantity = getValidNumber(h.quantity)
+            const warningText = Array.isArray(h.warnings) && h.warnings.length > 0
+              ? h.warnings.join(' ')
+              : h.warning || h.priceError || ''
             const rowKey = h._id || `${h.symbol || 'holding'}-${i}`
 
             return (
@@ -72,7 +110,7 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.055 }}
                 whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
-                className="grid grid-cols-3 md:grid-cols-6 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 gap-2 md:gap-0"
+                className="grid grid-cols-3 md:grid-cols-6 items-center px-3 py-3 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 gap-2 md:gap-0"
               >
                 <div className="flex items-center gap-2.5 col-span-1 md:col-span-2">
                   <div
@@ -93,22 +131,24 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                       )}
                     </div>
                     <p className="text-[10px] text-slate-700 font-medium">
-                      {quantity === null ? '--' : quantity} {h.symbol || ''}
+                      {formatNumber(quantity)} {h.symbol || ''} · {h.name || h.type || 'Asset'}
                     </p>
-                    {!priceAvailable && (
-                      <p className="text-[10px] text-amber-400/70 font-semibold md:hidden">
-                        Price unavailable
-                      </p>
-                    )}
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {priceAvailable && !h.priceFallback && !h.priceStale && <StatusBadge label="Live" tone="emerald" />}
+                      {h.priceCached && <StatusBadge label="Cached" />}
+                      {h.priceFallback && <StatusBadge label="Fallback" tone="amber" />}
+                      {h.priceStale && <StatusBadge label="Stale" tone="amber" />}
+                      {!priceAvailable && <StatusBadge label="Unavailable" tone="rose" />}
+                    </div>
                   </div>
                 </div>
 
-                <span className="hidden md:block text-xs text-slate-600 text-right tabular-nums font-medium">{fmt(h.avgPrice)}</span>
+                <span className="hidden md:block text-xs text-slate-600 text-right tabular-nums font-medium">{fmt(h.averagePrice ?? h.avgPrice)}</span>
                 <span
                   className={`text-xs text-right font-bold col-span-1 tabular-nums ${priceAvailable ? 'text-slate-300' : 'text-amber-400/75'}`}
-                  title={!priceAvailable ? h.warning || 'Price unavailable' : undefined}
+                  title={warningText || undefined}
                 >
-                  {priceAvailable ? fmt(h.currentPrice) : '--'}
+                  {priceAvailable ? fmt(h.currentPrice) : 'Unavailable'}
                 </span>
                 <span className="hidden md:block text-xs text-white font-black text-right tabular-nums">{priceAvailable ? fmt(h.currentValue) : '--'}</span>
 
@@ -120,6 +160,23 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                   <span className={`text-[10px] font-bold ${hasProfit ? (up ? 'text-emerald-500/80' : 'text-rose-500/80') : 'text-slate-700'}`}>
                     {hasProfit ? fmtP(h.profitPercent) : '--'}
                   </span>
+                </div>
+                <div className="col-span-3 md:col-span-6 mt-1 pt-2 border-t border-white/[0.035] grid grid-cols-1 md:grid-cols-4 gap-1.5 text-[10px] font-medium">
+                  <span className="text-slate-700">
+                    Provider <span className="text-slate-500">{h.priceProvider || h.priceSource || '--'}</span>
+                  </span>
+                  <span className="text-slate-700">
+                    Source <span className="text-slate-500">{h.priceSource || '--'}</span>
+                  </span>
+                  <span className="text-slate-700">
+                    Price time <span className="text-slate-500">{formatDateTime(h.priceTimestamp)}</span>
+                  </span>
+                  <span className="text-slate-700">
+                    Invested <span className="text-slate-500 tabular-nums">{fmt(h.investedValue ?? h.costBasis)}</span>
+                  </span>
+                  {warningText && (
+                    <p className="md:col-span-4 text-amber-400/75 font-semibold">{warningText}</p>
+                  )}
                 </div>
               </motion.div>
             )
