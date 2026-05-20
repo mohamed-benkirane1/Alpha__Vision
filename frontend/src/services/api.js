@@ -29,8 +29,16 @@ export class ApiError extends Error {
     this.name = 'ApiError'
     this.status = status
     this.data = data
+    this.priceStatus = data?.priceStatus
   }
 }
+
+export const extractApiError = (error) => ({
+  message: error?.message || 'Erreur API',
+  status: error?.status ?? error?.response?.status ?? null,
+  data: error?.data ?? error?.response?.data ?? null,
+  priceStatus: error?.priceStatus ?? error?.data?.priceStatus ?? error?.response?.data?.priceStatus ?? null,
+})
 
 const api = axios.create({
   baseURL: API_BASE_URL,
