@@ -7,7 +7,9 @@ const assetColors = {
 }
 
 export default function PriceCard({ symbol, name, price, change, selected, onSelect }) {
-  const up    = change >= 0
+  const validPrice = Number.isFinite(Number(price)) ? Number(price) : null
+  const validChange = Number.isFinite(Number(change)) ? Number(change) : 0
+  const up    = validChange >= 0
   const color = assetColors[symbol] || '#6366f1'
   return (
     <motion.button
@@ -38,10 +40,10 @@ export default function PriceCard({ symbol, name, price, change, selected, onSel
           </div>
         </div>
         <div className="text-right">
-          <p className="text-sm font-black text-white tabular-nums">${price.toLocaleString()}</p>
+          <p className="text-sm font-black text-white tabular-nums">{validPrice === null ? '--' : `$${validPrice.toLocaleString()}`}</p>
           <p className={`text-[11px] font-bold flex items-center justify-end gap-0.5 ${up ? 'text-emerald-400' : 'text-rose-400'}`}>
             {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-            {up ? '+' : ''}{change}%
+            {up ? '+' : ''}{validChange}%
           </p>
         </div>
       </div>

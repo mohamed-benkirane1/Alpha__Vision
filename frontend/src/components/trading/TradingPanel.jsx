@@ -1,12 +1,23 @@
 import { Shield, Target, AlertTriangle, TrendingUp } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-const fmt = (n) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const getValidNumber = (value) => {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? number : null
+}
+
+const fmt = (value) => {
+  const number = getValidNumber(value)
+  if (number === null) return '--'
+
+  return `$${number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
 
 export default function TradingPanel({ symbol, price, type }) {
   const isLong     = type !== 'SELL'
-  const stopLoss   = isLong ? price * 0.97 : price * 1.03
-  const takeProfit = isLong ? price * 1.06 : price * 0.94
+  const validPrice = getValidNumber(price)
+  const stopLoss   = validPrice === null ? null : (isLong ? validPrice * 0.97 : validPrice * 1.03)
+  const takeProfit = validPrice === null ? null : (isLong ? validPrice * 1.06 : validPrice * 0.94)
 
   const rows = [
     { label: 'Entry Price', value: fmt(price),      icon: TrendingUp,    color: 'text-white'      },

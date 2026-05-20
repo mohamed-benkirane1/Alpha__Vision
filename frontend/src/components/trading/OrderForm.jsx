@@ -2,11 +2,17 @@ import { useState, useEffect } from 'react'
 import { ShoppingCart, ChevronDown, CheckCircle } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 
-const SYMBOLS = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL']
-
 const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 placeholder-slate-700 appearance-none'
 
-export default function OrderForm({ prices, selectedSymbol, onTrade }) {
+export default function OrderForm({
+  prices,
+  symbols = [],
+  selectedSymbol,
+  onTrade,
+  loading = false,
+  successMessage = '',
+  errorMessage = '',
+}) {
   const [symbol, setSymbol]       = useState(selectedSymbol || 'BTC')
   const [type, setType]           = useState('BUY')
   const [qty, setQty]             = useState('')
@@ -20,15 +26,21 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
     return () => clearTimeout(t)
   }, [submitted])
 
-  const price     = prices[symbol]?.price || 0
-  const estimated = qty && parseFloat(qty) > 0 ? parseFloat(qty) * price : 0
+  const price     = Number(prices[symbol]?.price)
+  const hasPrice  = Number.isFinite(price) && price > 0
+  const quantity  = Number(qty)
+  const estimated = Number.isFinite(quantity) && quantity > 0 && hasPrice ? quantity * price : 0
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!qty || parseFloat(qty) <= 0) return
-    onTrade({ symbol, type, qty: parseFloat(qty), price, estimated })
-    setQty('')
-    setSubmitted(true)
+    if (loading) return
+    if (!qty || !Number.isFinite(quantity) || quantity <= 0) return
+
+    const ok = await onTrade({ symbol, type, qty: quantity })
+    if (ok) {
+      setQty('')
+      setSubmitted(true)
+    }
   }
 
   return (
@@ -49,8 +61,9 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
               onChange={(e) => setSymbol(e.target.value)}
               className={fieldCls + ' pr-9 cursor-pointer'}
               style={{ backgroundImage: 'none' }}
+              disabled={loading || symbols.length === 0}
             >
-              {SYMBOLS.map((s) => <option key={s} value={s} className="bg-[#0a1628]">{s}</option>)}
+              {symbols.map((s) => <option key={s} value={s} className="bg-[#0a1628]">{s}</option>)}
             </select>
             <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
@@ -65,6 +78,7 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
                 key={t}
                 type="button"
                 onClick={() => setType(t)}
+                disabled={loading}
                 className={`py-2 rounded-lg text-sm font-black border transition-all duration-200 ${
                   type === t
                     ? t === 'BUY'
@@ -89,6 +103,7 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             placeholder="0.00"
+            disabled={loading}
             className={fieldCls}
           />
         </div>
@@ -97,7 +112,7 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
         <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl px-4 py-3 space-y-2 text-xs">
           <div className="flex justify-between">
             <span className="text-slate-600 font-medium">Current Price</span>
-            <span className="text-white font-black tabular-nums">${price.toLocaleString()}</span>
+            <span className="text-white font-black tabular-nums">{hasPrice ? `$${price.toLocaleString()}` : '--'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-600 font-medium">Estimated Value</span>
@@ -107,17 +122,29 @@ export default function OrderForm({ prices, selectedSymbol, onTrade }) {
           </div>
         </div>
 
+        {(successMessage || errorMessage) && (
+          <p className={`text-[11px] font-semibold ${errorMessage ? 'text-amber-400/85' : 'text-emerald-400/85'}`}>
+            {errorMessage || successMessage}
+          </p>
+        )}
+
         <motion.button
           type="submit"
-          whileHover={submitted ? {} : { scale: 1.01 }}
-          whileTap={submitted ? {} : { scale: 0.98 }}
+          disabled={loading || symbols.length === 0}
+          whileHover={submitted || loading ? {} : { scale: 1.01 }}
+          whileTap={submitted || loading ? {} : { scale: 0.98 }}
           className={`ripple-btn w-full py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all duration-300 ${
             type === 'BUY'
               ? `bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white ${submitted ? 'shadow-[0_0_32px_rgba(16,185,129,0.55)]' : 'shadow-[0_0_18px_rgba(16,185,129,0.22)]'}`
               : `bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white ${submitted ? 'shadow-[0_0_32px_rgba(225,29,72,0.55)]' : 'shadow-[0_0_18px_rgba(244,63,94,0.22)]'}`
-          }`}
+          } disabled:opacity-60 disabled:cursor-not-allowed`}
         >
-          {submitted ? (
+          {loading ? (
+            <>
+              <ShoppingCart size={14} />
+              Sending Order...
+            </>
+          ) : submitted ? (
             <motion.span
               initial={{ opacity: 0, scale: shouldReduce ? 1 : 0.82 }}
               animate={{ opacity: 1, scale: 1 }}
