@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, TrendingUp, Target, Cpu, Zap, Bell, Search } from 'lucide-react'
+import { Wallet, TrendingUp, Database, Cpu, Zap, Bell, Search, RefreshCw, AlertTriangle } from 'lucide-react'
 
 import StatCard         from '../components/dashboard/StatCard'
 import PerformanceChart from '../components/dashboard/PerformanceChart'
@@ -9,13 +9,11 @@ import MarketOverview   from '../components/dashboard/MarketOverview'
 import PortfolioSummary from '../components/dashboard/PortfolioSummary'
 import RecentTrades     from '../components/dashboard/RecentTrades'
 import { useAuth } from '../context/useAuth'
-import { getBotStatus } from '../services/botService'
-import { getAllPrices } from '../services/marketService'
-import { getPortfolio } from '../services/portfolioService'
-import { getTradeHistory } from '../services/tradingService'
+import { getDashboardLiveData } from '../services/dashboardService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
+const AUTO_REFRESH_MS = 30000
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -24,13 +22,15 @@ function getGreeting() {
   return 'Good evening'
 }
 
-const toNumber = (value) => {
+const getValidNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null
   const number = Number(value)
-  return Number.isFinite(number) ? number : 0
+  return Number.isFinite(number) ? number : null
 }
 
 const formatCurrency = (value, { sign = false } = {}) => {
-  const number = toNumber(value)
+  const number = getValidNumber(value)
+  if (number === null) return '--'
   const formatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -42,8 +42,21 @@ const formatCurrency = (value, { sign = false } = {}) => {
 }
 
 const formatPercent = (value) => {
-  const number = toNumber(value)
+  const number = getValidNumber(value)
+  if (number === null) return '--'
   return `${number >= 0 ? '+' : ''}${number.toFixed(1)}%`
+}
+
+const formatDateTime = (value) => {
+  if (!value) return '--'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--'
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
 }
 
 const getFirstName = (name) => {
@@ -51,12 +64,13 @@ const getFirstName = (name) => {
   return name.trim().split(' ')[0] || 'Trader'
 }
 
-const responseData = (result) => result.value?.data ?? result.value
-
 function buildStats({ portfolio, trades, bot, loading }) {
-  const totalValue = portfolio?.totalValue
-  const totalProfit = portfolio?.totalProfit
-  const totalProfitPercent = portfolio?.totalProfitPercent
+  const totals = portfolio?.totals || {}
+  const totalValue = totals.totalPortfolioValue
+  const cashBalance = totals.cashBalance ?? portfolio?.balance
+  const holdingsValue = totals.holdingsValue ?? portfolio?.totalValue
+  const totalProfit = totals.totalProfit ?? portfolio?.totalProfit
+  const totalProfitPercent = totals.totalProfitPercent ?? portfolio?.totalProfitPercent
   const hasTradeData = Array.isArray(trades)
   const tradeCount = hasTradeData ? trades.length : 0
   const activeBot = bot?.status === 'running'
@@ -65,24 +79,24 @@ function buildStats({ portfolio, trades, bot, loading }) {
     {
       icon: Wallet,
       label: 'Portfolio Value',
-      value: loading && !portfolio ? 'Loading...' : (portfolio ? formatCurrency(totalValue) : '$24,856.40'),
-      sub: portfolio ? `${portfolio.holdings?.length || 0} assets tracked` : '+$1,234 today (+5.2%)',
+      value: loading && !portfolio ? 'Loading...' : formatCurrency(totalValue),
+      sub: portfolio ? `${portfolio.holdings?.length || 0} backend holdings` : 'No portfolio data',
       subUp: true,
       accentColor: 'rose',
     },
     {
       icon: TrendingUp,
       label: 'Total Profit',
-      value: loading && !portfolio ? 'Loading...' : (portfolio ? formatCurrency(totalProfit, { sign: true }) : '+$3,241.20'),
-      sub: portfolio ? `${formatPercent(totalProfitPercent)} all time` : '+15.8% all time',
-      subUp: toNumber(totalProfit) >= 0,
+      value: loading && !portfolio ? 'Loading...' : formatCurrency(totalProfit, { sign: true }),
+      sub: `${formatPercent(totalProfitPercent)} all time`,
+      subUp: (getValidNumber(totalProfit) ?? 0) >= 0,
       accentColor: 'emerald',
     },
     {
-      icon: Target,
-      label: 'Win Rate',
-      value: '72.4%',
-      sub: hasTradeData ? `${tradeCount} trades completed` : '48 trades completed',
+      icon: Database,
+      label: 'Cash Balance',
+      value: loading && !portfolio ? 'Loading...' : formatCurrency(cashBalance),
+      sub: `Holdings ${formatCurrency(holdingsValue)}`,
       subUp: true,
       accentColor: 'cyan',
     },
@@ -90,7 +104,7 @@ function buildStats({ portfolio, trades, bot, loading }) {
       icon: Cpu,
       label: 'Active Bot',
       value: loading && !bot ? 'Loading...' : (activeBot ? 'RUNNING' : 'STOPPED'),
-      sub: activeBot ? `${bot.symbol || 'BOT'}/USDT - ${(bot.strategy || 'multi').toUpperCase()} strategy` : 'No active bot',
+      sub: activeBot ? `${bot.symbol || 'BOT'}/USDT - ${(bot.strategy || 'multi').toUpperCase()} strategy` : `${tradeCount} backend trades loaded`,
       subUp: activeBot,
       accentColor: 'amber',
     },
@@ -102,54 +116,56 @@ export default function Dashboard() {
   const [portfolio, setPortfolio] = useState(null)
   const [trades, setTrades] = useState(null)
   const [markets, setMarkets] = useState([])
+  const [marketDataQuality, setMarketDataQuality] = useState(null)
+  const [serviceQuality, setServiceQuality] = useState(null)
   const [bot, setBot] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
+  const loadingRef = useRef(false)
 
-  useEffect(() => {
-    let isMounted = true
+  const loadDashboardData = useCallback(async ({ refresh = false } = {}) => {
+    if (loadingRef.current) return
+    loadingRef.current = true
+    if (refresh) setRefreshing(true)
+    else setLoading(true)
+    setError('')
 
-    async function loadDashboardData() {
-      setLoading(true)
-      setError('')
-
-      const [portfolioResult, tradesResult, marketsResult, botResult] = await Promise.allSettled([
-        getPortfolio(),
-        getTradeHistory(),
-        getAllPrices(),
-        getBotStatus(),
-      ])
-
-      if (!isMounted) return
-
-      if (portfolioResult.status === 'fulfilled') setPortfolio(responseData(portfolioResult))
-      if (tradesResult.status === 'fulfilled') {
-        const data = responseData(tradesResult)
-        setTrades(Array.isArray(data) ? data : [])
-      }
-      if (marketsResult.status === 'fulfilled') {
-        const data = responseData(marketsResult)
-        setMarkets(Array.isArray(data) ? data : [])
-      }
-      if (botResult.status === 'fulfilled') setBot(responseData(botResult))
-
-      const failed = [portfolioResult, tradesResult, marketsResult, botResult].some((result) => result.status === 'rejected')
-      if (failed) setError('Some dashboard data could not be refreshed. Showing the latest available view.')
-
+    try {
+      const data = await getDashboardLiveData()
+      setPortfolio(data.portfolio)
+      setTrades(Array.isArray(data.trades) ? data.trades : [])
+      setMarkets(Array.isArray(data.markets) ? data.markets : [])
+      setMarketDataQuality(data.marketDataQuality)
+      setServiceQuality(data.dataQuality)
+      setBot(data.bot)
+      if (!data.success) setError('Some dashboard data could not be refreshed. Showing available backend data only.')
+    } catch (err) {
+      console.error('Dashboard load failed:', err)
+      setError('Dashboard data could not be refreshed from the backend.')
+    } finally {
+      loadingRef.current = false
       setLoading(false)
-    }
-
-    loadDashboardData()
-
-    return () => {
-      isMounted = false
+      setRefreshing(false)
     }
   }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => loadDashboardData(), 0)
+    const interval = window.setInterval(() => loadDashboardData({ refresh: true }), AUTO_REFRESH_MS)
+    return () => {
+      window.clearTimeout(timer)
+      window.clearInterval(interval)
+    }
+  }, [loadDashboardData])
 
   const stats = useMemo(
     () => buildStats({ portfolio, trades, bot, loading }),
     [portfolio, trades, bot, loading],
   )
+  const portfolioQuality = portfolio?.dataQuality
+  const portfolioReliable = portfolioQuality?.valuationReliable !== false
+  const marketPartial = marketDataQuality?.hasErrors || marketDataQuality?.hasFallbacks || marketDataQuality?.hasStale
 
   return (
     <div className="space-y-5">
@@ -163,6 +179,10 @@ export default function Dashboard() {
           <p className="text-[11px] text-slate-600 font-bold tracking-widest uppercase mb-1">{getGreeting()}, {getFirstName(user?.name)}</p>
           <h1 className="text-2xl font-black text-white leading-tight">Dashboard</h1>
           <p className="text-xs text-slate-500 mt-0.5 font-medium">Real-time overview of your trading intelligence</p>
+          <p className="text-[11px] text-slate-700 mt-1 font-medium">
+            Portfolio updated <span className="text-slate-500">{formatDateTime(portfolio?.lastUpdated || portfolio?.timestamp)}</span>
+            {refreshing && <span className="text-rose-400/80 font-bold"> · Refreshing...</span>}
+          </p>
           {error && (
             <p className="text-[11px] text-amber-400/80 mt-2 font-semibold">{error}</p>
           )}
@@ -187,7 +207,52 @@ export default function Dashboard() {
           {/* Live badge */}
           <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/25 text-rose-400 text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(225,29,72,0.12)] tracking-wider">
             <Zap size={10} />
-            {loading ? 'SYNCING DATA' : 'LIVE DATA'}
+            {loading ? 'SYNCING DATA' : 'BACKEND DATA'}
+          </div>
+          <button
+            type="button"
+            onClick={() => loadDashboardData({ refresh: true })}
+            disabled={loading || refreshing}
+            className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center hover:bg-white/[0.07] disabled:opacity-50 transition-colors"
+            title="Refresh dashboard"
+            aria-label="Refresh dashboard"
+          >
+            <RefreshCw size={13} className={`text-slate-400 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </motion.div>
+
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}
+        className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-4 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.24)]">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${portfolioReliable && !marketPartial ? 'bg-emerald-500/10 border-emerald-500/22 text-emerald-400' : 'bg-amber-500/10 border-amber-500/22 text-amber-400'}`}>
+              <AlertTriangle size={15} />
+            </div>
+            <div>
+              <p className="text-sm text-white font-black">Dashboard data quality</p>
+              <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                Real backend data is shown where available. Missing analytics are labelled as coming soon.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+            <div className="rounded-xl bg-white/[0.025] border border-white/[0.055] px-3 py-2">
+              <p className="text-slate-700 uppercase font-black">Portfolio</p>
+              <p className="text-slate-300 font-black">{portfolioReliable ? 'Reliable' : 'Partial'}</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.025] border border-white/[0.055] px-3 py-2">
+              <p className="text-slate-700 uppercase font-black">Market</p>
+              <p className="text-slate-300 font-black">{marketPartial ? 'Partial' : 'Live'}</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.025] border border-white/[0.055] px-3 py-2">
+              <p className="text-slate-700 uppercase font-black">Trades</p>
+              <p className="text-slate-300 font-black">{serviceQuality?.trades || '--'}</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.025] border border-white/[0.055] px-3 py-2">
+              <p className="text-slate-700 uppercase font-black">Warnings</p>
+              <p className="text-slate-300 font-black">{portfolio?.warnings?.length || 0}</p>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -222,7 +287,7 @@ export default function Dashboard() {
         initial="hidden" animate="visible" variants={stagger}
         className="grid grid-cols-1 lg:grid-cols-2 gap-3.5"
       >
-        <motion.div variants={fadeUp}><MarketOverview markets={markets} loading={loading && markets.length === 0} /></motion.div>
+        <motion.div variants={fadeUp}><MarketOverview markets={markets} dataQuality={marketDataQuality} loading={loading && markets.length === 0} /></motion.div>
         <motion.div variants={fadeUp}><PortfolioSummary portfolio={portfolio} loading={loading && !portfolio} /></motion.div>
       </motion.div>
 

@@ -1,36 +1,17 @@
 import { motion } from 'framer-motion'
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
-
-const defaultAssets = [
-  { symbol: 'BTC',  name: 'Bitcoin',  price: '$67,432.00', change: '+2.4%', up: true,  color: '#f97316' },
-  { symbol: 'ETH',  name: 'Ethereum', price: '$3,847.20',  change: '+1.8%', up: true,  color: '#6366f1' },
-  { symbol: 'SOL',  name: 'Solana',   price: '$178.32',    change: '+4.1%', up: true,  color: '#8b5cf6' },
-  { symbol: 'XAU',  name: 'Gold',     price: '$2,345.80',  change: '+0.3%', up: true,  color: '#eab308' },
-  { symbol: 'AAPL', name: 'Apple',    price: '$189.45',    change: '-0.3%', up: false, color: '#64748b' },
-  { symbol: 'NDX',  name: 'NASDAQ',   price: '18,234.10',  change: '+0.8%', up: true,  color: '#06b6d4' },
-]
-
-const assetNames = {
-  BTC: 'Bitcoin',
-  ETH: 'Ethereum',
-  SOL: 'Solana',
-  XAU: 'Gold',
-  XAG: 'Silver',
-  AAPL: 'Apple',
-  TSLA: 'Tesla',
-  NVDA: 'NVIDIA',
-  MSFT: 'Microsoft',
-  GOOGL: 'Alphabet',
-  IXIC: 'NASDAQ Composite',
-  SPX: 'S&P 500',
-  DJI: 'Dow Jones',
-}
+import { TrendingUp, TrendingDown, Activity, AlertTriangle } from 'lucide-react'
 
 const assetColors = ['#f97316', '#6366f1', '#8b5cf6', '#eab308', '#64748b', '#06b6d4']
 
+const getValidNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
 const formatPrice = (price) => {
-  const number = Number(price)
-  if (!Number.isFinite(number)) return '$0.00'
+  const number = getValidNumber(price)
+  if (number === null) return 'Unavailable'
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -39,31 +20,59 @@ const formatPrice = (price) => {
 }
 
 const formatChange = (change) => {
-  const number = Number(change)
-  if (!Number.isFinite(number)) return '+0.0%'
+  const number = getValidNumber(change)
+  if (number === null) return '--'
   return `${number >= 0 ? '+' : ''}${number.toFixed(1)}%`
 }
 
+const formatDateTime = (value) => {
+  if (!value) return '--'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--'
+  return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(date)
+}
+
+function StatusBadge({ label, tone = 'slate' }) {
+  const tones = {
+    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+    amber: 'bg-amber-500/10 border-amber-500/22 text-amber-400',
+    rose: 'bg-rose-500/10 border-rose-500/22 text-rose-400',
+    slate: 'bg-white/[0.03] border-white/[0.07] text-slate-500',
+  }
+  return <span className={`rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase ${tones[tone]}`}>{label}</span>
+}
+
 const normalizeMarkets = (markets) => {
-  if (!Array.isArray(markets) || markets.length === 0) return defaultAssets
+  if (!Array.isArray(markets) || markets.length === 0) return []
 
   return markets.slice(0, 6).map((market, index) => {
-    const change = market.change24h ?? market.changePercent ?? 0
-    const symbol = market.symbol || 'N/A'
+    const price = getValidNumber(market.price)
+    const change = getValidNumber(market.change24h ?? market.changePercent)
+    const priceAvailable = market.priceAvailable === true && price !== null
 
     return {
-      symbol,
-      name: market.name || assetNames[symbol] || market.type || 'Market asset',
-      price: formatPrice(market.price),
-      change: formatChange(change),
-      up: Number(change) >= 0,
+      symbol: market.symbol || 'N/A',
+      name: market.name || market.type || 'Market asset',
+      type: market.type || 'unknown',
+      price,
+      change,
+      up: (change ?? 0) >= 0,
       color: assetColors[index % assetColors.length],
+      source: market.source || null,
+      provider: market.provider || null,
+      timestamp: market.timestamp || null,
+      cached: market.cached === true,
+      fallback: market.fallback === true,
+      stale: market.stale === true,
+      priceAvailable,
+      error: market.error || null,
     }
   })
 }
 
-export default function MarketOverview({ markets = [], loading = false }) {
+export default function MarketOverview({ markets = [], loading = false, dataQuality = null }) {
   const assets = normalizeMarkets(markets)
+  const hasQualityIssue = dataQuality?.hasErrors || dataQuality?.hasFallbacks || dataQuality?.hasStale
 
   return (
     <motion.div
@@ -75,44 +84,58 @@ export default function MarketOverview({ markets = [], loading = false }) {
           <Activity size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Market Overview</h2>
         </div>
-        <span className="text-[10px] text-slate-700 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-full font-bold">{loading ? 'Loading' : 'Live'}</span>
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${hasQualityIssue ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'}`}>
+          {loading ? 'Loading' : hasQualityIssue ? 'Partial' : 'Backend live'}
+        </span>
       </div>
 
       <div className="space-y-1.5">
-        {assets.map((a, i) => (
+        {assets.length > 0 ? assets.map((a, i) => (
           <motion.div
-            key={a.symbol}
+            key={`${a.symbol}-${i}`}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.05, duration: 0.3 }}
             whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
-            className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 cursor-default"
+            className="px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 cursor-default"
           >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0"
-                style={{
-                  background: `${a.color}16`,
-                  border: `1px solid ${a.color}28`,
-                  color: a.color,
-                }}
-              >
-                {a.symbol.slice(0, 2)}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0"
+                  style={{ background: `${a.color}16`, border: `1px solid ${a.color}28`, color: a.color }}
+                >
+                  {a.symbol.slice(0, 2)}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">{a.symbol}</p>
+                  <p className="text-[10px] text-slate-700">{a.name}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-bold text-white">{a.symbol}</p>
-                <p className="text-[10px] text-slate-700">{a.name}</p>
+              <div className="text-right">
+                <p className={`text-sm font-bold tabular-nums ${a.priceAvailable ? 'text-white' : 'text-amber-400/80'}`}>{formatPrice(a.price)}</p>
+                <p className={`text-xs font-bold flex items-center justify-end gap-0.5 ${a.up ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {a.up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                  {formatChange(a.change)}
+                </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm font-bold text-white tabular-nums">{a.price}</p>
-              <p className={`text-xs font-bold flex items-center justify-end gap-0.5 ${a.up ? 'text-emerald-400' : 'text-red-400'}`}>
-                {a.up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                {a.change}
-              </p>
+            <div className="mt-2 flex flex-wrap items-center gap-1">
+              {a.priceAvailable && !a.fallback && !a.stale && <StatusBadge label="Live" tone="emerald" />}
+              {a.cached && <StatusBadge label="Cached" />}
+              {a.fallback && <StatusBadge label="Fallback" tone="amber" />}
+              {a.stale && <StatusBadge label="Stale" tone="amber" />}
+              {!a.priceAvailable && <StatusBadge label="Unavailable" tone="rose" />}
+              <span className="text-[10px] text-slate-700 ml-auto">{a.source || '--'} · {formatDateTime(a.timestamp)}</span>
             </div>
+            {a.error && <p className="mt-1 text-[10px] text-amber-400/80 font-semibold flex items-center gap-1"><AlertTriangle size={10} />{a.error}</p>}
           </motion.div>
-        ))}
+        )) : (
+          <div className="py-10 text-center">
+            <Activity size={16} className="text-slate-700 mx-auto mb-3" />
+            <p className="text-xs text-slate-600 font-medium">{loading ? 'Loading market quotes...' : 'No backend market quotes available.'}</p>
+          </div>
+        )}
       </div>
     </motion.div>
   )
