@@ -16,6 +16,7 @@ export default function OrderForm({
   const [symbol, setSymbol]       = useState(selectedSymbol || 'BTC')
   const [type, setType]           = useState('BUY')
   const [qty, setQty]             = useState('')
+  const [quantityError, setQuantityError] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const shouldReduce = useReducedMotion()
 
@@ -34,8 +35,12 @@ export default function OrderForm({
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (loading) return
-    if (!qty || !Number.isFinite(quantity) || quantity <= 0) return
+    if (!qty || !Number.isFinite(quantity) || quantity <= 0) {
+      setQuantityError('Quantity must be a positive number.')
+      return
+    }
 
+    setQuantityError('')
     const ok = await onTrade({ symbol, type, qty: quantity })
     if (ok) {
       setQty('')
@@ -101,11 +106,17 @@ export default function OrderForm({
             min="0"
             step="any"
             value={qty}
-            onChange={(e) => setQty(e.target.value)}
+            onChange={(e) => {
+              setQty(e.target.value)
+              if (quantityError) setQuantityError('')
+            }}
             placeholder="0.00"
             disabled={loading}
             className={fieldCls}
           />
+          {quantityError && (
+            <p className="text-[11px] text-amber-400/85 font-semibold mt-1.5">{quantityError}</p>
+          )}
         </div>
 
         {/* Summary */}

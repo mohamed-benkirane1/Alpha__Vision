@@ -24,7 +24,7 @@ const fmtDate = (value) => {
   })
 }
 
-export default function TradeHistory({ trades = [], loading = false }) {
+export default function TradeHistory({ trades = [], loading = false, error = '', onRetry }) {
   return (
     <motion.div
       whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
@@ -38,7 +38,24 @@ export default function TradeHistory({ trades = [], loading = false }) {
         <span className="text-[10px] text-slate-700 font-bold">{loading ? 'Loading' : `${trades.length} orders`}</span>
       </div>
 
-      {trades.length === 0 ? (
+      {error ? (
+        <div className="py-10 text-center">
+          <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-3">
+            <ClipboardList size={16} className="text-slate-700" />
+          </div>
+          <p className="text-xs text-amber-400/85 font-semibold">{error}</p>
+          <p className="text-[11px] text-slate-700 mt-1">Trade history could not be loaded from the backend.</p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 text-[10px] text-rose-400 font-black hover:text-rose-300"
+            >
+              Retry
+            </button>
+          )}
+        </div>
+      ) : trades.length === 0 ? (
         <div className="py-10 text-center">
           <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-3">
             <ClipboardList size={16} className="text-slate-700" />

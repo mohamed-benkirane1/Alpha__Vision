@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { LineChart, Zap } from 'lucide-react'
+import { LineChart, RefreshCw, Zap } from 'lucide-react'
 import PriceCard    from '../components/trading/PriceCard'
 import OrderForm    from '../components/trading/OrderForm'
 import TradingPanel from '../components/trading/TradingPanel'
 import TradeHistory from '../components/trading/TradeHistory'
 import { getAllPrices } from '../services/marketService'
+import { getPortfolio } from '../services/portfolioService'
 import { createTrade, getTradeHistory } from '../services/tradingService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
@@ -37,16 +38,41 @@ const normalizeAsset = (asset) => ({
 
 const getTradeErrorMessage = (error) => {
   if (error?.status === 401) return 'Your session has expired. Please log in again.'
+  if (error?.message?.toLowerCase().includes('insufficient balance')) {
+    return 'Insufficient balance. Add demo funds from Portfolio or deposit funds.'
+  }
   if (error?.message) return error.message
   return 'Unable to place order right now.'
+}
+
+const getValidNumber = (value) => {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+const formatCurrency = (value) => {
+  const number = getValidNumber(value)
+  if (number === null) return '--'
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(number)
 }
 
 export default function Trading() {
   const [selectedSymbol, setSelectedSymbol] = useState('BTC')
   const [assets, setAssets] = useState([])
   const [trades, setTrades] = useState([])
+  const [balance, setBalance] = useState(null)
   const [pricesLoading, setPricesLoading] = useState(true)
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [balanceLoading, setBalanceLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [marketError, setMarketError] = useState('')
+  const [historyError, setHistoryError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [tradeMessage, setTradeMessage] = useState('')
   const [tradeError, setTradeError] = useState('')
@@ -62,6 +88,7 @@ export default function Trading() {
         : []
 
       setAssets(nextAssets)
+      setMarketError('')
       if (nextAssets.length > 0) {
         setSelectedSymbol((current) => (
           nextAssets.some((asset) => asset.symbol === current) ? current : nextAssets[0].symbol
@@ -69,6 +96,7 @@ export default function Trading() {
       }
     } catch (err) {
       console.error('Trading prices load failed:', err)
+      setMarketError('Unable to load market prices.')
     } finally {
       setPricesLoading(false)
     }
@@ -81,22 +109,54 @@ export default function Trading() {
       const response = await getTradeHistory()
       const data = getResponseData(response)
       setTrades(Array.isArray(data) ? data : [])
+      setHistoryError('')
     } catch (err) {
       console.error('Trade history load failed:', err)
-      setTrades([])
+      setHistoryError('Unable to load trade history.')
     } finally {
       setHistoryLoading(false)
     }
   }, [])
 
+  const loadBalance = useCallback(async () => {
+    setBalanceLoading(true)
+
+    try {
+      const response = await getPortfolio()
+      const data = getResponseData(response)
+      const nextBalance = getValidNumber(data?.balance)
+      setBalance(nextBalance)
+    } catch (err) {
+      console.error('Trading balance load failed:', err)
+      setBalance(null)
+    } finally {
+      setBalanceLoading(false)
+    }
+  }, [])
+
+  const refreshTrading = useCallback(async () => {
+    setRefreshing(true)
+    setTradeMessage('')
+    setTradeError('')
+
+    try {
+      await Promise.all([
+        loadPrices(),
+        loadTradeHistory(),
+        loadBalance(),
+      ])
+    } finally {
+      setRefreshing(false)
+    }
+  }, [loadBalance, loadPrices, loadTradeHistory])
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      loadPrices()
-      loadTradeHistory()
+      refreshTrading()
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [loadPrices, loadTradeHistory])
+  }, [refreshTrading])
 
   const handleTrade = useCallback(async ({ type, symbol, qty }) => {
     const quantity = Number(qty)
@@ -130,9 +190,14 @@ export default function Trading() {
         throw new Error(data?.message || 'Order rejected.')
       }
 
+      const nextBalance = getValidNumber(data.balance)
+      if (nextBalance !== null) setBalance(nextBalance)
       setTradeMessage(data.message || `${normalizedType} order placed.`)
-      await loadTradeHistory()
-      await loadPrices()
+      await Promise.all([
+        loadTradeHistory(),
+        loadPrices(),
+        loadBalance(),
+      ])
       return true
     } catch (err) {
       setTradeError(getTradeErrorMessage(err))
@@ -140,7 +205,7 @@ export default function Trading() {
     } finally {
       setSubmitting(false)
     }
-  }, [loadPrices, loadTradeHistory])
+  }, [loadBalance, loadPrices, loadTradeHistory])
 
   const priceMap = useMemo(() => Object.fromEntries(assets.map((asset) => [asset.symbol, asset])), [assets])
   const symbols = useMemo(() => assets.map((asset) => asset.symbol), [assets])
@@ -151,6 +216,8 @@ export default function Trading() {
     price: 0,
     change: 0,
   }
+  const balanceLabel = balanceLoading ? 'Loading...' : formatCurrency(balance)
+  const busy = pricesLoading || historyLoading || balanceLoading || refreshing
 
   return (
     <div className="space-y-5">
@@ -163,11 +230,26 @@ export default function Trading() {
             <h1 className="text-2xl font-black text-white">Trading</h1>
           </div>
           <p className="text-xs text-slate-500 font-medium">Place real demo orders backed by your account balance</p>
+          <p className="text-[11px] text-slate-600 mt-1 font-bold tabular-nums">
+            Cash balance <span className="text-slate-300">{balanceLabel}</span>
+          </p>
         </div>
-        <span className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/22 text-emerald-400 text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.10)] tracking-wider">
-          <Zap size={10} />
-          BACKEND
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/22 text-emerald-400 text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.10)] tracking-wider">
+            <Zap size={10} />
+            BACKEND
+          </span>
+          <button
+            type="button"
+            onClick={refreshTrading}
+            disabled={busy || submitting}
+            className="h-9 w-9 rounded-xl border border-white/[0.07] bg-[#0a1628]/88 text-slate-500 hover:text-white hover:border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+            title="Refresh trading data"
+            aria-label="Refresh trading data"
+          >
+            <RefreshCw size={14} className={refreshing ? 'animate-spin text-rose-400' : ''} />
+          </button>
+        </div>
       </motion.div>
 
       {/* Asset cards */}
@@ -183,8 +265,23 @@ export default function Trading() {
           </motion.div>
         ))}
         {!pricesLoading && assets.length === 0 && (
-          <motion.div variants={fadeUp} className="col-span-full bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 text-xs text-slate-600 font-semibold">
-            Market prices are unavailable right now.
+          <motion.div variants={fadeUp} className="col-span-full bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 text-xs text-slate-600 font-semibold flex items-center justify-between gap-3">
+            <span>{marketError || 'Market prices are unavailable right now.'}</span>
+            {marketError && (
+              <button
+                type="button"
+                onClick={loadPrices}
+                className="shrink-0 text-[10px] text-rose-400 font-black hover:text-rose-300"
+              >
+                Retry
+              </button>
+            )}
+          </motion.div>
+        )}
+        {marketError && assets.length > 0 && (
+          <motion.div variants={fadeUp} className="col-span-full text-[11px] text-amber-400/80 font-semibold flex items-center justify-between gap-3">
+            <span>{marketError}</span>
+            <button type="button" onClick={loadPrices} className="text-[10px] text-rose-400 font-black hover:text-rose-300">Retry</button>
           </motion.div>
         )}
       </motion.div>
@@ -198,7 +295,12 @@ export default function Trading() {
             price={currentAsset.price}
             type="BUY"
           />
-          <TradeHistory trades={trades} loading={historyLoading} />
+          <TradeHistory
+            trades={trades}
+            loading={historyLoading}
+            error={historyError}
+            onRetry={loadTradeHistory}
+          />
         </motion.div>
         <motion.div variants={fadeUp}>
           <OrderForm
