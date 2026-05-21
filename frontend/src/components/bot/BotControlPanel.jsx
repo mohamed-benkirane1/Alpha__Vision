@@ -1,20 +1,34 @@
 import { useState } from 'react'
-import { Play, Square, Settings2, ChevronDown } from 'lucide-react'
+import { Play, Square, Settings2, ChevronDown, AlertTriangle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-const SYMBOLS    = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL']
+const SYMBOLS = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL']
 const STRATEGIES = [
-  { value: 'rsi',       label: 'RSI Strategy'    },
-  { value: 'macd',      label: 'MACD Crossover'  },
+  { value: 'rsi', label: 'RSI Strategy' },
+  { value: 'macd', label: 'MACD Crossover' },
   { value: 'bollinger', label: 'Bollinger Bands' },
-  { value: 'multi',     label: 'Multi-Indicator' },
+  { value: 'multi', label: 'Multi-Indicator' },
 ]
 
 const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 disabled:opacity-40 appearance-none'
 
-export default function BotControlPanel({ onStart, onStop, running }) {
-  const [symbol,   setSymbol]   = useState('SOL')
+export default function BotControlPanel({ onStart, onStop, running, loading, error }) {
+  const [symbol, setSymbol] = useState('BTC')
   const [strategy, setStrategy] = useState('rsi')
+  const [localError, setLocalError] = useState(null)
+
+  const start = () => {
+    if (!symbol) {
+      setLocalError('Symbol is required.')
+      return
+    }
+    if (!strategy) {
+      setLocalError('Strategy is required.')
+      return
+    }
+    setLocalError(null)
+    onStart({ symbol, strategy, mode: 'paper' })
+  }
 
   return (
     <motion.div
@@ -27,16 +41,14 @@ export default function BotControlPanel({ onStart, onStop, running }) {
       </div>
 
       <div className="space-y-4">
-
-        {/* Trading Pair */}
         <div>
           <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Trading Pair</label>
           <div className="relative">
             <select
               value={symbol}
               onChange={(e) => setSymbol(e.target.value)}
-              disabled={running}
-              className={fieldCls + ' pr-9 cursor-pointer'}
+              disabled={running || loading}
+              className={`${fieldCls} pr-9 cursor-pointer`}
               style={{ backgroundImage: 'none' }}
             >
               {SYMBOLS.map((s) => <option key={s} value={s} className="bg-[#0a1628]">{s}/USDT</option>)}
@@ -45,15 +57,14 @@ export default function BotControlPanel({ onStart, onStop, running }) {
           </div>
         </div>
 
-        {/* Strategy */}
         <div>
           <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Strategy</label>
           <div className="relative">
             <select
               value={strategy}
               onChange={(e) => setStrategy(e.target.value)}
-              disabled={running}
-              className={fieldCls + ' pr-9 cursor-pointer'}
+              disabled={running || loading}
+              className={`${fieldCls} pr-9 cursor-pointer`}
               style={{ backgroundImage: 'none' }}
             >
               {STRATEGIES.map((s) => <option key={s.value} value={s.value} className="bg-[#0a1628]">{s.label}</option>)}
@@ -62,27 +73,35 @@ export default function BotControlPanel({ onStart, onStop, running }) {
           </div>
         </div>
 
-        {/* Toggle */}
+        {(localError || error) && (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs font-semibold text-amber-300">
+            <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+            <span>{localError || error}</span>
+          </div>
+        )}
+
         <div className="pt-1">
           {!running ? (
             <motion.button
-              onClick={() => onStart(symbol, strategy)}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.97 }}
-              className="ripple-btn w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
+              onClick={start}
+              disabled={loading}
+              whileHover={{ scale: loading ? 1 : 1.01 }}
+              whileTap={{ scale: loading ? 1 : 0.97 }}
+              className="ripple-btn w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-55 disabled:cursor-not-allowed text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
             >
-              <Play size={13} />
-              Start Bot
+              {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Play size={13} />}
+              {loading ? 'Starting...' : 'Start Bot'}
             </motion.button>
           ) : (
             <motion.button
               onClick={onStop}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.97 }}
-              className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(244,63,94,0.22)]"
+              disabled={loading}
+              whileHover={{ scale: loading ? 1 : 1.01 }}
+              whileTap={{ scale: loading ? 1 : 0.97 }}
+              className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 disabled:opacity-55 disabled:cursor-not-allowed text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(244,63,94,0.22)]"
             >
-              <Square size={13} />
-              Stop Bot
+              {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Square size={13} />}
+              {loading ? 'Stopping...' : 'Stop Bot'}
             </motion.button>
           )}
         </div>
