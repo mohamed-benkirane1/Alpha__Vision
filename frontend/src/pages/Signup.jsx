@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
-import { signup } from '../services/authService'
+import { signup, startGoogleOAuth } from '../services/authService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
@@ -102,6 +102,8 @@ export default function Signup() {
       e.password = 'Password is required'
     else if (form.password.length < 8)
       e.password = 'Must be at least 8 characters'
+    else if (!/[A-Za-z]/.test(form.password) || !/\d/.test(form.password))
+      e.password = 'Must include at least one letter and one number'
     if (!form.confirm)
       e.confirm = 'Please confirm your password'
     else if (form.confirm !== form.password)
@@ -198,13 +200,13 @@ export default function Signup() {
               </span>
             </h2>
             <p className="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">
-              Join thousands of traders using AI-powered signals and professional-grade analytics to stay ahead.
+              Create an account to use backend-backed market data, trading, and portfolio flows.
             </p>
           </div>
 
           {/* Plan comparison */}
           <div className="space-y-2">
-            <p className="text-[10px] text-slate-600 uppercase tracking-[0.14em] font-black">Start free · Upgrade anytime</p>
+            <p className="text-[10px] text-slate-600 uppercase tracking-[0.14em] font-black">Start free / upgrade through backend plans</p>
             <div className="flex gap-2">
               <PlanBadge label="Free" />
               <PlanBadge label="Pro" highlight />
@@ -217,7 +219,7 @@ export default function Signup() {
             {[
               { icon: ShieldCheck, text: 'Bank-level encryption' },
               { icon: CheckCircle,  text: 'No credit card required' },
-              { icon: CheckCircle,  text: '14-day free trial' },
+              { icon: CheckCircle,  text: 'Password policy enforced' },
               { icon: ShieldCheck, text: 'Cancel anytime' },
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-2">
@@ -230,7 +232,7 @@ export default function Signup() {
 
         {/* Stats row */}
         <div className="relative z-10 flex items-center gap-5">
-          {[['12k+', 'Traders'], ['94%', 'Accuracy'], ['$2.4B', 'Volume']].map(([val, lbl]) => (
+          {[['Live', 'Market quotes'], ['Real', 'Trade writes'], ['Safe', 'Portfolio reads']].map(([val, lbl]) => (
             <div key={lbl}>
               <p className="text-lg font-black text-white">{val}</p>
               <p className="text-[10px] text-slate-600 font-medium">{lbl}</p>
@@ -273,10 +275,10 @@ export default function Signup() {
           <motion.div variants={fadeUp} className="mb-7">
             <div className="inline-flex items-center gap-1.5 bg-rose-500/8 border border-rose-500/20 rounded-full px-3 py-1 mb-4">
               <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase">Free 14-day trial</span>
+              <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase">Free account</span>
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">Create your account</h1>
-            <p className="text-xs text-slate-500 font-medium mt-1">Start your 14-day free trial — no card required</p>
+            <p className="text-xs text-slate-500 font-medium mt-1">Create your account / no card required</p>
           </motion.div>
 
           {/* Form */}
@@ -335,7 +337,7 @@ export default function Signup() {
                   type={showPw ? 'text' : 'password'}
                   value={form.password}
                   onChange={handleChange('password')}
-                  placeholder="Min. 8 characters"
+                  placeholder="8+ characters, letter and number"
                   className={inputCls('password', 'pl-10 pr-10')}
                 />
                 <button type="button" onClick={() => setShowPw(v => !v)}
@@ -410,7 +412,7 @@ export default function Signup() {
               {loading ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating account…
+                  Creating account...
                 </>
               ) : (
                 <>Create Account <ArrowRight size={15} /></>
@@ -435,9 +437,12 @@ export default function Signup() {
               <motion.button
                 key={label}
                 type="button"
+                onClick={label === 'Google' ? startGoogleOAuth : undefined}
+                disabled={label !== 'Google'}
+                title={label === 'Google' ? 'Continue with Google' : `${label} OAuth is not connected yet`}
                 whileHover={{ y: -1, backgroundColor: 'rgba(255,255,255,0.05)' }}
                 whileTap={{ scale: 0.97 }}
-                className="flex items-center justify-center gap-1.5 py-2.5 bg-white/[0.03] border border-white/[0.07] rounded-xl text-xs font-bold text-slate-400 transition-all duration-200"
+                className="flex items-center justify-center gap-1.5 py-2.5 bg-white/[0.03] border border-white/[0.07] rounded-xl text-xs font-bold text-slate-400 disabled:cursor-not-allowed disabled:opacity-45 transition-all duration-200"
               >
                 {apple ? (
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" className="text-white">
@@ -450,6 +455,9 @@ export default function Signup() {
               </motion.button>
             ))}
           </motion.div>
+          <motion.p variants={fadeUp} className="mt-2 text-center text-[10px] font-semibold text-slate-600">
+            Google uses backend OAuth when configured. Apple and Discord are not connected yet.
+          </motion.p>
 
           {/* Footer link */}
           <motion.p variants={fadeUp} className="text-[11px] text-slate-600 text-center mt-6 font-medium">

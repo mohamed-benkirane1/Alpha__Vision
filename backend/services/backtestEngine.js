@@ -4,6 +4,7 @@ const PROVIDER = 'internal-backtest-engine';
 const REAL_SOURCE = 'binance-historical-klines';
 const DEMO_SOURCE = 'demo';
 const VALID_STRATEGIES = ['rsi', 'macd', 'bollinger', 'multi'];
+const SUPPORTED_SYMBOLS = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE'];
 
 function nowIso() {
   return new Date().toISOString();
@@ -304,6 +305,12 @@ async function runBacktest(params) {
   };
 
   if (!symbol) return createErrorBacktest('symbol required', normalizedParams);
+  if (!SUPPORTED_SYMBOLS.includes(symbol)) {
+    return createErrorBacktest(
+      `${symbol} is not supported by the current Binance historical backtest provider.`,
+      normalizedParams,
+    );
+  }
   if (!VALID_STRATEGIES.includes(strategy)) return createErrorBacktest('Invalid strategy.', normalizedParams);
   if (!initialCapital || initialCapital <= 0) return createErrorBacktest('initialCapital must be positive.', normalizedParams);
   if (!positionSize || positionSize <= 0 || positionSize > 1) return createErrorBacktest('positionSize must be between 0 and 1.', normalizedParams);
@@ -340,4 +347,5 @@ module.exports = {
   runBacktest,
   createErrorBacktest,
   VALID_STRATEGIES,
+  SUPPORTED_SYMBOLS,
 };

@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
-import { login as loginRequest } from '../services/authService'
+import { login as loginRequest, startGoogleOAuth } from '../services/authService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
@@ -146,34 +146,34 @@ export default function Login() {
         <div className="relative z-10 space-y-6">
           <div>
             <h2 className="text-3xl xl:text-4xl font-black text-white leading-[1.15] tracking-tight">
-              Trade smarter<br />
+              Verify your trades<br />
               <span className="bg-gradient-to-r from-rose-400 to-red-500 bg-clip-text text-transparent">
-                with AI at your side
+                with backend data
               </span>
             </h2>
             <p className="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">
-              Real-time signals, portfolio analytics, and an AI assistant — all in one premium platform.
+              Backend quotes, execution metadata, portfolio warnings, and provider status in one workspace.
             </p>
           </div>
 
           <div className="space-y-4">
-            <Feature icon={Zap}  title="AI-Powered Signals" desc="Sub-second market intelligence powered by large language models." />
-            <Feature icon={Mail} title="Portfolio Analytics" desc="Real-time P&L tracking, risk metrics, and allocation insights." />
-            <Feature icon={Lock} title="Institutional Grade" desc="Bank-level encryption and compliance-ready infrastructure." />
+            <Feature icon={Zap}  title="Price Metadata" desc="Source, freshness, fallback, and availability stay visible before execution." />
+            <Feature icon={Mail} title="Portfolio Analytics" desc="Backend holdings, cash balance, valuation quality, and allocation insights." />
+            <Feature icon={Lock} title="Protected Flows" desc="Authentication and guarded backend writes stay the source of truth." />
           </div>
         </div>
 
-        {/* Testimonial */}
+        {/* Integration status */}
         <div className="relative z-10">
           <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm">
-            <p className="text-xs text-slate-400 italic leading-relaxed">
-              "Alpha Vision changed how I approach every trade. The AI signals are uncanny."
+            <p className="text-xs text-slate-400 leading-relaxed">
+              AI signals still need a real backend signal provider. Live market, trading, portfolio, news, and payment flows stay explicit about provider status.
             </p>
             <div className="flex items-center gap-2 mt-3">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-[10px] font-black text-white">S</div>
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-[10px] font-black text-white">API</div>
               <div>
-                <p className="text-[11px] font-bold text-white/80">Sarah M.</p>
-                <p className="text-[10px] text-slate-600">Quantitative Trader</p>
+                <p className="text-[11px] font-bold text-white/80">Integration status</p>
+                <p className="text-[10px] text-slate-600">Provider-backed data only</p>
               </div>
             </div>
           </div>
@@ -332,9 +332,12 @@ export default function Login() {
               <motion.button
                 key={label}
                 type="button"
+                onClick={label === 'Google' ? startGoogleOAuth : undefined}
+                disabled={label !== 'Google'}
+                title={label === 'Google' ? 'Continue with Google' : `${label} OAuth is not connected yet`}
                 whileHover={{ y: -1, backgroundColor: 'rgba(255,255,255,0.05)' }}
                 whileTap={{ scale: 0.97 }}
-                className="flex items-center justify-center gap-1.5 py-2.5 bg-white/[0.03] border border-white/[0.07] rounded-xl text-xs font-bold text-slate-400 transition-all duration-200"
+                className="flex items-center justify-center gap-1.5 py-2.5 bg-white/[0.03] border border-white/[0.07] rounded-xl text-xs font-bold text-slate-400 disabled:cursor-not-allowed disabled:opacity-45 transition-all duration-200"
               >
                 {apple ? (
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" className="text-white">
@@ -347,6 +350,9 @@ export default function Login() {
               </motion.button>
             ))}
           </motion.div>
+          <motion.p variants={fadeUp} className="mt-2 text-center text-[10px] font-semibold text-slate-600">
+            Google uses backend OAuth when configured. Apple and Discord are not connected yet.
+          </motion.p>
 
           {/* Footer link */}
           <motion.p variants={fadeUp} className="text-[11px] text-slate-600 text-center mt-6 font-medium">

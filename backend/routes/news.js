@@ -1,7 +1,8 @@
 const router = require('express').Router();
+const auth = require('../middleware/auth');
 const { getNews } = require('../services/newsService');
 
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const news = await getNews();
     if (news.success === false) {

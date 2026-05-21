@@ -1,10 +1,14 @@
-import api, { extractApiError, removeToken } from './api'
+import api, { API_BASE_URL, extractApiError, removeToken } from './api'
 
 export const signup = (userData) =>
   api.post('/auth/signup', userData)
 
 export const login = (credentials) =>
   api.post('/auth/login', credentials)
+
+export const startGoogleOAuth = () => {
+  window.location.assign(`${API_BASE_URL}/auth/google`)
+}
 
 export const getCurrentUser = () =>
   api.get('/auth/me')

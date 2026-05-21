@@ -73,7 +73,26 @@ function buildStats({ portfolio, trades, bot, loading }) {
   const totalProfitPercent = totals.totalProfitPercent ?? portfolio?.totalProfitPercent
   const hasTradeData = Array.isArray(trades)
   const tradeCount = hasTradeData ? trades.length : 0
-  const activeBot = bot?.status === 'running'
+  const botStatus = bot?.status || {}
+  const botEngineAvailable = bot?.dataQuality?.hasRealBotEngine === true
+    && bot?.fallback !== true
+    && botStatus.mode !== 'unavailable'
+  const activeBot = botEngineAvailable && botStatus.isRunning === true
+  const botValue = !bot
+    ? '--'
+    : !botEngineAvailable
+      ? 'UNAVAILABLE'
+      : activeBot
+        ? 'RUNNING'
+        : 'STOPPED'
+  const botDetails = !bot
+    ? `Bot status unavailable / ${tradeCount} backend trades loaded`
+    : [
+        `Mode ${botStatus.mode || '--'}`,
+        botStatus.strategy ? `${botStatus.strategy.toUpperCase()} strategy` : 'No strategy',
+        botStatus.symbol || 'No symbol',
+        bot?.fallback || bot?.dataQuality?.isIndicative ? 'Indicative' : null,
+      ].filter(Boolean).join(' / ')
 
   return [
     {
@@ -102,9 +121,9 @@ function buildStats({ portfolio, trades, bot, loading }) {
     },
     {
       icon: Cpu,
-      label: 'Active Bot',
-      value: loading && !bot ? 'Loading...' : (activeBot ? 'RUNNING' : 'STOPPED'),
-      sub: activeBot ? `${bot.symbol || 'BOT'}/USDT - ${(bot.strategy || 'multi').toUpperCase()} strategy` : `${tradeCount} backend trades loaded`,
+      label: 'Bot Status',
+      value: loading && !bot ? 'Loading...' : botValue,
+      sub: botDetails,
       subUp: activeBot,
       accentColor: 'amber',
     },

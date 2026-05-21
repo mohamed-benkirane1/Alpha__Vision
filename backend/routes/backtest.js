@@ -1,7 +1,12 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const { checkPlan } = require('../middleware/CheckPlan');
-const { runBacktest, createErrorBacktest, VALID_STRATEGIES } = require('../services/backtestEngine');
+const {
+  runBacktest,
+  createErrorBacktest,
+  VALID_STRATEGIES,
+  SUPPORTED_SYMBOLS,
+} = require('../services/backtestEngine');
 
 function normalizeInput(body = {}) {
   const symbol = typeof body.symbol === 'string' ? body.symbol.trim().toUpperCase() : '';
@@ -10,6 +15,11 @@ function normalizeInput(body = {}) {
   const positionSize = body.positionSize === undefined ? 0.2 : Number(body.positionSize);
 
   if (!symbol) return { error: 'symbol required' };
+  if (!SUPPORTED_SYMBOLS.includes(symbol)) {
+    return {
+      error: `${symbol} is not supported by the current Binance historical backtest provider.`,
+    };
+  }
   if (!VALID_STRATEGIES.includes(strategy)) return { error: 'Invalid strategy.' };
   if (!Number.isFinite(initialCapital) || initialCapital <= 0) return { error: 'initialCapital must be positive.' };
   if (!Number.isFinite(positionSize) || positionSize <= 0 || positionSize > 1) {
@@ -48,6 +58,9 @@ router.get('/strategies', auth, async (req, res) => {
     success: true,
     timestamp: new Date().toISOString(),
     strategies: VALID_STRATEGIES,
+    supportedSymbols: SUPPORTED_SYMBOLS,
+    historicalProvider: 'Binance historical klines',
+    marketType: 'crypto',
   });
 });
 

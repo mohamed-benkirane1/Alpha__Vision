@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, FlaskConical, Server } from 'lucide-react'
 import BacktestForm from '../components/backtest/BacktestForm'
 import BacktestResults from '../components/backtest/BacktestResults'
 import BacktestChart from '../components/backtest/BacktestChart'
-import { runBacktest } from '../services/backtestService'
+import { getBacktestCapabilities, runBacktest } from '../services/backtestService'
 
 const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 
@@ -19,6 +19,27 @@ export default function Backtesting() {
   const [response, setResponse] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [capabilities, setCapabilities] = useState(null)
+  const [capabilitiesError, setCapabilitiesError] = useState('')
+
+  useEffect(() => {
+    let active = true
+
+    getBacktestCapabilities().then((result) => {
+      if (!active) return
+      if (result.success) {
+        setCapabilities(result)
+        setCapabilitiesError('')
+      } else {
+        setCapabilities(null)
+        setCapabilitiesError(result.error || 'Unable to load supported backtest symbols.')
+      }
+    })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   async function handleRun({ symbol, strategy, capital }) {
     setLoading(true)
@@ -87,9 +108,23 @@ export default function Backtesting() {
         </div>
       )}
 
+      {capabilitiesError && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-xs font-semibold text-amber-300">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+          <span>{capabilitiesError}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <BacktestForm onRun={handleRun} loading={loading} error={error} />
+          <BacktestForm
+            onRun={handleRun}
+            loading={loading}
+            error={error}
+            supportedSymbols={capabilities?.supportedSymbols || []}
+            supportedStrategies={capabilities?.strategies || []}
+            historicalProvider={capabilities?.historicalProvider}
+          />
         </motion.div>
 
         <div className="lg:col-span-2 space-y-3.5">

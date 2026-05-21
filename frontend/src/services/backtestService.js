@@ -56,6 +56,37 @@ export const runBacktest = async (params = {}) => {
   }
 }
 
+export const getBacktestCapabilities = async () => {
+  try {
+    const response = await api.get('/backtest/strategies')
+    const payload = response.data || {}
+
+    return {
+      success: payload.success !== false,
+      timestamp: payload.timestamp || null,
+      strategies: normalizeArray(payload.strategies).filter(Boolean),
+      supportedSymbols: normalizeArray(payload.supportedSymbols).filter(Boolean),
+      historicalProvider: payload.historicalProvider || null,
+      marketType: payload.marketType || null,
+      error: payload.error || null,
+    }
+  } catch (error) {
+    const apiError = extractApiError(error)
+    const payload = apiError.data || {}
+
+    return {
+      success: false,
+      timestamp: payload.timestamp || null,
+      strategies: [],
+      supportedSymbols: [],
+      historicalProvider: payload.historicalProvider || null,
+      marketType: payload.marketType || null,
+      error: payload.error || payload.message || apiError.message || 'Unable to load backtest capabilities.',
+    }
+  }
+}
+
 export default {
   runBacktest,
+  getBacktestCapabilities,
 }

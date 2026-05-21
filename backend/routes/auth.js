@@ -102,12 +102,12 @@ function buildResetUrl(email, token) {
   return url.toString();
 }
 
-function validateResetPassword(password) {
+function validatePassword(password, fieldName = 'password') {
   if (typeof password !== 'string' || password.length < 8) {
-    return 'newPassword must be at least 8 characters.';
+    return `${fieldName} must be at least 8 characters.`;
   }
   if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-    return 'newPassword must include at least one letter and one number.';
+    return `${fieldName} must include at least one letter and one number.`;
   }
   return null;
 }
@@ -140,6 +140,14 @@ router.post('/signup', async (req, res) => {
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'All fields required' });
+    }
+    if (!isEmail(email)) {
+      return res.status(400).json({ message: 'A valid email is required.' });
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ message: passwordError });
     }
 
     const existing = await User.findOne({ email });
@@ -238,7 +246,7 @@ router.post('/reset-password', async (req, res) => {
     const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
     const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
     const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
-    const passwordError = validateResetPassword(newPassword);
+    const passwordError = validatePassword(newPassword, 'newPassword');
 
     if (!isEmail(email)) {
       return res.status(400).json(authActionError('A valid email is required.'));

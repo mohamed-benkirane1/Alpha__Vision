@@ -21,36 +21,36 @@ const NAV_LINKS = [
 ]
 
 const STATS = [
-  { icon: Users,      end: 10000, suffix: '+', div: 1,   label: 'Active Traders'  },
-  { icon: Target,     end: 987,   suffix: '%', div: 10,  label: 'Signal Accuracy' },
-  { icon: TrendingUp, end: 248,   suffix: 'B', div: 100, prefix: '$', label: 'Volume Traded' },
-  { icon: Clock,      end: null,               label: 'AI Monitoring'  },
+  { icon: Users, value: 'Live', label: 'Backend auth' },
+  { icon: Target, value: 'Live', label: 'Quote metadata' },
+  { icon: TrendingUp, value: 'Live', label: 'Trade writes' },
+  { icon: Clock, value: 'Next', label: 'Signal provider' },
 ]
 
 const FEATURES = [
-  { icon: Brain,       color: '#e11d48', glow: 'rgba(225,29,72,0.5)',  title: 'AI Signal Engine',    badge: '87% acc.',     desc: 'Neural networks cross-validate 200+ indicators to generate high-confidence trade signals in real-time.' },
-  { icon: BarChart3,   color: '#f59e0b', glow: 'rgba(245,158,11,0.5)', title: 'Instant Backtesting', badge: '5Y history',   desc: 'Replay any strategy against 5 years of historical data in under 2 seconds.' },
-  { icon: Activity,    color: '#06b6d4', glow: 'rgba(6,182,212,0.5)',  title: 'Live Portfolio',       badge: 'Real-time',    desc: 'Real-time P&L tracking, risk metrics, and rebalancing alerts across all positions.' },
-  { icon: Shield,      color: '#10b981', glow: 'rgba(16,185,129,0.5)', title: 'Risk Management',      badge: 'Protected',    desc: 'Automated stop-loss, position sizing, and drawdown protection powered by ML models.' },
-  { icon: Bot,         color: '#8b5cf6', glow: 'rgba(139,92,246,0.5)', title: 'Trading Bot 24/7',     badge: 'Automated',    desc: 'Deploy bots that execute signals around the clock with zero emotional bias.' },
-  { icon: LineChart,   color: '#e11d48', glow: 'rgba(225,29,72,0.5)',  title: 'Market Intelligence',  badge: 'Sentiment AI', desc: 'Sentiment analysis, news monitoring, and macro trend detection in one unified view.' },
+  { icon: Brain, color: '#e11d48', glow: 'rgba(225,29,72,0.5)', title: 'AI Signal Engine', badge: 'Provider next', desc: 'The signal endpoint still needs a real model/provider integration before predictions are shown.' },
+  { icon: BarChart3, color: '#f59e0b', glow: 'rgba(245,158,11,0.5)', title: 'Backtesting', badge: 'Binance crypto', desc: 'The current backtest engine uses supported Binance crypto history and rejects unsupported assets.' },
+  { icon: Activity, color: '#06b6d4', glow: 'rgba(6,182,212,0.5)', title: 'Live Portfolio', badge: 'Data quality', desc: 'Portfolio valuation returns backend price metadata, warnings, and reliability flags.' },
+  { icon: Shield, color: '#10b981', glow: 'rgba(16,185,129,0.5)', title: 'Execution Guardrails', badge: 'Backend', desc: 'Trade execution rejects stale, fallback, and unavailable prices before balance changes.' },
+  { icon: Bot, color: '#8b5cf6', glow: 'rgba(139,92,246,0.5)', title: 'Trading Bot', badge: 'Controller only', desc: 'Bot status is wired to the backend controller; the real autonomous engine is the next integration.' },
+  { icon: LineChart, color: '#e11d48', glow: 'rgba(225,29,72,0.5)', title: 'Market Intelligence', badge: 'Provider-backed', desc: 'Quotes and news expose provider status instead of hiding fallback or unavailable data.' },
 ]
 
 const HOW = [
-  { step: '01', title: 'Connect & Configure',  desc: 'Link your portfolio, set risk tolerance, and select your preferred assets and strategies.' },
-  { step: '02', title: 'AI Analyzes Markets',   desc: 'The engine processes thousands of technical, on-chain, and sentiment signals per second.'   },
-  { step: '03', title: 'Execute & Compound',    desc: 'Act on AI signals manually or let the bot run 24/7 with full risk controls active.'         },
+  { step: '01', title: 'Create an Account', desc: 'Authenticate through backend auth, add demo cash when needed, and choose supported assets.' },
+  { step: '02', title: 'Inspect Backend Data', desc: 'Quotes, portfolio valuation, and provider warnings stay visible before you act.' },
+  { step: '03', title: 'Execute and Verify', desc: 'Place BUY/SELL orders through backend trade execution and verify portfolio impact.' },
 ]
 
 const BENEFITS = [
-  'No financial expertise required',
-  'Institutional-grade algorithms',
-  'Crypto, stocks & forex support',
-  'Full strategy backtesting suite',
-  'Automated 24/7 trading bot',
-  'Real-time portfolio analytics',
-  'Advanced risk management',
-  'Cancel anytime — no lock-in',
+  'Backend source of truth',
+  'Price quality metadata',
+  'Crypto trading flow',
+  'Supported historical backtests',
+  'Bot controller transparency',
+  'Portfolio valuation warnings',
+  'Stripe and demo funding split',
+  'Provider gaps documented',
 ]
 
 const PLAN_COLORS = { free: '#64748b', pro: '#e11d48', elite: '#f59e0b' }
@@ -88,7 +88,7 @@ function FadeUp({ children, delay = 0, className = '' }) {
   )
 }
 
-function Counter({ end, suffix = '', prefix = '', div = 1 }) {
+function Counter({ end, suffix = '', prefix = '', div = 1, value = null }) {
   const [count, setCount] = useState(0)
   const ref    = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-60px' })
@@ -108,8 +108,8 @@ function Counter({ end, suffix = '', prefix = '', div = 1 }) {
 
   return (
     <span ref={ref}>
-      {end === null
-        ? '24/7'
+      {value || end === null
+        ? value || '24/7'
         : `${prefix}${(count / div).toFixed(div > 1 ? (div >= 100 ? 2 : 1) : 0)}${suffix}`}
     </span>
   )
@@ -499,14 +499,14 @@ export default function Home() {
           <div className="shrink-0 border-t border-white/[0.06] bg-[#040108]/85 backdrop-blur-xl">
             <div className="max-w-7xl mx-auto px-6 sm:px-8">
               <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/[0.06]">
-                {STATS.map(({ icon: Icon, label, end, suffix, prefix, div }) => (
+                {STATS.map(({ icon: Icon, label, end, suffix, prefix, div, value }) => (
                   <div key={label} className="flex items-center gap-3 px-5 xl:px-8 py-5">
                     <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
                       <Icon size={13} className="text-rose-400" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-[19px] font-black text-white leading-none tabular-nums">
-                        <Counter end={end} suffix={suffix} prefix={prefix} div={div} />
+                        <Counter end={end} suffix={suffix} prefix={prefix} div={div} value={value} />
                       </p>
                       <p className="text-[11px] text-slate-600 mt-[3px] font-medium truncate">{label}</p>
                     </div>
@@ -533,7 +533,7 @@ export default function Home() {
                 </span>
               </h2>
               <p className="text-slate-500 text-sm font-medium max-w-md mx-auto leading-relaxed">
-                Built for every level — from your first signal to fully automated portfolio management.
+                Built around current backend flows while advanced signal and automation providers are integrated.
               </p>
             </FadeUp>
 
@@ -578,7 +578,7 @@ export default function Home() {
               <SectionBadge color="#f59e0b"><TrendingUp size={10} /> Simple by design</SectionBadge>
               <h2 className="text-4xl font-black text-white tracking-tight mb-4">How It Works</h2>
               <p className="text-slate-500 text-sm font-medium max-w-sm mx-auto leading-relaxed">
-                From setup to first signal in under 5 minutes.
+                From authenticated setup to backend-verified trading flow.
               </p>
             </FadeUp>
 
@@ -622,11 +622,11 @@ export default function Home() {
                   </span>
                 </h2>
                 <p className="text-sm text-slate-400 leading-relaxed font-medium mb-6">
-                  Real-time signals, portfolio performance, market news, and bot controls — all in one
-                  clean, distraction-free interface.
+                  Backend-backed market quotes, trade writes, portfolio valuation, and provider status in one
+                  clean, focused interface.
                 </p>
                 <div className="space-y-3 mb-8">
-                  {['Real-time AI signal feed', 'Portfolio P&L with risk metrics', 'One-click bot deployment', 'News sentiment overlay'].map((item) => (
+                  {['Backend market quote metadata', 'Portfolio valuation quality flags', 'Trading execution metadata', 'Provider-backed news visibility'].map((item) => (
                     <div key={item} className="flex items-center gap-3">
                       <div className="w-5 h-5 rounded-full bg-rose-500/15 border border-rose-500/28 flex items-center justify-center shrink-0">
                         <Check size={10} className="text-rose-400" />
@@ -641,7 +641,7 @@ export default function Home() {
                 </Link>
               </FadeUp>
 
-              {/* Dashboard mock */}
+              {/* Dashboard product preview */}
               <FadeUp delay={0.15} className="relative">
                 <div className="absolute -inset-4 bg-rose-500/5 rounded-3xl blur-2xl" />
                 <div className="relative bg-[#0d0212]/90 border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_80px_rgba(225,29,72,0.07)] backdrop-blur-xl">
@@ -656,17 +656,17 @@ export default function Home() {
                         <span className="text-[10px] text-slate-600 font-mono">alphavision.app/dashboard</span>
                       </div>
                     </div>
-                    <span className="text-[10px] text-rose-400 font-black bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">● LIVE</span>
+                    <span className="text-[10px] text-rose-400 font-black bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">PREVIEW</span>
                   </div>
 
                   <div className="p-4">
                     {/* Mini stat cards */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                       {[
-                        { label: 'Portfolio',   val: '$24,810', sub: '+12.4%',   color: '#10b981' },
-                        { label: "Today P&L",   val: '+$842',   sub: '+3.5%',    color: '#10b981' },
-                        { label: 'Win Rate',     val: '72.4%',   sub: '48 trades',color: '#e11d48' },
-                        { label: 'AI Signals',   val: '3 BUY',   sub: 'active',   color: '#e11d48' },
+                        { label: 'Market quotes', val: 'Backend', sub: 'metadata', color: '#10b981' },
+                        { label: 'Trade writes', val: 'Real', sub: 'executed', color: '#10b981' },
+                        { label: 'AI signals', val: 'Provider', sub: 'pending', color: '#e11d48' },
+                        { label: 'Bot engine', val: 'Backend', sub: 'pending', color: '#e11d48' },
                       ].map((s) => (
                         <div key={s.label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
                           <p className="text-[9px] text-slate-600 font-medium mb-1 truncate">{s.label}</p>
@@ -680,7 +680,7 @@ export default function Home() {
                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3 mb-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold text-white">Portfolio Performance</span>
-                        <span className="text-[10px] text-emerald-400 font-black">+12.4% / 30D</span>
+                        <span className="text-[10px] text-amber-400 font-black">Snapshots pending</span>
                       </div>
                       <svg viewBox="0 0 400 72" className="w-full" style={{ height: 72 }}>
                         <defs>
@@ -701,11 +701,11 @@ export default function Home() {
                     <div className="flex items-center justify-between px-3 py-2.5 bg-rose-500/[0.06] border border-rose-500/20 rounded-xl">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
-                        <span className="text-xs font-black text-white">BTC / USDT</span>
-                        <span className="text-[10px] font-black text-rose-400 bg-rose-500/15 px-1.5 py-0.5 rounded">STRONG BUY</span>
+                        <span className="text-xs font-black text-white">AI signal endpoint</span>
+                        <span className="text-[10px] font-black text-rose-400 bg-rose-500/15 px-1.5 py-0.5 rounded">PENDING</span>
                       </div>
                       <span className="text-[10px] text-slate-500 font-medium">
-                        Conf: <span className="text-rose-400 font-black">89%</span>
+                        Provider: <span className="text-rose-400 font-black">required</span>
                       </span>
                     </div>
                   </div>
@@ -884,7 +884,7 @@ export default function Home() {
                 </span>
               </h2>
               <p className="text-slate-500 text-sm font-medium max-w-md mx-auto leading-relaxed">
-                Our team responds within 24 hours. Whether it&apos;s a technical question or a partnership inquiry — we&apos;d love to hear from you.
+                The support form still needs a real delivery endpoint before contact messages can be sent.
               </p>
             </FadeUp>
             <FadeUp delay={0.1}>
@@ -909,11 +909,10 @@ export default function Home() {
                   </div>
                   <motion.button
                     type="button"
-                    whileHover={{ scale: 1.01, boxShadow: '0 0 28px rgba(225,29,72,0.42)' }}
-                    whileTap={{ scale: 0.98 }}
-                    className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_22px_rgba(225,29,72,0.28)]"
+                    disabled
+                    className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-700 disabled:cursor-not-allowed disabled:opacity-55 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_22px_rgba(225,29,72,0.28)]"
                   >
-                    Send Message <ArrowRight size={15} />
+                    Contact delivery pending <ArrowRight size={15} />
                   </motion.button>
                 </div>
               </div>
@@ -941,7 +940,7 @@ export default function Home() {
                 </span>
               </h2>
               <p className="text-slate-400 text-sm font-medium leading-relaxed mb-8 max-w-md mx-auto">
-                Join 10,000+ traders who use Alpha Vision every day. Get your first AI signal in minutes — no credit card required.
+                Use the real auth, quote, trade, portfolio, news, and payment flows now while the remaining providers are integrated.
               </p>
               <div className="flex items-center justify-center gap-4 flex-wrap">
                 <Link to="/signup"
