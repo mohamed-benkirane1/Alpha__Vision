@@ -16,6 +16,7 @@ const Trading        = lazy(() => import('../pages/Trading'))
 const Backtesting    = lazy(() => import('../pages/Backtesting'))
 const TradingBot     = lazy(() => import('../pages/TradingBot'))
 const Settings       = lazy(() => import('../pages/Settings'))
+const Payments       = lazy(() => import('../pages/Payments'))
 const NotFound       = lazy(() => import('../pages/NotFound'))
 
 // ── Brand-aligned loading fallback ────────────────────────────────────────────
@@ -59,6 +60,7 @@ function AppRoutes() {
             <Route path="/trading"     element={<Trading />}    />
             <Route path="/backtesting" element={<Backtesting />}/>
             <Route path="/bot"         element={<TradingBot />} />
+            <Route path="/payments"    element={<Payments />}   />
             <Route path="/settings"    element={<Settings />}   />
           </Route>
         </Route>

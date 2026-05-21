@@ -1,43 +1,95 @@
 const router = require('express').Router();
+const express = require('express');
+const createStripeClient = require('stripe');
 const auth = require('../middleware/auth');
 const User = require('../models/user');
 const Transaction = require('../models/Transaction');
-const createStripeClient = require('stripe');
-const express = require('express');
 
 const PLANS = {
-  free: { price: 0, features: ['1 API call/min', '5 trades/jour'] },
-  pro: { price: 2999, features: ['10 API calls/min', '50 trades/jour', 'Backtesting'] },
-  elite: { price: 9999, features: ['Unlimited API calls', '1000 trades/jour', 'AI Assistant', 'Trading bot'] }
+  free: {
+    id: 'free',
+    label: 'Free',
+    price: 0,
+    currency: 'eur',
+    features: ['1 API call/min', '5 trades/jour'],
+  },
+  pro: {
+    id: 'pro',
+    label: 'Pro',
+    price: 2999,
+    currency: 'eur',
+    features: ['10 API calls/min', '50 trades/jour', 'Backtesting'],
+  },
+  elite: {
+    id: 'elite',
+    label: 'Elite',
+    price: 9999,
+    currency: 'eur',
+    features: ['Unlimited API calls', '1000 trades/jour', 'AI Assistant', 'Trading bot'],
+  },
+};
+
+const FEATURES = {
+  free: {
+    realTimePrices: true,
+    news: true,
+    tradesPerDay: 5,
+    backtesting: false,
+    chatbot: false,
+    tradingBot: false,
+    apiCallsPerDay: 10,
+  },
+  pro: {
+    realTimePrices: true,
+    news: true,
+    tradesPerDay: 50,
+    backtesting: true,
+    chatbot: false,
+    tradingBot: false,
+    apiCallsPerDay: 100,
+  },
+  elite: {
+    realTimePrices: true,
+    news: true,
+    tradesPerDay: 1000,
+    backtesting: true,
+    chatbot: true,
+    tradingBot: true,
+    apiCallsPerDay: 1000,
+  },
 };
 
 const MAX_DEMO_DEPOSIT = 100000;
+const MIN_STRIPE_DEPOSIT = 10;
+const MAX_STRIPE_DEPOSIT = 100000;
+
+function nowIso() {
+  return new Date().toISOString();
+}
 
 function isDemoFundingAllowed() {
   return process.env.ALLOW_DEMO_FUNDING === 'true';
 }
 
-function parseDemoDepositAmount(body) {
-  const amount = Number(body?.amount);
+function isStripeSecretConfigured() {
+  return Boolean(process.env.STRIPE_SECRET_KEY);
+}
 
-  if (!Number.isFinite(amount)) {
-    return { error: 'amount is required and must be numeric' };
-  }
+function isStripeWebhookConfigured() {
+  return Boolean(process.env.STRIPE_WEBHOOK_SECRET);
+}
 
-  if (amount <= 0) {
-    return { error: 'amount must be greater than 0' };
-  }
+function isStripeConfigured() {
+  return isStripeSecretConfigured() && isStripeWebhookConfigured();
+}
 
-  if (amount > MAX_DEMO_DEPOSIT) {
-    return { error: `amount must be less than or equal to ${MAX_DEMO_DEPOSIT}` };
-  }
-
-  return { amount: Number(amount.toFixed(2)) };
+function getFrontendUrl() {
+  return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
 }
 
 function getStripeClient() {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    const error = new Error('Stripe is not configured');
+  if (!isStripeSecretConfigured()) {
+    const error = new Error('Payment provider unavailable');
     error.statusCode = 503;
     throw error;
   }
@@ -45,249 +97,455 @@ function getStripeClient() {
   return createStripeClient(process.env.STRIPE_SECRET_KEY);
 }
 
-// 1. Obtenir les plans disponibles
+function getStripeWarnings() {
+  const warnings = [];
+  if (!isStripeSecretConfigured()) warnings.push('Stripe secret key is not configured on the backend.');
+  if (!isStripeWebhookConfigured()) warnings.push('Stripe webhook secret is not configured on the backend.');
+  return warnings;
+}
+
+function paymentError(error, extras = {}) {
+  return {
+    success: false,
+    timestamp: nowIso(),
+    source: 'backend',
+    provider: 'stripe',
+    warnings: [],
+    error,
+    ...extras,
+  };
+}
+
+function getSubscription(user) {
+  const plan = PLANS[user?.plan] ? user.plan : 'free';
+  const planExpiresAt = user?.planExpiresAt || null;
+  const expiresAt = planExpiresAt ? new Date(planExpiresAt) : null;
+
+  let status = 'inactive';
+  if (plan !== 'free') {
+    if (!expiresAt || Number.isNaN(expiresAt.getTime())) status = 'unknown';
+    else status = expiresAt.getTime() > Date.now() ? 'active' : 'expired';
+  }
+
+  return {
+    plan,
+    planExpiresAt,
+    status,
+  };
+}
+
+function statusResponse(user) {
+  const balance = Number(user?.balance);
+
+  return {
+    success: true,
+    timestamp: nowIso(),
+    source: 'backend',
+    provider: 'stripe',
+    stripeConfigured: isStripeConfigured(),
+    stripeSecretConfigured: isStripeSecretConfigured(),
+    webhookConfigured: isStripeWebhookConfigured(),
+    demoFundingEnabled: isDemoFundingAllowed(),
+    subscription: getSubscription(user),
+    balance: Number.isFinite(balance) ? balance : 0,
+    features: FEATURES[user?.plan] || FEATURES.free,
+    warnings: getStripeWarnings(),
+    error: null,
+  };
+}
+
+function checkoutUnavailableResponse() {
+  return paymentError('Payment provider unavailable', {
+    stripeConfigured: false,
+    checkoutUrl: null,
+    sessionId: null,
+    warnings: getStripeWarnings().length
+      ? getStripeWarnings()
+      : ['Stripe is not configured on the backend.'],
+  });
+}
+
+function parseAmount(value, { min = 0, max = Number.POSITIVE_INFINITY } = {}) {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount)) return { error: 'amount is required and must be numeric' };
+  if (amount <= min) return { error: `amount must be greater than ${min}` };
+  if (amount > max) return { error: `amount must be less than or equal to ${max}` };
+
+  return { amount: Number(amount.toFixed(2)) };
+}
+
+function parseDemoDepositAmount(body) {
+  return parseAmount(body?.amount, { min: 0, max: MAX_DEMO_DEPOSIT });
+}
+
+function checkoutBaseConfig(userId, metadata) {
+  const frontendUrl = getFrontendUrl();
+
+  return {
+    payment_method_types: ['card'],
+    mode: 'payment',
+    success_url: `${frontendUrl}/payments?checkout=returned&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${frontendUrl}/payments?checkout=cancelled`,
+    metadata: {
+      userId: String(userId),
+      ...metadata,
+    },
+  };
+}
+
+function createCheckoutConfig(userId, body = {}) {
+  const type = typeof body.type === 'string' ? body.type.trim().toLowerCase() : '';
+
+  if (type === 'subscription') {
+    const planId = typeof body.planId === 'string' ? body.planId.trim().toLowerCase() : '';
+    const plan = PLANS[planId];
+
+    if (!plan || plan.id === 'free' || plan.price <= 0) {
+      return { error: 'Invalid paid subscription plan.' };
+    }
+
+    return {
+      sessionConfig: {
+        ...checkoutBaseConfig(userId, { type: 'subscription', plan: plan.id }),
+        line_items: [{
+          price_data: {
+            currency: plan.currency,
+            product_data: {
+              name: `Alpha Vision ${plan.label}`,
+              description: `Access to the ${plan.label} plan for 30 days`,
+            },
+            unit_amount: plan.price,
+          },
+          quantity: 1,
+        }],
+      },
+    };
+  }
+
+  if (type === 'deposit') {
+    const input = parseAmount(body.amount, { min: MIN_STRIPE_DEPOSIT - 0.01, max: MAX_STRIPE_DEPOSIT });
+    if (input.error) return { error: input.error };
+
+    return {
+      sessionConfig: {
+        ...checkoutBaseConfig(userId, { type: 'deposit', amount: String(input.amount) }),
+        line_items: [{
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: `Trading balance deposit`,
+              description: `Add ${input.amount} EUR to your Alpha Vision trading balance`,
+            },
+            unit_amount: Math.round(input.amount * 100),
+          },
+          quantity: 1,
+        }],
+      },
+    };
+  }
+
+  return { error: 'Invalid checkout type.' };
+}
+
+async function fulfillCheckoutSession(session) {
+  if (!session || session.payment_status !== 'paid') return;
+
+  const userId = session.metadata?.userId;
+  const type = session.metadata?.type;
+  const plan = session.metadata?.plan;
+  const existing = await Transaction.findOne({ transactionId: session.id });
+
+  if (!userId || existing) return;
+
+  if (type === 'subscription' && PLANS[plan] && plan !== 'free') {
+    const user = await User.findById(userId);
+    if (!user) return;
+
+    user.plan = plan;
+    user.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    user.updatedAt = new Date();
+    await user.save();
+
+    await Transaction.create({
+      userId,
+      type: 'subscription',
+      amount: PLANS[plan].price / 100,
+      plan,
+      paymentMethod: 'card',
+      transactionId: session.id,
+      stripeSessionId: session.id,
+      status: 'completed',
+    });
+  }
+
+  if (type === 'deposit') {
+    const amount = Number(session.amount_total) / 100;
+    if (!Number.isFinite(amount) || amount <= 0) return;
+
+    const user = await User.findById(userId);
+    if (!user) return;
+
+    const balance = Number(user.balance);
+    user.balance = Number(((Number.isFinite(balance) ? balance : 0) + amount).toFixed(2));
+    user.updatedAt = new Date();
+    await user.save();
+
+    await Transaction.create({
+      userId,
+      type: 'deposit',
+      amount,
+      paymentMethod: 'card',
+      transactionId: session.id,
+      stripeSessionId: session.id,
+      status: 'completed',
+    });
+  }
+}
+
 router.get('/plans', (req, res) => {
-  res.json(PLANS);
+  res.json({
+    success: true,
+    timestamp: nowIso(),
+    source: 'backend',
+    provider: 'stripe',
+    stripeConfigured: isStripeConfigured(),
+    plans: Object.values(PLANS),
+    warnings: getStripeWarnings(),
+    error: null,
+  });
 });
 
 // Demo funding for PFA/dev environments only. This is not a real payment.
 router.post('/demo-deposit', auth, async (req, res) => {
   try {
     if (!isDemoFundingAllowed()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Demo funding is disabled'
-      });
+      return res.status(403).json(paymentError('Demo funding is disabled', {
+        source: 'demo',
+        provider: 'internal-demo-funding',
+        demo: true,
+        balance: null,
+        message: 'Demo funding is disabled',
+        warnings: ['Demo funding is disabled on the backend.'],
+      }));
     }
 
     const input = parseDemoDepositAmount(req.body);
     if (input.error) {
-      return res.status(400).json({
-        success: false,
-        message: input.error
-      });
+      return res.status(400).json(paymentError(input.error, {
+        source: 'demo',
+        provider: 'internal-demo-funding',
+        demo: true,
+        balance: null,
+        message: input.error,
+      }));
     }
 
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      return res.status(404).json(paymentError('User not found', {
+        source: 'demo',
+        provider: 'internal-demo-funding',
+        demo: true,
+        balance: null,
+        message: 'User not found',
+      }));
     }
 
-    const currentBalance = Number(user.balance);
-    user.balance = Number(((Number.isFinite(currentBalance) ? currentBalance : 0) + input.amount).toFixed(2));
+    const balance = Number(user.balance);
+    user.balance = Number(((Number.isFinite(balance) ? balance : 0) + input.amount).toFixed(2));
+    user.updatedAt = new Date();
     await user.save();
 
-    res.json({
+    return res.json({
       success: true,
-      message: 'Demo balance added',
-      balance: user.balance
+      timestamp: nowIso(),
+      source: 'demo',
+      provider: 'internal-demo-funding',
+      demo: true,
+      balance: user.balance,
+      message: 'Demo funds added',
+      warnings: ['Demo funding is enabled. This is not a real payment.'],
+      error: null,
     });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message || 'Server error'
-    });
+    return res.status(500).json(paymentError(err.message || 'Unable to add demo funds', {
+      source: 'demo',
+      provider: 'internal-demo-funding',
+      demo: true,
+      balance: null,
+      message: 'Unable to add demo funds',
+    }));
   }
 });
 
-// 2. Créer une session de paiement Stripe
 router.post('/create-checkout-session', auth, async (req, res) => {
   try {
-    const { type, planId, amount } = req.body;
-    const user = await User.findById(req.user.id);
-    
-    let sessionConfig = {};
-    
-    if (type === 'subscription' && planId && PLANS[planId]) {
-      sessionConfig = {
-        payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: `Abonnement Alpha Vision ${planId.toUpperCase()}`,
-              description: `Accès au plan ${planId} pour 30 jours`,
-            },
-            unit_amount: PLANS[planId].price,
-          },
-          quantity: 1,
-        }],
-        mode: 'payment',
-        success_url: 'http://localhost:5171/payment/success?session_id={CHECKOUT_SESSION_ID}&type=subscription&plan=' + planId,
-        cancel_url: 'http://localhost:5171/payment/cancel',
-        metadata: {
-          userId: req.user.id,
-          type: 'subscription',
-          plan: planId
-        }
-      };
-    } else if (type === 'deposit' && amount && amount >= 10) {
-      sessionConfig = {
-        payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: `Dépôt de ${amount} €`,
-              description: `Ajout de ${amount} € à votre solde de trading`,
-            },
-            unit_amount: amount * 100,
-          },
-          quantity: 1,
-        }],
-        mode: 'payment',
-        success_url: 'http://localhost:5171/payment/success?session_id={CHECKOUT_SESSION_ID}&type=deposit&amount=' + amount,
-        cancel_url: 'http://localhost:5171/payment/cancel',
-        metadata: {
-          userId: req.user.id,
-          type: 'deposit',
-          amount: amount
-        }
-      };
-    } else {
-      return res.status(400).json({ message: 'Paramètres invalides' });
+    const input = createCheckoutConfig(req.user.id, req.body);
+    if (input.error) {
+      return res.status(400).json(paymentError(input.error, {
+        stripeConfigured: isStripeConfigured(),
+        checkoutUrl: null,
+        sessionId: null,
+      }));
     }
-    
+
+    if (!isStripeConfigured()) {
+      return res.status(503).json(checkoutUnavailableResponse());
+    }
+
     const stripe = getStripeClient();
-    const session = await stripe.checkout.sessions.create(sessionConfig);
-    res.json({ id: session.id, url: session.url });
-    
+    const session = await stripe.checkout.sessions.create(input.sessionConfig);
+
+    return res.json({
+      success: true,
+      timestamp: nowIso(),
+      source: 'backend',
+      provider: 'stripe',
+      stripeConfigured: true,
+      checkoutUrl: session.url || null,
+      sessionId: session.id || null,
+      warnings: [],
+      error: null,
+    });
   } catch (err) {
-    res.status(err.statusCode || 500).json({ message: err.message });
+    return res.status(err.statusCode || 500).json(paymentError(err.message || 'Unable to create checkout session', {
+      stripeConfigured: isStripeConfigured(),
+      checkoutUrl: null,
+      sessionId: null,
+      warnings: err.statusCode === 503 ? getStripeWarnings() : [],
+    }));
   }
 });
 
-// 3. Webhook Stripe
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!isStripeSecretConfigured() || !isStripeWebhookConfigured()) {
+    return res.status(503).json(paymentError('Stripe webhook is not configured', {
+      stripeConfigured: false,
+      warnings: getStripeWarnings(),
+    }));
+  }
+
   const sig = req.headers['stripe-signature'];
   let event;
-  
+
   try {
     const stripe = getStripeClient();
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+  } catch {
+    return res.status(400).json(paymentError('Invalid Stripe webhook signature', {
+      stripeConfigured: true,
+    }));
   }
-  
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const { userId, type, plan, amount } = session.metadata;
-    
-    if (type === 'subscription') {
-      await User.findByIdAndUpdate(userId, {
-        plan: plan,
-        planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      });
-      
-      await Transaction.create({
-        userId: userId,
-        type: 'subscription',
-        amount: PLANS[plan].price / 100,
-        plan: plan,
-        paymentMethod: 'card',
-        transactionId: session.id,
-        status: 'completed'
-      });
-      
-    } else if (type === 'deposit') {
-      await User.findByIdAndUpdate(userId, {
-        $inc: { balance: parseFloat(amount) }
-      });
-      
-      await Transaction.create({
-        userId: userId,
-        type: 'deposit',
-        amount: parseFloat(amount),
-        paymentMethod: 'card',
-        transactionId: session.id,
-        status: 'completed'
-      });
+
+  try {
+    if (event.type === 'checkout.session.completed') {
+      await fulfillCheckoutSession(event.data.object);
     }
+
+    return res.json({
+      success: true,
+      timestamp: nowIso(),
+      source: 'stripe-webhook',
+      provider: 'stripe',
+      received: true,
+      eventType: event.type,
+      warnings: [],
+      error: null,
+    });
+  } catch (err) {
+    return res.status(500).json(paymentError(err.message || 'Unable to process Stripe webhook', {
+      stripeConfigured: true,
+    }));
   }
-  
-  res.json({ received: true });
 });
 
-// 4. Vérifier le statut d'une transaction
 router.get('/check-session/:sessionId', auth, async (req, res) => {
   try {
     const stripe = getStripeClient();
     const session = await stripe.checkout.sessions.retrieve(req.params.sessionId);
-    res.json({ status: session.payment_status });
+
+    if (String(session.metadata?.userId || '') !== String(req.user.id)) {
+      return res.status(403).json(paymentError('Checkout session does not belong to current user', {
+        stripeConfigured: isStripeConfigured(),
+        paymentStatus: null,
+      }));
+    }
+
+    return res.json({
+      success: true,
+      timestamp: nowIso(),
+      source: 'backend',
+      provider: 'stripe',
+      stripeConfigured: isStripeConfigured(),
+      sessionId: session.id,
+      paymentStatus: session.payment_status || null,
+      warnings: [],
+      error: null,
+    });
   } catch (err) {
-    res.status(err.statusCode || 500).json({ message: err.message });
+    return res.status(err.statusCode || 500).json(paymentError(err.message || 'Unable to check Stripe session', {
+      stripeConfigured: isStripeConfigured(),
+      paymentStatus: null,
+      warnings: err.statusCode === 503 ? getStripeWarnings() : [],
+    }));
   }
 });
 
-// 5. Obtenir le solde et plan de l'utilisateur
 router.get('/status', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('balance plan planExpiresAt');
-    res.json({
-      balance: user.balance,
-      plan: user.plan,
-      planExpiresAt: user.planExpiresAt,
-      features: PLANS[user.plan].features
-    });
+    if (!user) {
+      return res.status(404).json(paymentError('User not found'));
+    }
+
+    return res.json(statusResponse(user));
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json(paymentError(err.message || 'Unable to load payment status'));
   }
 });
 
-// 6. Historique des transactions
 router.get('/transactions', auth, async (req, res) => {
   try {
-    const transactions = await Transaction.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(50);
-    res.json(transactions);
+    const transactions = await Transaction.find({ userId: req.user.id })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.json({
+      success: true,
+      timestamp: nowIso(),
+      source: 'backend',
+      provider: 'stripe',
+      transactions,
+      warnings: [],
+      error: null,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json(paymentError(err.message || 'Unable to load transactions', {
+      transactions: [],
+    }));
   }
 });
 
-// 7. Obtenir les fonctionnalités selon le plan
 router.get('/features', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    
-    const features = {
-      free: {
-        realTimePrices: true,
-        news: true,
-        tradesPerDay: 5,
-        backtesting: false,
-        chatbot: false,
-        tradingBot: false,
-        apiCallsPerDay: 10
-      },
-      pro: {
-        realTimePrices: true,
-        news: true,
-        tradesPerDay: 50,
-        backtesting: true,
-        chatbot: false,
-        tradingBot: false,
-        apiCallsPerDay: 100
-      },
-      elite: {
-        realTimePrices: true,
-        news: true,
-        tradesPerDay: 1000,
-        backtesting: true,
-        chatbot: true,
-        tradingBot: true,
-        apiCallsPerDay: 1000
-      }
-    };
-    
-    res.json({
-      currentPlan: user.plan,
-      features: features[user.plan]
+    const user = await User.findById(req.user.id).select('plan');
+    if (!user) {
+      return res.status(404).json(paymentError('User not found'));
+    }
+
+    return res.json({
+      success: true,
+      timestamp: nowIso(),
+      source: 'backend',
+      provider: 'stripe',
+      currentPlan: PLANS[user.plan] ? user.plan : 'free',
+      features: FEATURES[user.plan] || FEATURES.free,
+      warnings: [],
+      error: null,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json(paymentError(err.message || 'Unable to load plan features'));
   }
 });
 

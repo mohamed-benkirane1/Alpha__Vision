@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import PriceTicker from '../components/ambient/PriceTicker'
+import { getPlans } from '../services/paymentService'
 // heroImage supprimé — composition 3D abstraite remplace le taureau
 import heroBg3D  from '../assets/reference/home-hero-3d-bg.jpg'
 
@@ -52,20 +53,7 @@ const BENEFITS = [
   'Cancel anytime — no lock-in',
 ]
 
-const PRICING = [
-  {
-    name: 'Starter', price: 'Free',   sub: 'forever',   color: '#64748b', featured: false,
-    features: ['5 assets tracked', 'Basic AI signals', 'Portfolio overview', '7-day backtest'],
-  },
-  {
-    name: 'Pro',     price: '$29',    sub: 'per month', color: '#e11d48', featured: true,
-    features: ['50+ assets tracked', 'Full AI signal suite', 'Advanced backtesting', 'Live trading bot', 'Priority support'],
-  },
-  {
-    name: 'Enterprise', price: 'Custom', sub: 'contact us', color: '#f59e0b', featured: false,
-    features: ['Unlimited assets', 'Dedicated AI model', 'API access', 'White-label option', 'SLA guarantee'],
-  },
-]
+const PLAN_COLORS = { free: '#64748b', pro: '#e11d48', elite: '#f59e0b' }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function LogoMark() {
@@ -127,6 +115,17 @@ function Counter({ end, suffix = '', prefix = '', div = 1 }) {
   )
 }
 
+function formatBackendPlanPrice(plan) {
+  const price = Number(plan?.price)
+  if (!Number.isFinite(price)) return '--'
+  if (price <= 0) return 'Free'
+
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: (plan.currency || 'eur').toUpperCase(),
+  }).format(price / 100)
+}
+
 function SectionBadge({ children, color = '#e11d48' }) {
   return (
     <div className="mb-5">
@@ -144,6 +143,24 @@ function SectionBadge({ children, color = '#e11d48' }) {
 // HOME PAGE
 // ═════════════════════════════════════════════════════════════════════════════
 export default function Home() {
+  const [pricingPlans, setPricingPlans] = useState([])
+  const [pricingError, setPricingError] = useState(null)
+
+  useEffect(() => {
+    const timer = window.setTimeout(async () => {
+      const response = await getPlans()
+
+      if (response.success) {
+        setPricingPlans(response.plans)
+        setPricingError(null)
+      } else {
+        setPricingError(response.error || 'Backend pricing plans unavailable.')
+      }
+    }, 0)
+
+    return () => window.clearTimeout(timer)
+  }, [])
+
   return (
     <>
       <style>{`
@@ -779,42 +796,52 @@ export default function Home() {
               </p>
             </FadeUp>
 
+            {pricingError && (
+              <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-center text-xs font-semibold text-amber-300">
+                {pricingError} No local pricing fallback is shown.
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
-              {PRICING.map((plan, i) => (
-                <FadeUp key={plan.name} delay={i * 0.1}>
+              {pricingPlans.map((plan, i) => {
+                const featured = plan.id === 'pro'
+                const color = PLAN_COLORS[plan.id] || '#64748b'
+
+                return (
+                <FadeUp key={plan.id} delay={i * 0.1}>
                   <motion.div
-                    whileHover={{ y: plan.featured ? -6 : -4 }}
+                    whileHover={{ y: featured ? -6 : -4 }}
                     className={`relative flex flex-col rounded-2xl p-6 backdrop-blur-xl h-full transition-all duration-300 overflow-hidden ${
-                      plan.featured
+                      featured
                         ? 'border-2 shadow-[0_0_60px_rgba(225,29,72,0.24),0_4px_28px_rgba(0,0,0,0.40)]'
                         : 'bg-white/[0.03] border border-white/[0.07] shadow-[0_4px_28px_rgba(0,0,0,0.32)]'
                     }`}
-                    style={plan.featured ? { background: 'rgba(225,29,72,0.07)', borderColor: 'rgba(225,29,72,0.45)' } : {}}
+                    style={featured ? { background: 'rgba(225,29,72,0.07)', borderColor: 'rgba(225,29,72,0.45)' } : {}}
                   >
-                    {plan.featured && (
+                    {featured && (
                       <div className="absolute top-0 inset-x-0 h-32 pointer-events-none"
                         style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(225,29,72,0.16), transparent 70%)' }} />
                     )}
-                    {plan.featured && (
+                    {featured && (
                       <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[10px] font-black tracking-widest uppercase text-white bg-gradient-to-r from-rose-600 to-red-700 px-4 py-1 rounded-full shadow-[0_0_20px_rgba(225,29,72,0.50)] z-10">
                         Most Popular
                       </div>
                     )}
 
                     <div className="mb-5">
-                      <p className="text-[11px] font-black tracking-widest uppercase mb-2" style={{ color: plan.color }}>
-                        {plan.name}
+                      <p className="text-[11px] font-black tracking-widest uppercase mb-2" style={{ color }}>
+                        {plan.label || plan.id}
                       </p>
                       <div className="flex items-end gap-1.5">
-                        <span className="text-4xl font-black text-white">{plan.price}</span>
-                        <span className="text-xs text-slate-600 font-medium mb-1.5">{plan.sub}</span>
+                        <span className="text-4xl font-black text-white">{formatBackendPlanPrice(plan)}</span>
+                        <span className="text-xs text-slate-600 font-medium mb-1.5">{Number(plan.price) > 0 ? '30 days' : 'backend plan'}</span>
                       </div>
                     </div>
 
                     <ul className="space-y-2.5 flex-1 mb-6">
-                      {plan.features.map((feat) => (
+                      {(plan.features || []).map((feat) => (
                         <li key={feat} className="flex items-center gap-2.5 text-xs text-slate-400 font-medium">
-                          <Check size={12} style={{ color: plan.color }} className="shrink-0" />
+                          <Check size={12} style={{ color }} className="shrink-0" />
                           {feat}
                         </li>
                       ))}
@@ -822,7 +849,7 @@ export default function Home() {
 
                     <Link to="/signup"
                       className={`ripple-btn w-full py-2.5 rounded-xl text-sm font-black text-center transition-all flex items-center justify-center gap-1.5 ${
-                        plan.featured
+                        featured
                           ? 'bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white shadow-[0_0_18px_rgba(225,29,72,0.3)]'
                           : 'bg-white/[0.05] border border-white/[0.10] text-slate-300 hover:bg-white/[0.09] hover:text-white'
                       }`}
@@ -831,7 +858,13 @@ export default function Home() {
                     </Link>
                   </motion.div>
                 </FadeUp>
-              ))}
+                )
+              })}
+              {!pricingError && pricingPlans.length === 0 && (
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 text-center text-sm font-bold text-slate-500 md:col-span-3">
+                  Loading backend plans...
+                </div>
+              )}
             </div>
           </div>
         </section>

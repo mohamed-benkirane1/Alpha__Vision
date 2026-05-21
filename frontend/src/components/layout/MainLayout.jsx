@@ -3,7 +3,7 @@ import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, PieChart, Newspaper, MessageSquare, TrendingUp,
-  FlaskConical, Bot, Settings, LogOut, Menu, X, Bell, ChevronRight,
+  FlaskConical, Bot, CreditCard, Settings, LogOut, Menu, X, Bell, ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
 
@@ -36,6 +36,7 @@ const NAV_TOOLS = [
   { to: '/chatbot',     label: 'AI Chatbot',  icon: MessageSquare },
   { to: '/backtesting', label: 'Backtesting', icon: FlaskConical  },
   { to: '/bot',         label: 'Trading Bot', icon: Bot           },
+  { to: '/payments',    label: 'Payments',    icon: CreditCard    },
   { to: '/settings',    label: 'Settings',    icon: Settings      },
 ]
 
