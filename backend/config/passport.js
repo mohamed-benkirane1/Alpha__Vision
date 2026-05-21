@@ -1,30 +1,47 @@
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/user');
 
-passport.use(new GoogleStrategy({
+const googleOAuthConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+const googleCallbackUrl = process.env.GOOGLE_CALLBACK_URL
+  || `http://localhost:${process.env.PORT || 5000}/api/auth/google/callback`;
+
+if (googleOAuthConfigured) {
+  passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: 'http://localhost:5002/api/auth/google/callback'
-  },
-  async (accessToken, refreshToken, profile, done) => {
+    callbackURL: googleCallbackUrl,
+  }, async (accessToken, refreshToken, profile, done) => {
     try {
-      let user = await User.findOne({ email: profile.emails[0].value });
-      
+      const email = profile.emails?.[0]?.value;
+      if (!email) return done(new Error('Google account email is required.'), null);
+
+      let user = await User.findOne({ email });
+
       if (!user) {
+        const generatedPassword = crypto.randomBytes(32).toString('hex');
         user = await User.create({
-          name: profile.displayName,
-          email: profile.emails[0].value,
+          name: profile.displayName || email,
+          email,
           googleId: profile.id,
-          password: Math.random().toString(36).substring(2, 15)
+          password: await bcrypt.hash(generatedPassword, 10),
         });
+      } else if (!user.googleId) {
+        user.googleId = profile.id;
+        user.updatedAt = new Date();
+        await user.save();
       }
-      
+
       return done(null, user);
     } catch (err) {
       return done(err, null);
     }
-  }
-));
+  }));
+}
+
+passport.googleOAuthConfigured = googleOAuthConfigured;
+passport.googleCallbackUrl = googleCallbackUrl;
 
 module.exports = passport;

@@ -8,6 +8,8 @@ const Home           = lazy(() => import('../pages/Home'))
 const Login          = lazy(() => import('../pages/Login'))
 const Signup         = lazy(() => import('../pages/Signup'))
 const ForgotPassword = lazy(() => import('../pages/ForgotPassword'))
+const ResetPassword  = lazy(() => import('../pages/ResetPassword'))
+const AuthCallback   = lazy(() => import('../pages/AuthCallback'))
 const Dashboard      = lazy(() => import('../pages/Dashboard'))
 const Portfolio      = lazy(() => import('../pages/Portfolio'))
 const News           = lazy(() => import('../pages/News'))
@@ -50,6 +52,8 @@ function AppRoutes() {
         <Route path="/login"           element={<Login />}          />
         <Route path="/signup"          element={<Signup />}         />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password"  element={<ResetPassword />}  />
+        <Route path="/auth/callback"   element={<AuthCallback />}   />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>

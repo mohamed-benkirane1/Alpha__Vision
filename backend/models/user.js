@@ -8,6 +8,8 @@ const UserSchema = new mongoose.Schema({
   balance: { type: Number, default: 0 },
   plan: { type: String, enum: ['free', 'pro', 'elite'], default: 'free' },
   planExpiresAt: { type: Date, default: null },
+  resetPasswordTokenHash: { type: String, default: null, select: false },
+  resetPasswordExpires: { type: Date, default: null, select: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
