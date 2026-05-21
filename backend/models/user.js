@@ -5,10 +5,11 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   googleId: { type: String, sparse: true },
-  balance: { type: Number, default: 0 },        // ← NOUVEAU
-  plan: { type: String, enum: ['free', 'pro', 'elite'], default: 'free' }, // ← NOUVEAU
-  planExpiresAt: { type: Date, default: null }, // ← NOUVEAU
-  createdAt: { type: Date, default: Date.now }
+  balance: { type: Number, default: 0 },
+  plan: { type: String, enum: ['free', 'pro', 'elite'], default: 'free' },
+  planExpiresAt: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model('User', UserSchema);
