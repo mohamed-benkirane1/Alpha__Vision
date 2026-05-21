@@ -3,6 +3,13 @@ const auth = require('../middleware/auth');
 const Portfolio = require('../models/portfolio');
 const User = require('../models/user');
 const { getPrice } = require('../services/marketService');
+const {
+  MIN_REQUIRED_HISTORY_POINTS,
+  createPortfolioSnapshot,
+  getPortfolioHistory,
+  isSupportedRange,
+  serializePortfolioSnapshot,
+} = require('../services/portfolioSnapshotService');
 
 function roundMoney(value) {
   const number = Number(value);
@@ -145,6 +152,61 @@ async function enrichHolding(holding) {
   }
 }
 
+function createHistoryPayload({ range, data = [], warnings = [], error = null, success = true }) {
+  return {
+    success,
+    timestamp: new Date().toISOString(),
+    range,
+    count: data.length,
+    dataQuality: {
+      hasEnoughData: data.length >= MIN_REQUIRED_HISTORY_POINTS,
+      minRequiredPoints: MIN_REQUIRED_HISTORY_POINTS,
+      usesRealSnapshots: true
+    },
+    data,
+    warnings,
+    error
+  };
+}
+
+router.get('/history', auth, async (req, res) => {
+  const requestedRange = typeof req.query.range === 'string' ? req.query.range.trim() : '30d';
+
+  if (!isSupportedRange(requestedRange)) {
+    return res.status(400).json(createHistoryPayload({
+      range: requestedRange,
+      success: false,
+      error: 'range must be one of 7d, 30d, 90d, or 1y.'
+    }));
+  }
+
+  try {
+    const history = await getPortfolioHistory(req.user.id, requestedRange);
+    const data = history.snapshots.map(serializePortfolioSnapshot);
+    const warnings = [];
+
+    if (data.length < MIN_REQUIRED_HISTORY_POINTS) {
+      warnings.push('Not enough real portfolio history yet.');
+    }
+
+    if (data.some((snapshot) => snapshot.dataQuality?.valuationReliable === false)) {
+      warnings.push('Some snapshots were recorded with partial portfolio valuation quality.');
+    }
+
+    return res.json(createHistoryPayload({
+      range: history.range,
+      data,
+      warnings
+    }));
+  } catch (err) {
+    return res.status(500).json(createHistoryPayload({
+      range: requestedRange,
+      success: false,
+      error: err.message || 'Unable to load portfolio history.'
+    }));
+  }
+});
+
 router.get('/', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('balance');
@@ -223,10 +285,11 @@ router.get('/', auth, async (req, res) => {
       totalProfitPercent
     };
 
-    res.json({
+    const timestamp = new Date().toISOString();
+    const response = {
       success: true,
-      timestamp: new Date().toISOString(),
-      lastUpdated: new Date().toISOString(),
+      timestamp,
+      lastUpdated: timestamp,
       balance: cashBalance,
       holdings: holdingsWithAllocation,
       totals,
@@ -235,9 +298,18 @@ router.get('/', auth, async (req, res) => {
       totalProfit: formatMoney(totalProfit),
       totalProfitPercent: pricedInvested > 0 ? formatPercent((totalProfit / pricedInvested) * 100) : 0,
       warnings
-    });
+    };
+
+    try {
+      await createPortfolioSnapshot(req.user.id, response, 'portfolio-refresh');
+    } catch (snapshotError) {
+      console.warn('Portfolio snapshot refresh failed:', snapshotError.message);
+      response.warnings.push('Portfolio loaded, but its performance snapshot could not be recorded.');
+    }
+
+    return res.json(response);
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Unable to load portfolio',
       error: err.message || 'Portfolio could not be loaded',

@@ -96,6 +96,57 @@ export const getPortfolio = async () => {
   }
 }
 
+const normalizePortfolioHistoryPoint = (point = {}) => ({
+  timestamp: point.timestamp || null,
+  totalPortfolioValue: toNumberOrNull(point.totalPortfolioValue),
+  cashBalance: toNumberOrNull(point.cashBalance),
+  holdingsValue: toNumberOrNull(point.holdingsValue),
+  totalInvested: toNumberOrNull(point.totalInvested),
+  totalProfit: toNumberOrNull(point.totalProfit),
+  totalProfitPercent: toNumberOrNull(point.totalProfitPercent),
+  dataQuality: point.dataQuality || null,
+  source: point.source || null,
+})
+
+export const normalizePortfolioHistoryResponse = (payload = {}) => {
+  const data = Array.isArray(payload.data)
+    ? payload.data.map(normalizePortfolioHistoryPoint)
+    : []
+
+  return {
+    success: payload.success !== false,
+    timestamp: payload.timestamp || null,
+    range: payload.range || '30d',
+    count: toNumberOrNull(payload.count) ?? data.length,
+    dataQuality: {
+      hasEnoughData: payload.dataQuality?.hasEnoughData === true,
+      minRequiredPoints: toNumberOrNull(payload.dataQuality?.minRequiredPoints) ?? 2,
+      usesRealSnapshots: payload.dataQuality?.usesRealSnapshots === true,
+    },
+    data,
+    warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
+    error: payload.error || null,
+    raw: payload,
+  }
+}
+
+export const getPortfolioHistory = async (range = '30d') => {
+  try {
+    const response = await api.get('/portfolio/history', { params: { range } })
+    return normalizePortfolioHistoryResponse(response.data)
+  } catch (error) {
+    const apiError = extractApiError(error)
+    throw Object.assign(error, {
+      normalized: {
+        success: false,
+        message: apiError.message,
+        status: apiError.status,
+        raw: apiError.data,
+      },
+    })
+  }
+}
+
 export const demoDeposit = async (amount) => {
   const response = await api.post('/payment/demo-deposit', { amount })
   return {

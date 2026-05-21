@@ -133,6 +133,7 @@ function buildStats({ portfolio, trades, bot, loading }) {
 export default function Dashboard() {
   const { user } = useAuth()
   const [portfolio, setPortfolio] = useState(null)
+  const [portfolioHistory, setPortfolioHistory] = useState(null)
   const [trades, setTrades] = useState(null)
   const [markets, setMarkets] = useState([])
   const [marketDataQuality, setMarketDataQuality] = useState(null)
@@ -153,6 +154,7 @@ export default function Dashboard() {
     try {
       const data = await getDashboardLiveData()
       setPortfolio(data.portfolio)
+      setPortfolioHistory(data.portfolioHistory)
       setTrades(Array.isArray(data.trades) ? data.trades : [])
       setMarkets(Array.isArray(data.markets) ? data.markets : [])
       setMarketDataQuality(data.marketDataQuality)
@@ -294,7 +296,11 @@ export default function Dashboard() {
         className="grid grid-cols-1 lg:grid-cols-3 gap-3.5"
       >
         <motion.div variants={fadeUp} className="lg:col-span-2">
-          <PerformanceChart loading={loading && !portfolio} />
+          <PerformanceChart
+            history={portfolioHistory}
+            loading={loading && !portfolioHistory}
+            unavailable={serviceQuality?.history === 'rejected'}
+          />
         </motion.div>
         <motion.div variants={fadeUp} className="h-full">
           <AISignalCard />

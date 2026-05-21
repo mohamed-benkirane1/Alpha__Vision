@@ -5,6 +5,7 @@ const Trade = require('../models/trade');
 const Portfolio = require('../models/portfolio');
 const User = require('../models/user');
 const { getPrice } = require('../services/marketService');
+const { createPortfolioSnapshotFromState } = require('../services/portfolioSnapshotService');
 const { getSubscriptionAccess } = require('../utils/subscription');
 
 const TRADE_LIMITS = { free: 5, pro: 50, elite: 1000 };
@@ -289,6 +290,14 @@ router.post('/', auth, async (req, res) => {
       total,
     });
     const execution = createExecutionPayload({ symbol, type, quantity, price, total, quote });
+    const warnings = [];
+
+    try {
+      await createPortfolioSnapshotFromState(req.user.id, 'trade');
+    } catch (snapshotError) {
+      console.warn('Trade portfolio snapshot failed:', snapshotError.message);
+      warnings.push('Trade executed, but its portfolio performance snapshot could not be recorded.');
+    }
 
     return res.status(201).json({
       success: true,
@@ -304,6 +313,7 @@ router.post('/', auth, async (req, res) => {
       holding: serializeHolding(result.portfolio),
       holdingRemoved: result.holdingRemoved,
       writeIntegrity: result.writeIntegrity,
+      warnings,
     });
   } catch (err) {
     return res.status(err.statusCode || 500).json({

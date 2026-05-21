@@ -1,5 +1,5 @@
 import { getMarketPrices } from './marketService'
-import { getPortfolio } from './portfolioService'
+import { getPortfolio, getPortfolioHistory } from './portfolioService'
 import { getTradeHistory } from './tradingService'
 import { getBotStatus } from './botService'
 
@@ -10,22 +10,24 @@ export const getDashboardLiveData = async () => {
     getMarketPrices(),
     getBotStatus(),
   ])
+  const [historyResult] = await Promise.allSettled([getPortfolioHistory('30d')])
 
   return {
-    success: [portfolioResult, tradesResult, marketsResult, botResult].every((result) => result.status === 'fulfilled'),
+    success: [portfolioResult, historyResult, tradesResult, marketsResult, botResult].every((result) => result.status === 'fulfilled'),
     portfolio: portfolioResult.status === 'fulfilled' ? portfolioResult.value : null,
+    portfolioHistory: historyResult.status === 'fulfilled' ? historyResult.value : null,
     trades: tradesResult.status === 'fulfilled' ? tradesResult.value : [],
     markets: marketsResult.status === 'fulfilled' ? marketsResult.value.quotes : [],
     marketDataQuality: marketsResult.status === 'fulfilled' ? marketsResult.value.dataQuality : null,
     bot: botResult.status === 'fulfilled' ? botResult.value : null,
     dataQuality: {
       portfolio: portfolioResult.status,
+      history: historyResult.status,
       trades: tradesResult.status,
       markets: marketsResult.status,
       bot: botResult.status,
     },
     notes: [
-      'Performance chart needs historical portfolio snapshots.',
       'AI signal needs a dedicated backend signal endpoint.',
     ],
   }
