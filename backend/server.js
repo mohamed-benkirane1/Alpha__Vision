@@ -1,4 +1,14 @@
-require('dotenv').config();
+const { loadEnvConfig, logFeatureWarnings } = require('./config/env');
+
+let env;
+try {
+  env = loadEnvConfig();
+  logFeatureWarnings(env.warnings);
+} catch (error) {
+  console.error(`[env] ${error.message}`);
+  process.exit(1);
+}
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -7,10 +17,12 @@ const { rateLimit } = require('express-rate-limit');
 const passport = require('./config/passport');
 
 const app = express();
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-const defaultRateLimitWindowMs = Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
-const globalRateLimitMax = Number(process.env.RATE_LIMIT_MAX) || 300;
-const sensitiveRateLimitMax = Number(process.env.AUTH_RATE_LIMIT_MAX) || 30;
+const frontendUrl = env.frontendUrl;
+const defaultRateLimitWindowMs = env.rateLimits.windowMs;
+const globalRateLimitMax = env.rateLimits.apiMax;
+const sensitiveRateLimitMax = env.rateLimits.authMax;
+const paymentRateLimitMax = env.rateLimits.paymentMax;
+const chatbotRateLimitMax = env.rateLimits.chatbotMax;
 
 function createRateLimitMessage(message) {
   return (req, res) => res.status(429).json({
@@ -47,7 +59,7 @@ const forgotPasswordLimiter = rateLimit({
 
 const paymentLimiter = rateLimit({
   windowMs: defaultRateLimitWindowMs,
-  limit: sensitiveRateLimitMax,
+  limit: paymentRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => req.originalUrl.startsWith('/api/payment/webhook'),
@@ -56,7 +68,7 @@ const paymentLimiter = rateLimit({
 
 const chatbotLimiter = rateLimit({
   windowMs: defaultRateLimitWindowMs,
-  limit: sensitiveRateLimitMax,
+  limit: chatbotRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
   handler: createRateLimitMessage('Too many chatbot requests. Please retry later.'),
@@ -90,9 +102,9 @@ app.use('/api/bot', require('./routes/bot'));
 app.use('/api/backtest', require('./routes/backtest'));
 app.use('/api/payment', require('./routes/Payment'));
 
-const port = process.env.PORT || 5000;
+const port = env.port;
 app.listen(port, () => console.log(`✅ Server on port ${port}`));
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(env.mongoUri)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.log('❌ MongoDB error:', err));
