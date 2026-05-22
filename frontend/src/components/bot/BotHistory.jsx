@@ -8,6 +8,22 @@ const formatDateTime = (value) => {
   return date.toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
+const formatPrice = (value) => {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return '--'
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+  }).format(number)
+}
+
+const formatQuantity = (value) => {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return '--'
+  return number.toLocaleString('en-US', { maximumFractionDigits: 8 })
+}
+
 export default function BotHistory({ actions = [] }) {
   const cleanActions = Array.isArray(actions) ? actions.filter(Boolean) : []
 
@@ -31,30 +47,37 @@ export default function BotHistory({ actions = [] }) {
           </div>
           <p className="text-xs text-slate-600 font-medium">No real bot actions yet.</p>
           <p className="text-[11px] text-slate-700 mt-1">
-            Trade events will appear only after a real bot engine is implemented.
+            Start the paper bot and run a tick to record a backend-priced decision.
           </p>
         </div>
       ) : (
         <>
-          <div className="hidden sm:grid grid-cols-4 px-3 mb-2 text-[10px] text-slate-700 uppercase tracking-[0.1em] font-black">
-            <span>Time</span><span>Type</span><span>Symbol</span><span className="text-right">Details</span>
+          <div className="hidden sm:grid grid-cols-5 px-3 mb-2 text-[10px] text-slate-700 uppercase tracking-[0.1em] font-black">
+            <span>Time</span><span>Action</span><span>Symbol</span><span>Quote</span><span className="text-right">Reason</span>
           </div>
           <div className="space-y-1.5">
             <AnimatePresence initial={false}>
               {cleanActions.map((action, i) => (
                 <motion.div
-                  key={`${action.timestamp || i}-${action.type || 'action'}`}
+                  key={`${action.id || action.timestamp || i}-${action.action || 'action'}`}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.25 }}
                   whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
-                  className="grid grid-cols-2 sm:grid-cols-4 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-xs gap-1 sm:gap-0"
+                  className="grid grid-cols-2 sm:grid-cols-5 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-xs gap-1 sm:gap-2"
                 >
-                  <span className="text-slate-600 font-mono text-[10px]">{formatDateTime(action.timestamp)}</span>
-                  <span className="text-slate-300 font-bold">{action.type || '--'}</span>
+                  <span className="text-slate-600 font-mono text-[10px]">{formatDateTime(action.createdAt || action.timestamp)}</span>
+                  <span className="text-slate-300 font-bold">{action.action || '--'}</span>
                   <span className="hidden sm:block text-slate-600 font-medium">{action.symbol || '--'}</span>
-                  <span className="text-right text-slate-500 font-medium">{action.message || '--'}</span>
+                  <span className="text-slate-500 font-medium">
+                    {formatPrice(action.price)}
+                    <span className="block text-[10px] text-slate-700">{formatQuantity(action.quantity)} / {action.priceProvider || '--'}</span>
+                  </span>
+                  <span className="text-right text-slate-500 font-medium">
+                    {action.reason || action.error || '--'}
+                    <span className="block text-[10px] text-slate-700">{action.executed ? 'Executed trade linked' : 'Paper action only'}</span>
+                  </span>
                 </motion.div>
               ))}
             </AnimatePresence>

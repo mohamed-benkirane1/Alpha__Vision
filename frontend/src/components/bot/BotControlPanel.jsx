@@ -1,20 +1,18 @@
 import { useState } from 'react'
-import { Play, Square, Settings2, ChevronDown, AlertTriangle } from 'lucide-react'
+import { Play, Square, Settings2, ChevronDown, AlertTriangle, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-const SYMBOLS = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL']
+const SYMBOLS = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'DOGE']
 const STRATEGIES = [
-  { value: 'rsi', label: 'RSI Strategy' },
-  { value: 'macd', label: 'MACD Crossover' },
-  { value: 'bollinger', label: 'Bollinger Bands' },
-  { value: 'multi', label: 'Multi-Indicator' },
+  { value: 'momentum-24h', label: '24h Momentum' },
 ]
 
 const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 disabled:opacity-40 appearance-none'
 
-export default function BotControlPanel({ onStart, onStop, running, loading, error }) {
+export default function BotControlPanel({ onStart, onStop, onTick, running, loading, tickLoading, error }) {
   const [symbol, setSymbol] = useState('BTC')
-  const [strategy, setStrategy] = useState('rsi')
+  const [strategy, setStrategy] = useState('momentum-24h')
+  const [positionSize, setPositionSize] = useState('100')
   const [localError, setLocalError] = useState(null)
 
   const start = () => {
@@ -26,8 +24,18 @@ export default function BotControlPanel({ onStart, onStop, running, loading, err
       setLocalError('Strategy is required.')
       return
     }
+    const normalizedPositionSize = Number(positionSize)
+    if (!Number.isFinite(normalizedPositionSize) || normalizedPositionSize <= 0) {
+      setLocalError('Paper position size must be positive.')
+      return
+    }
     setLocalError(null)
-    onStart({ symbol, strategy, mode: 'paper' })
+    onStart({
+      symbol,
+      strategy,
+      positionSize: normalizedPositionSize,
+      mode: 'paper',
+    })
   }
 
   return (
@@ -73,6 +81,19 @@ export default function BotControlPanel({ onStart, onStop, running, loading, err
           </div>
         </div>
 
+        <div>
+          <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Paper Position Size</label>
+          <input
+            value={positionSize}
+            onChange={(e) => setPositionSize(e.target.value)}
+            disabled={running || loading}
+            type="number"
+            min="1"
+            step="1"
+            className={fieldCls}
+          />
+        </div>
+
         {(localError || error) && (
           <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs font-semibold text-amber-300">
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
@@ -93,16 +114,28 @@ export default function BotControlPanel({ onStart, onStop, running, loading, err
               {loading ? 'Starting...' : 'Start Bot'}
             </motion.button>
           ) : (
-            <motion.button
-              onClick={onStop}
-              disabled={loading}
-              whileHover={{ scale: loading ? 1 : 1.01 }}
-              whileTap={{ scale: loading ? 1 : 0.97 }}
-              className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 disabled:opacity-55 disabled:cursor-not-allowed text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(244,63,94,0.22)]"
-            >
-              {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Square size={13} />}
-              {loading ? 'Stopping...' : 'Stop Bot'}
-            </motion.button>
+            <div className="grid grid-cols-1 gap-2">
+              <motion.button
+                onClick={onTick}
+                disabled={loading || tickLoading}
+                whileHover={{ scale: loading || tickLoading ? 1 : 1.01 }}
+                whileTap={{ scale: loading || tickLoading ? 1 : 0.97 }}
+                className="ripple-btn w-full py-3 bg-white/[0.055] hover:bg-white/[0.09] border border-white/[0.08] disabled:opacity-55 disabled:cursor-not-allowed text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={13} className={tickLoading ? 'animate-spin' : ''} />
+                {tickLoading ? 'Running Tick...' : 'Run Bot Tick'}
+              </motion.button>
+              <motion.button
+                onClick={onStop}
+                disabled={loading || tickLoading}
+                whileHover={{ scale: loading || tickLoading ? 1 : 1.01 }}
+                whileTap={{ scale: loading || tickLoading ? 1 : 0.97 }}
+                className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 disabled:opacity-55 disabled:cursor-not-allowed text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(244,63,94,0.22)]"
+              >
+                {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Square size={13} />}
+                {loading ? 'Stopping...' : 'Stop Bot'}
+              </motion.button>
+            </div>
           )}
         </div>
       </div>

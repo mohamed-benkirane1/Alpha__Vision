@@ -4,7 +4,7 @@ import { AlertTriangle, Cpu, RefreshCw, Server } from 'lucide-react'
 import BotControlPanel from '../components/bot/BotControlPanel'
 import BotStatusCard from '../components/bot/BotStatusCard'
 import BotHistory from '../components/bot/BotHistory'
-import { getBotStatus, startBot, stopBot } from '../services/botService'
+import { getBotStatus, runBotTick, startBot, stopBot } from '../services/botService'
 
 const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 
@@ -12,21 +12,23 @@ const emptyBot = {
   success: true,
   timestamp: null,
   source: 'backend',
-  provider: 'internal-bot-controller',
-  fallback: true,
+  provider: 'internal-paper-bot',
+  fallback: false,
   dataQuality: {
-    hasRealBotEngine: false,
+    hasRealBotEngine: true,
     usesMockPerformance: false,
-    isIndicative: true,
+    isIndicative: false,
     warnings: ['Bot status has not been loaded yet.'],
   },
   status: {
     isRunning: false,
-    mode: 'unavailable',
+    mode: 'paper',
     strategy: null,
     symbol: null,
     startedAt: null,
     stoppedAt: null,
+    lastTickAt: null,
+    positionSize: null,
   },
   performance: null,
   recentActions: [],
@@ -39,6 +41,7 @@ export default function TradingBot() {
   const [bot, setBot] = useState(emptyBot)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  const [tickLoading, setTickLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const loadStatus = useCallback(async ({ silent = false } = {}) => {
@@ -79,6 +82,17 @@ export default function TradingBot() {
     setActionLoading(false)
   }
 
+  const handleTick = async () => {
+    setTickLoading(true)
+    setError(null)
+
+    const data = await runBotTick()
+    setBot(data)
+    if (!data.success) setError(data.error || data.message || 'Unable to run bot tick.')
+
+    setTickLoading(false)
+  }
+
   const running = Boolean(bot?.status?.isRunning)
 
   return (
@@ -91,7 +105,7 @@ export default function TradingBot() {
               <h1 className="text-2xl font-black text-white">Trading Bot</h1>
             </div>
             <p className="text-xs text-slate-500 font-medium">
-              Backend bot controller. Real execution engine is not implemented yet.
+              Persistent paper bot decisions from backend market quotes.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -138,6 +152,8 @@ export default function TradingBot() {
               error={error}
               onStart={handleStart}
               onStop={handleStop}
+              onTick={handleTick}
+              tickLoading={tickLoading}
             />
             <BotStatusCard bot={bot} />
           </motion.div>
