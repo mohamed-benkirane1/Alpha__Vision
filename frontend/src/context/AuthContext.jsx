@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AuthContext from './authContextCore'
-import { getCurrentUserFromStorage, getToken, removeToken, setToken } from '../services/api'
+import {
+  AUTH_SESSION_EXPIRED_EVENT,
+  getCurrentUserFromStorage,
+  getToken,
+  removeToken,
+  setToken,
+} from '../services/api'
 import { getCurrentUser } from '../services/authService'
 
 const normalizeUser = (data) => data?.user || data || null
@@ -26,12 +32,16 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback((nextUser, nextToken) => {
-    if (nextToken) setToken(nextToken)
-    if (nextUser) storeUser(nextUser)
+    if (!nextToken || !nextUser) {
+      clearSession()
+      throw new Error('Invalid authentication response.')
+    }
 
-    setTokenState(nextToken || getToken())
-    setUser(nextUser || getCurrentUserFromStorage())
-  }, [])
+    setToken(nextToken)
+    storeUser(nextUser)
+    setTokenState(nextToken)
+    setUser(nextUser)
+  }, [clearSession])
 
   const logout = useCallback(() => {
     clearSession()
@@ -59,6 +69,8 @@ export function AuthProvider({ children }) {
       if (currentUser) {
         storeUser(currentUser)
         setUser(currentUser)
+      } else {
+        clearSession()
       }
 
       return currentUser
@@ -71,6 +83,15 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false)
     }
+  }, [clearSession])
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      clearSession()
+    }
+
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired)
+    return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired)
   }, [clearSession])
 
   useEffect(() => {

@@ -126,6 +126,10 @@ export default function Signup() {
         password: form.password,
       })
 
+      if (data?.success !== true || !data?.token || !data?.user) {
+        throw new Error(data?.message || 'Invalid authentication response.')
+      }
+
       authLogin(data?.user, data?.token)
 
       setSuccess('Account created successfully. Redirecting...')

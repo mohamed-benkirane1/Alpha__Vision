@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+export const AUTH_SESSION_EXPIRED_EVENT = 'alpha-vision:auth-session-expired'
 
 export const getToken = () => localStorage.getItem('token')
 
@@ -64,6 +65,23 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status
     const data = error.response?.data
+    const requestUrl = error.config?.url || ''
+    const publicAuthEndpoints = [
+      '/auth/login',
+      '/auth/signup',
+      '/auth/forgot-password',
+      '/auth/reset-password',
+    ]
+
+    if (
+      status === 401 &&
+      getToken() &&
+      typeof window !== 'undefined' &&
+      !publicAuthEndpoints.some((endpoint) => requestUrl.includes(endpoint))
+    ) {
+      window.dispatchEvent(new CustomEvent(AUTH_SESSION_EXPIRED_EVENT))
+    }
+
     const message =
       data?.message ||
       data?.error ||

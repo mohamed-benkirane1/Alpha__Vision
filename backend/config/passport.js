@@ -1,4 +1,3 @@
-const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
@@ -15,7 +14,7 @@ if (googleOAuthConfigured) {
     callbackURL: googleCallbackUrl,
   }, async (accessToken, refreshToken, profile, done) => {
     try {
-      const email = profile.emails?.[0]?.value;
+      const email = profile.emails?.[0]?.value?.trim().toLowerCase();
       if (!email) return done(new Error('Google account email is required.'), null);
 
       let user = await User.findOne({ email });
@@ -26,11 +25,10 @@ if (googleOAuthConfigured) {
           name: profile.displayName || email,
           email,
           googleId: profile.id,
-          password: await bcrypt.hash(generatedPassword, 10),
+          password: generatedPassword,
         });
       } else if (!user.googleId) {
         user.googleId = profile.id;
-        user.updatedAt = new Date();
         await user.save();
       }
 

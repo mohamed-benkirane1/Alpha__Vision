@@ -1,5 +1,4 @@
 const router = require('express').Router();
-const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
@@ -31,16 +30,50 @@ function isEmail(value) {
   return EMAIL_PATTERN.test(value);
 }
 
+function normalizeEmail(value) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+function signAuthToken(user) {
+  return jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+}
+
+function isDuplicateEmailError(error) {
+  return error?.code === 11000 && Object.prototype.hasOwnProperty.call(error.keyPattern || {}, 'email');
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function emailCaseInsensitiveFilter(email) {
+  return { email: new RegExp(`^${escapeRegExp(email)}$`, 'i') };
+}
+
+async function findUserByEmail(email, projection) {
+  let query = User.findOne({ email });
+  if (projection) query = query.select(projection);
+
+  const exactUser = await query;
+  if (exactUser) return exactUser;
+
+  query = User.findOne(emailCaseInsensitiveFilter(email));
+  if (projection) query = query.select(projection);
+  return query;
+}
+
 function serializeUser(user) {
   if (!user) return null;
 
   const balance = Number(user.balance);
+  const id = String(user._id || user.id);
 
   return {
-    id: String(user._id || user.id),
+    _id: id,
+    id,
     name: user.name || '',
     email: user.email || '',
-    role: user.role || null,
+    role: user.role || 'user',
     plan: user.plan || 'free',
     balance: Number.isFinite(balance) ? balance : 0,
     planExpiresAt: user.planExpiresAt || null,
@@ -64,6 +97,7 @@ function errorResponse(error, extras = {}) {
   return {
     success: false,
     timestamp: nowIso(),
+    message: error,
     user: null,
     warnings: [],
     error,
@@ -85,8 +119,26 @@ function authActionError(error, extras = {}) {
   return {
     success: false,
     timestamp: nowIso(),
+    message: error,
     warnings: [],
     error,
+    ...extras,
+  };
+}
+
+function authSessionResponse(user, token, extras = {}) {
+  return {
+    success: true,
+    token,
+    user: serializeUser(user),
+    ...extras,
+  };
+}
+
+function authSessionError(message, extras = {}) {
+  return {
+    success: false,
+    message,
     ...extras,
   };
 }
@@ -135,54 +187,70 @@ function requireGoogleOAuth(req, res, next) {
 router.post('/signup', async (req, res) => {
   try {
     const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
-    const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
+    const email = normalizeEmail(req.body?.email);
     const password = typeof req.body?.password === 'string' ? req.body.password : '';
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: 'All fields required' });
+      return res.status(400).json(authSessionError('name, email and password are required.'));
+    }
+    if (name.length < 2 || name.length > 80) {
+      return res.status(400).json(authSessionError('name must be between 2 and 80 characters.'));
     }
     if (!isEmail(email)) {
-      return res.status(400).json({ message: 'A valid email is required.' });
+      return res.status(400).json(authSessionError('A valid email is required.'));
     }
 
     const passwordError = validatePassword(password);
     if (passwordError) {
-      return res.status(400).json({ message: passwordError });
+      return res.status(400).json(authSessionError(passwordError));
     }
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: 'Email already used' });
+    const existing = await findUserByEmail(email);
+    if (existing) {
+      return res.status(409).json(authSessionError('Email is already registered.'));
+    }
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashed });
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const user = await User.create({ name, email, password });
+    const token = signAuthToken(user);
 
-    return res.status(201).json({ token, user: serializeUser(user) });
+    return res.status(201).json(authSessionResponse(user, token));
   } catch (err) {
-    return res.status(500).json({ message: err.message || 'Unable to create account' });
+    if (isDuplicateEmailError(err)) {
+      return res.status(409).json(authSessionError('Email is already registered.'));
+    }
+
+    return res.status(500).json(authSessionError('Unable to create account.'));
   }
 });
 
 router.post('/login', async (req, res) => {
   try {
-    const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
+    const email = normalizeEmail(req.body?.email);
     const password = typeof req.body?.password === 'string' ? req.body.password : '';
-    const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!email || !password) {
+      return res.status(400).json(authSessionError('email and password are required.'));
+    }
+    if (!isEmail(email)) {
+      return res.status(400).json(authSessionError('A valid email is required.'));
+    }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    return res.json({ token, user: serializeUser(user) });
+    const user = await findUserByEmail(email, '+password');
+    if (!user) return res.status(401).json(authSessionError('Invalid credentials.'));
+
+    const valid = await user.comparePassword(password);
+    if (!valid) return res.status(401).json(authSessionError('Invalid credentials.'));
+
+    const token = signAuthToken(user);
+    return res.json(authSessionResponse(user, token));
   } catch (err) {
-    return res.status(500).json({ message: err.message || 'Unable to sign in' });
+    return res.status(500).json(authSessionError('Unable to sign in.'));
   }
 });
 
 router.post('/forgot-password', async (req, res) => {
   try {
-    const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
+    const email = normalizeEmail(req.body?.email);
     if (!isEmail(email)) {
       return res.status(400).json(authActionError('A valid email is required.'));
     }
@@ -193,7 +261,7 @@ router.post('/forgot-password', async (req, res) => {
     let emailSent = providerConfigured;
     let resetUrl = null;
 
-    const user = await User.findOne({ email });
+    const user = await findUserByEmail(email);
     if (user) {
       const resetToken = crypto.randomBytes(RESET_TOKEN_BYTES).toString('hex');
       user.resetPasswordTokenHash = hashResetToken(resetToken);
@@ -243,7 +311,7 @@ router.post('/forgot-password', async (req, res) => {
 
 router.post('/reset-password', async (req, res) => {
   try {
-    const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
+    const email = normalizeEmail(req.body?.email);
     const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
     const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
     const passwordError = validatePassword(newPassword, 'newPassword');
@@ -260,7 +328,7 @@ router.post('/reset-password', async (req, res) => {
 
     const tokenHash = hashResetToken(token);
     const user = await User.findOne({
-      email,
+      ...emailCaseInsensitiveFilter(email),
       resetPasswordTokenHash: tokenHash,
       resetPasswordExpires: { $gt: new Date() },
     }).select('+resetPasswordTokenHash +resetPasswordExpires');
@@ -269,10 +337,9 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json(authActionError('Reset token is invalid or expired.'));
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    user.password = newPassword;
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpires = null;
-    user.updatedAt = new Date();
     await user.save();
 
     return res.json(authActionResponse({
@@ -286,7 +353,7 @@ router.post('/reset-password', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select('name email balance plan planExpiresAt createdAt updatedAt');
+      .select('name email role balance plan planExpiresAt createdAt updatedAt');
 
     if (!user) {
       return res.status(404).json(errorResponse('User not found'));
@@ -321,7 +388,6 @@ router.patch('/profile', auth, async (req, res) => {
     }
 
     user.name = name;
-    user.updatedAt = new Date();
     await user.save();
 
     return res.json(userResponse(user, {
@@ -344,7 +410,7 @@ router.get('/google/callback',
     failureRedirect: `${getFrontendUrl()}/login?oauth=failed`,
   }),
   (req, res) => {
-    const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = signAuthToken(req.user);
     res.redirect(`${getFrontendUrl()}/auth/callback?token=${encodeURIComponent(token)}`);
   },
 );

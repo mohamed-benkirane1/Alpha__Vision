@@ -75,6 +75,10 @@ export default function Login() {
         password: form.password,
       })
 
+      if (data?.success !== true || !data?.token || !data?.user) {
+        throw new Error(data?.message || 'Invalid authentication response.')
+      }
+
       authLogin(data?.user, data?.token)
 
       const redirectTo = location.state?.from?.pathname || '/dashboard'
