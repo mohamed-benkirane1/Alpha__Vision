@@ -139,6 +139,7 @@ export default function Dashboard() {
   const [marketDataQuality, setMarketDataQuality] = useState(null)
   const [serviceQuality, setServiceQuality] = useState(null)
   const [bot, setBot] = useState(null)
+  const [aiSignal, setAiSignal] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
@@ -160,6 +161,7 @@ export default function Dashboard() {
       setMarketDataQuality(data.marketDataQuality)
       setServiceQuality(data.dataQuality)
       setBot(data.bot)
+      setAiSignal(data.aiSignal)
       if (!data.success) setError('Some dashboard data could not be refreshed. Showing available backend data only.')
     } catch (err) {
       console.error('Dashboard load failed:', err)
@@ -303,7 +305,11 @@ export default function Dashboard() {
           />
         </motion.div>
         <motion.div variants={fadeUp} className="h-full">
-          <AISignalCard />
+          <AISignalCard
+            aiSignal={aiSignal}
+            loading={loading && !aiSignal}
+            unavailable={serviceQuality?.aiSignal === 'rejected'}
+          />
         </motion.div>
       </motion.div>
 
