@@ -14,6 +14,7 @@ import {
   checkCheckoutSession,
   createCheckoutSession,
   getPaymentStatus,
+  getPaymentTransactions,
   getPlans,
 } from '../services/paymentService'
 import { useAuth } from '../context/useAuth'
@@ -38,6 +39,16 @@ function formatCurrency(value) {
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency: 'USD',
+  }).format(number)
+}
+
+function formatTransactionAmount(value) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return '--'
+
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'EUR',
   }).format(number)
 }
 
@@ -74,6 +85,7 @@ export default function Payments() {
   const [searchParams] = useSearchParams()
   const [status, setStatus] = useState(null)
   const [plans, setPlans] = useState([])
+  const [transactions, setTransactions] = useState([])
   const [checkoutStatus, setCheckoutStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -90,9 +102,10 @@ export default function Payments() {
     else setLoading(true)
     setError(null)
 
-    const [statusResult, plansResult] = await Promise.all([
+    const [statusResult, plansResult, transactionsResult] = await Promise.all([
       getPaymentStatus(),
       getPlans(),
+      getPaymentTransactions(),
     ])
 
     if (statusResult.success) setStatus(statusResult)
@@ -100,6 +113,9 @@ export default function Payments() {
 
     if (plansResult.success) setPlans(plansResult.plans)
     else setError((current) => current || plansResult.error || 'Unable to load plans.')
+
+    if (transactionsResult.success) setTransactions(transactionsResult.transactions)
+    else setError((current) => current || transactionsResult.error || 'Unable to load payment transactions.')
 
     if (refresh) setRefreshing(false)
     else setLoading(false)
@@ -322,8 +338,37 @@ export default function Payments() {
             })}
           </div>
 
-          <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/70 p-4 text-xs font-medium text-slate-500">
-            Invoice history and self-service cancellation are not connected yet. Subscription activation remains confirmed by Stripe webhook fulfillment on the backend.
+          <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/70 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-black text-white">Payment Transactions</p>
+              <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                GET /api/payment/transactions
+              </span>
+            </div>
+            {transactions.length > 0 ? (
+              <div className="space-y-2">
+                {transactions.slice(0, 5).map((transaction) => (
+                  <div key={transaction._id || transaction.transactionId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+                    <div>
+                      <p className="text-xs font-black capitalize text-white">
+                        {transaction.type || 'transaction'} {transaction.plan ? `- ${transaction.plan}` : ''}
+                      </p>
+                      <p className="text-[11px] font-medium text-slate-600">
+                        {formatDateTime(transaction.createdAt)} / {transaction.paymentMethod || 'payment'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-slate-300">{formatTransactionAmount(transaction.amount)}</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">{transaction.status || '--'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs font-medium text-slate-500">
+                No backend payment transactions yet. Self-service cancellation still needs a dedicated backend endpoint.
+              </p>
+            )}
           </div>
         </>
       )}

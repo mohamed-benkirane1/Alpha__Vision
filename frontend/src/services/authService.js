@@ -1,10 +1,10 @@
 import api, { API_BASE_URL, extractApiError, removeToken } from './api'
 
 export const signup = (userData) =>
-  api.post('/auth/signup', userData)
+  api.post('/auth/signup', userData, { skipAuth: true })
 
 export const login = (credentials) =>
-  api.post('/auth/login', credentials)
+  api.post('/auth/login', credentials, { skipAuth: true })
 
 export const startGoogleOAuth = () => {
   window.location.assign(`${API_BASE_URL}/auth/google`)
@@ -90,7 +90,7 @@ export const updateProfile = async (profile = {}) => {
 
 export const requestPasswordReset = async (email) => {
   try {
-    const response = await api.post('/auth/forgot-password', { email })
+    const response = await api.post('/auth/forgot-password', { email }, { skipAuth: true })
     return normalizeAuthActionResponse(response.data)
   } catch (error) {
     return normalizeAuthActionError(error, 'Unable to request password reset.')
@@ -103,7 +103,7 @@ export const resetPassword = async ({ email, token, newPassword }) => {
       email,
       token,
       newPassword,
-    })
+    }, { skipAuth: true })
     return normalizeAuthActionResponse(response.data)
   } catch (error) {
     return normalizeAuthActionError(error, 'Unable to reset password.')

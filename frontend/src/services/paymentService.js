@@ -29,6 +29,7 @@ const normalizePaymentResponse = (payload = {}) => ({
   checkoutUrl: payload.checkoutUrl || payload.url || null,
   sessionId: payload.sessionId || payload.id || null,
   paymentStatus: payload.paymentStatus || payload.status || null,
+  currentPlan: payload.currentPlan || payload.subscription?.plan || null,
   transactions: normalizeArray(payload.transactions),
   demo: payload.demo === true,
   balance: toNumberOrNull(payload.balance),
@@ -62,10 +63,28 @@ const normalizePaymentError = (error, fallbackMessage) => {
 
 export const getPlans = async () => {
   try {
-    const response = await api.get('/payment/plans')
+    const response = await api.get('/payment/plans', { skipAuth: true })
     return normalizePaymentResponse(response.data)
   } catch (error) {
     return normalizePaymentError(error, 'Unable to load payment plans.')
+  }
+}
+
+export const getPaymentTransactions = async () => {
+  try {
+    const response = await api.get('/payment/transactions')
+    return normalizePaymentResponse(response.data)
+  } catch (error) {
+    return normalizePaymentError(error, 'Unable to load payment transactions.')
+  }
+}
+
+export const getPlanFeatures = async () => {
+  try {
+    const response = await api.get('/payment/features')
+    return normalizePaymentResponse(response.data)
+  } catch (error) {
+    return normalizePaymentError(error, 'Unable to load plan features.')
   }
 }
 
@@ -127,7 +146,9 @@ export default {
   checkCheckoutSession,
   createCheckoutSession,
   createDepositCheckoutSession,
+  getPaymentTransactions,
   getPaymentStatus,
+  getPlanFeatures,
   getPlans,
   getSubscription,
 }

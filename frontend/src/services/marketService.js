@@ -92,11 +92,11 @@ const requestMarketList = async (request) => {
 }
 
 export const getMarketPrices = () =>
-  requestMarketList(() => api.get('/market/prices'))
+  requestMarketList(() => api.get('/market/prices', { skipAuth: true }))
 
 export const getMarketPrice = async (symbol) => {
   try {
-    const response = await api.get(`/market/price/${encodeURIComponent(symbol)}`)
+    const response = await api.get(`/market/price/${encodeURIComponent(symbol)}`, { skipAuth: true })
     return normalizeSingleMarketResponse(response.data)
   } catch (error) {
     const apiError = extractApiError(error)
@@ -115,13 +115,13 @@ export const getMarketPrice = async (symbol) => {
 }
 
 export const getTopMarkets = (limit = 100) =>
-  requestMarketList(() => api.get('/market/top', { params: { limit } }))
+  requestMarketList(() => api.get('/market/top', { params: { limit }, skipAuth: true }))
 
 export const getSpecificMarketPrices = (symbols) =>
-  requestMarketList(() => api.post('/market/specific', { symbols }))
+  requestMarketList(() => api.post('/market/specific', { symbols }, { skipAuth: true }))
 
 export const getMultiMarketPrices = (symbols) =>
-  requestMarketList(() => api.get('/market/multi', { params: { symbols: symbols.join(',') } }))
+  requestMarketList(() => api.get('/market/multi', { params: { symbols: symbols.join(',') }, skipAuth: true }))
 
 // Legacy names kept for current pages until Live T6/T7.
 export const getAllPrices = getMarketPrices

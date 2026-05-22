@@ -1,6 +1,15 @@
 import axios from 'axios'
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const DEFAULT_API_BASE_URL = 'http://localhost:5000/api'
+
+const normalizeApiBaseUrl = (value) => {
+  const url = String(value || DEFAULT_API_BASE_URL).trim().replace(/\/+$/, '')
+  if (!url) return DEFAULT_API_BASE_URL
+  if (url.endsWith('/api') || url.includes('/api/')) return url
+  return `${url}/api`
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL)
 export const AUTH_SESSION_EXPIRED_EVENT = 'alpha-vision:auth-session-expired'
 
 export const getToken = () => localStorage.getItem('token')
@@ -43,6 +52,7 @@ export const extractApiError = (error) => ({
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -51,7 +61,7 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = getToken()
 
-  if (token) {
+  if (token && config.skipAuth !== true) {
     config.headers.Authorization = `Bearer ${token}`
   } else if (config.headers.Authorization) {
     delete config.headers.Authorization

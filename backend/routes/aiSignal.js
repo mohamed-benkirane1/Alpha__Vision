@@ -10,7 +10,7 @@ router.get('/', auth, async (req, res) => {
       symbol,
     });
 
-    return res.status(response.success ? 200 : 422).json(response);
+    return res.status(200).json(response);
   } catch (err) {
     return res.status(500).json({
       success: false,
