@@ -68,7 +68,7 @@ export default function BotHistory({ actions = [] }) {
                   className="grid grid-cols-2 sm:grid-cols-5 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-xs gap-1 sm:gap-2"
                 >
                   <span className="text-slate-600 font-mono text-[10px]">{formatDateTime(action.createdAt || action.timestamp)}</span>
-                  <span className="text-slate-300 font-bold">{action.action || '--'}</span>
+                  <span className="text-slate-300 font-bold">{action.decision || action.action || '--'}</span>
                   <span className="hidden sm:block text-slate-600 font-medium">{action.symbol || '--'}</span>
                   <span className="text-slate-500 font-medium">
                     {formatPrice(action.price)}
@@ -76,7 +76,9 @@ export default function BotHistory({ actions = [] }) {
                   </span>
                   <span className="text-right text-slate-500 font-medium">
                     {action.reason || action.error || '--'}
-                    <span className="block text-[10px] text-slate-700">{action.executed ? 'Executed trade linked' : 'Paper action only'}</span>
+                    <span className="block text-[10px] text-slate-700">
+                      {action.executed ? 'Simulated trade executed' : action.error ? action.error : 'Decision recorded only'}
+                    </span>
                   </span>
                 </motion.div>
               ))}

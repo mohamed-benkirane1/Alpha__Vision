@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
-const { checkPlan } = require('../middleware/CheckPlan');
 const {
   getBotStatus,
   startBot,
@@ -24,7 +23,7 @@ router.get('/status', auth, async (req, res) => {
   }
 });
 
-router.post('/start', auth, checkPlan('elite'), async (req, res) => {
+router.post('/start', auth, async (req, res) => {
   try {
     const response = await startBot(req.user.id, req.body);
     return res.status(response.success ? 200 : 400).json(response);
@@ -33,7 +32,7 @@ router.post('/start', auth, checkPlan('elite'), async (req, res) => {
   }
 });
 
-router.post('/stop', auth, checkPlan('elite'), async (req, res) => {
+router.post('/stop', auth, async (req, res) => {
   try {
     return res.json(await stopBot(req.user.id));
   } catch (err) {
@@ -41,7 +40,7 @@ router.post('/stop', auth, checkPlan('elite'), async (req, res) => {
   }
 });
 
-router.post('/tick', auth, checkPlan('elite'), async (req, res) => {
+router.post('/tick', auth, async (req, res) => {
   try {
     return res.json(await runBotTick(req.user.id));
   } catch (err) {
@@ -54,6 +53,14 @@ router.get('/actions', auth, async (req, res) => {
     return res.json(await getBotActionsResponse(req.user.id, req.query.limit));
   } catch (err) {
     return sendBotError(res, err, 'Unable to load bot actions');
+  }
+});
+
+router.get('/history', auth, async (req, res) => {
+  try {
+    return res.json(await getBotActionsResponse(req.user.id, req.query.limit));
+  } catch (err) {
+    return sendBotError(res, err, 'Unable to load bot history');
   }
 });
 

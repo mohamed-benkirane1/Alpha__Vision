@@ -59,7 +59,7 @@ export default function BotStatusCard({ bot }) {
           { label: 'Symbol', value: status.symbol || '--', color: 'text-white' },
           { label: 'Strategy', value: status.strategy ? status.strategy.toUpperCase() : '--', color: 'text-white' },
           { label: 'Mode', value: status.mode || '--', color: running ? 'text-amber-300' : 'text-slate-500' },
-          { label: 'Last Tick', value: formatDateTime(status.lastTickAt), color: 'text-white' },
+          { label: 'Status', value: status.status ? status.status.toUpperCase() : '--', color: running ? 'text-amber-300' : 'text-slate-500' },
         ].map((item) => (
           <div key={item.label} className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3">
             <p className="text-[10px] text-slate-600 mb-1 font-bold uppercase tracking-wider">{item.label}</p>
@@ -76,7 +76,7 @@ export default function BotStatusCard({ bot }) {
           <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-0.5">Engine status</p>
           <p className="text-xs font-semibold text-amber-300 leading-relaxed">
             {bot?.dataQuality?.hasRealBotEngine
-              ? 'Persistent paper bot engine available. Ticks record deterministic paper actions from backend prices.'
+              ? 'Persistent paper bot engine available. Ticks use backend OHLC candles and can execute simulated paper trades when enabled.'
               : 'Paper bot engine unavailable.'}
           </p>
         </div>
@@ -88,9 +88,19 @@ export default function BotStatusCard({ bot }) {
           <p className="text-sm font-black tabular-nums text-white">{formatDateTime(status.startedAt)}</p>
         </div>
         <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3">
+          <p className="text-[10px] text-slate-600 mb-1 font-bold uppercase tracking-wider">Last Tick</p>
+          <p className="text-sm font-black tabular-nums text-white">{formatDateTime(status.lastRunAt || status.lastTickAt)}</p>
+        </div>
+        <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3">
           <p className="text-[10px] text-slate-600 mb-1 font-bold uppercase tracking-wider">Position Size</p>
           <p className="text-sm font-black tabular-nums text-white">
             {status.positionSize === null || status.positionSize === undefined ? '--' : `$${Number(status.positionSize).toFixed(2)}`}
+          </p>
+        </div>
+        <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3">
+          <p className="text-[10px] text-slate-600 mb-1 font-bold uppercase tracking-wider">Execution</p>
+          <p className={`text-sm font-black tabular-nums ${status.executeTrades ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {status.executeTrades ? 'PAPER ON' : 'DECISIONS ONLY'}
           </p>
         </div>
       </div>
@@ -110,11 +120,9 @@ export default function BotStatusCard({ bot }) {
               </div>
             ))}
           </div>
-          {!bot.performance.pnlAvailable && (
-            <p className="text-[11px] text-slate-600 font-semibold mt-3">
-              Realized P&amp;L is unavailable because ticks currently record paper actions without executed bot trades.
-            </p>
-          )}
+          <p className="text-[11px] text-slate-600 font-semibold mt-3">
+            Executed paper trades: {bot.performance.executedCount ?? 0}. Realized P&amp;L {bot.performance.pnlAvailable ? 'comes from executed bot SELL trades.' : 'appears after executed bot trades with realized P&L.'}
+          </p>
         </div>
       )}
 
@@ -125,7 +133,7 @@ export default function BotStatusCard({ bot }) {
         </span>
         <span className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-[10px] font-bold text-slate-500">
           <Shield size={10} />
-          Mock performance: {bot?.dataQuality?.usesMockPerformance ? 'yes' : 'no'}
+          Paper only: no broker
         </span>
         {bot?.timestamp && (
           <span className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-[10px] font-bold text-slate-500">

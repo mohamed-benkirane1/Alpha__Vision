@@ -102,10 +102,10 @@ export default function TradingBot() {
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <Cpu size={16} className="text-rose-400" />
-              <h1 className="text-2xl font-black text-white">Trading Bot</h1>
+              <h1 className="text-2xl font-black text-white">Paper Trading Bot</h1>
             </div>
             <p className="text-xs text-slate-500 font-medium">
-              Persistent paper bot decisions from backend market quotes.
+              Simulated bot decisions and optional paper execution. No real broker orders are sent.
             </p>
           </div>
           <div className="flex items-center gap-2">

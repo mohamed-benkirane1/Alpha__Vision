@@ -10,17 +10,22 @@ const toNumberOrNull = (value) => {
 
 const normalizeStatus = (status = null) => ({
   isRunning: Boolean(status?.isRunning),
+  status: status?.status || (status?.isRunning ? 'running' : 'stopped'),
   mode: status?.mode || 'paper',
   strategy: status?.strategy || null,
   symbol: status?.symbol || null,
+  executeTrades: status?.executeTrades === true,
+  quantity: toNumberOrNull(status?.quantity),
   startedAt: status?.startedAt || null,
   stoppedAt: status?.stoppedAt || null,
   lastTickAt: status?.lastTickAt || null,
+  lastRunAt: status?.lastRunAt || status?.lastTickAt || null,
   positionSize: toNumberOrNull(status?.positionSize),
   maxPositionSize: toNumberOrNull(status?.maxPositionSize),
   riskLevel: status?.riskLevel || null,
   intervalSeconds: toNumberOrNull(status?.intervalSeconds),
   lastDecision: status?.lastDecision || null,
+  lastError: status?.lastError || null,
 })
 
 const normalizeAction = (action = {}) => ({
@@ -28,16 +33,26 @@ const normalizeAction = (action = {}) => ({
   bot: action.bot || null,
   symbol: action.symbol || null,
   action: action.action || null,
+  decision: action.decision || action.action || null,
+  mode: action.mode || 'paper',
   reason: action.reason || '',
   quantity: toNumberOrNull(action.quantity),
   price: toNumberOrNull(action.price),
   priceSource: action.priceSource || null,
   priceProvider: action.priceProvider || null,
+  priceProviderSymbol: action.priceProviderSymbol || null,
   priceTimestamp: action.priceTimestamp || null,
+  priceFetchedAt: action.priceFetchedAt || action.priceTimestamp || null,
+  priceCached: action.priceCached === true,
+  priceFallback: action.priceFallback === true,
+  priceStale: action.priceStale === true || action.priceIsStale === true,
+  priceIsLive: action.priceIsLive === true,
+  priceIsStale: action.priceIsStale === true || action.priceStale === true,
   confidence: toNumberOrNull(action.confidence),
   strategy: action.strategy || null,
   executed: action.executed === true,
   trade: action.trade || null,
+  execution: action.execution || null,
   error: action.error || null,
   createdAt: action.createdAt || action.timestamp || null,
   timestamp: action.timestamp || action.createdAt || null,
@@ -52,13 +67,14 @@ const normalizePerformance = (performance = null) => {
     sellCount: toNumberOrNull(performance.sellCount) ?? 0,
     holdCount: toNumberOrNull(performance.holdCount) ?? 0,
     skipCount: toNumberOrNull(performance.skipCount) ?? 0,
+    executedCount: toNumberOrNull(performance.executedCount) ?? 0,
     realizedPnl: toNumberOrNull(performance.realizedPnl),
     pnlAvailable: performance.pnlAvailable === true,
   }
 }
 
 const normalizeBotResponse = (payload = {}) => {
-  const status = normalizeStatus(payload.status)
+  const status = normalizeStatus(payload.status || payload.bot)
 
   return {
     success: Boolean(payload.success),
@@ -70,8 +86,11 @@ const normalizeBotResponse = (payload = {}) => {
       hasRealBotEngine: Boolean(payload.dataQuality?.hasRealBotEngine),
       usesMockPerformance: Boolean(payload.dataQuality?.usesMockPerformance),
       isIndicative: Boolean(payload.dataQuality?.isIndicative),
+      strategyUsesRealCandles: Boolean(payload.dataQuality?.strategyUsesRealCandles),
+      canExecutePaperTrades: Boolean(payload.dataQuality?.canExecutePaperTrades),
       warnings: normalizeArray(payload.dataQuality?.warnings),
     },
+    bot: status,
     status,
     performance: normalizePerformance(payload.performance),
     recentActions: normalizeArray(payload.recentActions).map(normalizeAction),
@@ -123,6 +142,8 @@ export const startBot = async ({
   symbol,
   strategy,
   positionSize,
+  quantity,
+  executeTrades,
   intervalSeconds,
   riskLevel,
   mode = 'paper',
@@ -133,6 +154,8 @@ export const startBot = async ({
       strategy,
       mode,
       positionSize,
+      ...(quantity ? { quantity } : {}),
+      executeTrades: executeTrades === true,
       ...(intervalSeconds ? { intervalSeconds } : {}),
       ...(riskLevel ? { riskLevel } : {}),
     })
@@ -162,12 +185,14 @@ export const runBotTick = async () => {
 
 export const getBotActions = async (limit = 20) => {
   try {
-    const response = await api.get('/bot/actions', { params: { limit } })
+    const response = await api.get('/bot/history', { params: { limit } })
     return normalizeBotResponse(response.data)
   } catch (error) {
     return normalizeError(error, 'Unable to load bot actions.')
   }
 }
+
+export const getBotHistory = getBotActions
 
 export default {
   getBotStatus,
@@ -175,4 +200,5 @@ export default {
   stopBot,
   runBotTick,
   getBotActions,
+  getBotHistory,
 }
