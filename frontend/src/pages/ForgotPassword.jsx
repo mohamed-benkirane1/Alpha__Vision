@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, CheckCircle, Mail } from 'lucide-react'
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle, Mail } from 'lucide-react'
 import { requestPasswordReset } from '../services/authService'
 
 const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
@@ -62,7 +62,6 @@ export default function ForgotPassword() {
   }
 
   const isValid = email && !error
-  const warnings = Array.isArray(result?.warnings) ? result.warnings : []
   const inputClass =
     `w-full bg-[#06020c]/70 border ${
       error
@@ -159,30 +158,17 @@ export default function ForgotPassword() {
           <motion.div initial="hidden" animate="visible" variants={stagger} className="text-center py-4">
             <motion.div variants={fadeUp} className="flex justify-center mb-5">
               <div className={`w-16 h-16 rounded-2xl border flex items-center justify-center ${
-                result.emailSent
-                  ? 'bg-emerald-500/10 border-emerald-500/25 shadow-[0_0_28px_rgba(16,185,129,0.15)]'
-                  : 'bg-amber-500/10 border-amber-500/25 shadow-[0_0_28px_rgba(245,158,11,0.12)]'
+                'bg-emerald-500/10 border-emerald-500/25 shadow-[0_0_28px_rgba(16,185,129,0.15)]'
               }`}>
-                {result.emailSent
-                  ? <CheckCircle size={28} className="text-emerald-400" />
-                  : <AlertTriangle size={28} className="text-amber-300" />}
+                <CheckCircle size={28} className="text-emerald-400" />
               </div>
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-xl font-black text-white mb-2">
-              {result.emailSent ? 'Check your inbox' : 'Email provider unavailable'}
+              Check your inbox
             </motion.h2>
             <motion.p variants={fadeUp} className="text-xs text-slate-500 leading-relaxed mb-4">
               {result.message}
             </motion.p>
-            {warnings.length > 0 && (
-              <motion.div variants={fadeUp} className="space-y-2 mb-5 text-left">
-                {warnings.map((warning) => (
-                  <div key={warning} className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-[11px] font-semibold text-amber-300">
-                    {warning}
-                  </div>
-                ))}
-              </motion.div>
-            )}
             <motion.button
               variants={fadeUp}
               type="button"

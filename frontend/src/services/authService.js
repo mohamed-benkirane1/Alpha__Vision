@@ -43,12 +43,9 @@ const normalizeAuthActionResponse = (payload = {}) => ({
   success: Boolean(payload.success),
   timestamp: payload.timestamp || null,
   message: payload.message || '',
-  emailSent: payload.emailSent === true,
-  providerConfigured: payload.providerConfigured === true,
   expiresMinutes: Number.isFinite(Number(payload.expiresMinutes)) ? Number(payload.expiresMinutes) : null,
   warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
   error: payload.error || null,
-  devResetUrl: payload.devResetUrl || null,
   raw: payload,
 })
 
@@ -60,8 +57,6 @@ const normalizeAuthActionError = (error, fallbackMessage) => {
     success: false,
     timestamp: payload.timestamp || null,
     message: payload.message || '',
-    emailSent: payload.emailSent === true,
-    providerConfigured: payload.providerConfigured === true,
     expiresMinutes: payload.expiresMinutes,
     warnings: payload.warnings || [],
     error: payload.error || payload.message || apiError.message || fallbackMessage,
@@ -97,12 +92,11 @@ export const requestPasswordReset = async (email) => {
   }
 }
 
-export const resetPassword = async ({ email, token, newPassword }) => {
+export const resetPassword = async ({ token, password, newPassword }) => {
   try {
     const response = await api.post('/auth/reset-password', {
-      email,
       token,
-      newPassword,
+      password: password || newPassword,
     }, { skipAuth: true })
     return normalizeAuthActionResponse(response.data)
   } catch (error) {

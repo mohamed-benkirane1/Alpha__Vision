@@ -15,14 +15,13 @@ function validatePassword(password) {
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
-  const email = searchParams.get('email') || ''
   const token = searchParams.get('token') || ''
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const linkError = !email || !token ? 'Reset link is missing required data.' : ''
+  const linkError = !token ? 'Reset link is missing required data.' : ''
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -44,7 +43,7 @@ export default function ResetPassword() {
     setLoading(true)
     setError('')
     setSuccess('')
-    const response = await resetPassword({ email, token, newPassword: password })
+    const response = await resetPassword({ token, password })
     setLoading(false)
 
     if (!response.success) {

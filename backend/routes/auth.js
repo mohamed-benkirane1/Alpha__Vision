@@ -10,6 +10,7 @@ const PROFILE_FIELDS = ['name'];
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESET_TOKEN_BYTES = 32;
 const DEFAULT_RESET_PASSWORD_EXPIRES_MINUTES = 15;
+const PASSWORD_RESET_PUBLIC_MESSAGE = 'If an account exists for this email, a password reset link has been sent.';
 
 function nowIso() {
   return new Date().toISOString();
@@ -147,10 +148,9 @@ function hashResetToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-function buildResetUrl(email, token) {
+function buildResetUrl(token) {
   const url = new URL('/reset-password', getFrontendUrl());
   url.searchParams.set('token', token);
-  url.searchParams.set('email', email);
   return url.toString();
 }
 
@@ -162,18 +162,6 @@ function validatePassword(password, fieldName = 'password') {
     return `${fieldName} must include at least one letter and one number.`;
   }
   return null;
-}
-
-function devResetUrlExtras(resetUrl) {
-  const devResponseEnabled = process.env.NODE_ENV !== 'production'
-    && process.env.ENABLE_DEV_RESET_TOKEN_RESPONSE === 'true';
-
-  if (!devResponseEnabled || !resetUrl) return {};
-
-  return {
-    devResetUrl: resetUrl,
-    warnings: ['Development reset URL response is enabled. Disable it outside local development.'],
-  };
 }
 
 function requireGoogleOAuth(req, res, next) {
@@ -257,68 +245,57 @@ router.post('/forgot-password', async (req, res) => {
 
     const providerConfigured = isSmtpConfigured();
     const expiresMinutes = getResetPasswordExpiresMinutes();
-    const warnings = [];
-    let emailSent = providerConfigured;
-    let resetUrl = null;
-
     const user = await findUserByEmail(email);
-    if (user) {
+
+    if (user && !providerConfigured) {
+      user.resetPasswordTokenHash = null;
+      user.resetPasswordExpires = null;
+      user.updatedAt = new Date();
+      await user.save();
+    }
+
+    if (user && providerConfigured) {
       const resetToken = crypto.randomBytes(RESET_TOKEN_BYTES).toString('hex');
       user.resetPasswordTokenHash = hashResetToken(resetToken);
       user.resetPasswordExpires = new Date(Date.now() + expiresMinutes * 60 * 1000);
       user.updatedAt = new Date();
       await user.save();
 
-      resetUrl = buildResetUrl(email, resetToken);
+      const resetUrl = buildResetUrl(resetToken);
 
-      if (providerConfigured) {
-        try {
-          const result = await sendPasswordResetEmail({
-            to: email,
-            resetUrl,
-            expiresMinutes,
-          });
-          emailSent = result.emailSent === true;
-          warnings.push(...(result.warnings || []));
-        } catch {
-          emailSent = false;
-          warnings.push('Configured SMTP provider could not send the password reset email.');
-        }
+      try {
+        await sendPasswordResetEmail({
+          to: email,
+          resetUrl,
+          expiresMinutes,
+        });
+      } catch {
+        user.resetPasswordTokenHash = null;
+        user.resetPasswordExpires = null;
+        user.updatedAt = new Date();
+        await user.save();
       }
     }
 
-    if (!providerConfigured) {
-      emailSent = false;
-      warnings.push('SMTP email provider is not configured. No password reset email was sent.');
-    }
-
-    const devExtras = user ? devResetUrlExtras(resetUrl) : {};
-
     return res.json(authActionResponse({
-      message: emailSent
-        ? 'If an account exists for this email, a password reset link has been sent.'
-        : 'Password reset request accepted, but no email was sent because the email provider is unavailable.',
-      emailSent,
-      providerConfigured,
+      message: PASSWORD_RESET_PUBLIC_MESSAGE,
       expiresMinutes,
-      warnings: [...warnings, ...(devExtras.warnings || [])],
-      ...(devExtras.devResetUrl ? { devResetUrl: devExtras.devResetUrl } : {}),
     }));
   } catch (err) {
-    return res.status(500).json(authActionError(err.message || 'Unable to create password reset request.'));
+    return res.status(500).json(authActionError('Unable to create password reset request.'));
   }
 });
 
 router.post('/reset-password', async (req, res) => {
   try {
-    const email = normalizeEmail(req.body?.email);
     const token = typeof req.body?.token === 'string' ? req.body.token.trim() : '';
-    const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
-    const passwordError = validatePassword(newPassword, 'newPassword');
+    const newPassword = typeof req.body?.password === 'string'
+      ? req.body.password
+      : typeof req.body?.newPassword === 'string'
+        ? req.body.newPassword
+        : '';
+    const passwordError = validatePassword(newPassword, 'password');
 
-    if (!isEmail(email)) {
-      return res.status(400).json(authActionError('A valid email is required.'));
-    }
     if (!token) {
       return res.status(400).json(authActionError('Reset token is required.'));
     }
@@ -328,7 +305,6 @@ router.post('/reset-password', async (req, res) => {
 
     const tokenHash = hashResetToken(token);
     const user = await User.findOne({
-      ...emailCaseInsensitiveFilter(email),
       resetPasswordTokenHash: tokenHash,
       resetPasswordExpires: { $gt: new Date() },
     }).select('+resetPasswordTokenHash +resetPasswordExpires');

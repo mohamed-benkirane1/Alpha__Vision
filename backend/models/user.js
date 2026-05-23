@@ -15,12 +15,16 @@ const UserSchema = new mongoose.Schema({
   stripeSubscriptionStatus: { type: String, default: null },
   resetPasswordTokenHash: { type: String, default: null, select: false },
   resetPasswordExpires: { type: Date, default: null, select: false },
+  passwordChangedAt: { type: Date, default: null },
 }, { timestamps: true });
 
 UserSchema.pre('save', async function hashPassword(next) {
   if (!this.isModified('password')) return next();
 
   try {
+    if (!this.isNew) {
+      this.passwordChangedAt = new Date();
+    }
     this.password = await bcrypt.hash(this.password, 10);
     return next();
   } catch (error) {
