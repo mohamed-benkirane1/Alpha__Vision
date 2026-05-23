@@ -25,6 +25,18 @@ export default function TradingPanel({ symbol, price, type, quote }) {
   const normalizedType = type === 'SELL' ? 'SELL' : 'BUY'
   const isLong     = normalizedType !== 'SELL'
   const validPrice = getValidNumber(price)
+  const quoteFallback = quote?.fallback === true
+  const quoteStale = quote?.stale === true || quote?.isStale === true
+  const quoteUnavailable = quote?.priceAvailable === false || validPrice === null
+  const quoteStatus = quoteUnavailable
+    ? 'Unavailable'
+    : quoteFallback
+      ? 'Fallback'
+      : quoteStale
+        ? 'Stale'
+        : quote?.isLive
+          ? 'Live'
+          : 'Backend quote'
   const stopLoss   = validPrice === null ? null : (isLong ? validPrice * 0.97 : validPrice * 1.03)
   const takeProfit = validPrice === null ? null : (isLong ? validPrice * 1.06 : validPrice * 0.94)
 
@@ -74,7 +86,10 @@ export default function TradingPanel({ symbol, price, type, quote }) {
           Indicative preview only. Final execution price is calculated by backend.
         </p>
         <p className="text-[10px] text-slate-700 mt-2 font-medium">
-          Quote {quote?.source || '--'} · {quote?.provider || '--'} · {formatDateTime(quote?.timestamp)}
+          Price status: <span className="text-slate-500">{quoteStatus}</span>
+        </p>
+        <p className="text-[10px] text-slate-700 mt-2 font-medium">
+          Quote {quote?.source || '--'} - {quote?.provider || '--'} - {formatDateTime(quote?.fetchedAt || quote?.timestamp)}
         </p>
       </div>
     </motion.div>

@@ -29,12 +29,15 @@ function Badge({ label, tone = 'slate' }) {
   return <span className={`rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase ${tones[tone]}`}>{label}</span>
 }
 
-export default function PriceCard({ symbol, name, type, price, change, source, provider, timestamp, cached, fallback, stale, priceAvailable = true, error, selected, onSelect }) {
+export default function PriceCard({ symbol, name, type, price, change, source, provider, providerSymbol, timestamp, fetchedAt, cached, fallback, stale, isLive, isStale, priceAvailable = true, error, selected, onSelect }) {
   const validPrice = getValidNumber(price)
   const available = priceAvailable === true && validPrice !== null
+  const staleQuote = stale === true || isStale === true || fallback === true || !available
+  const liveQuote = available && (isLive === true || (!fallback && !staleQuote))
   const validChange = getValidNumber(change) ?? 0
   const up    = validChange >= 0
   const color = assetColors[symbol] || '#6366f1'
+  const displayTimestamp = fetchedAt || timestamp
   return (
     <motion.button
       onClick={() => onSelect(symbol)}
@@ -74,15 +77,15 @@ export default function PriceCard({ symbol, name, type, price, change, source, p
         </div>
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
-        {available && !fallback && !stale && <Badge label="Live" tone="emerald" />}
+        {liveQuote && <Badge label="Live" tone="emerald" />}
         {cached && <Badge label="Cached" />}
         {fallback && <Badge label="Fallback" tone="amber" />}
-        {stale && <Badge label="Stale" tone="amber" />}
+        {staleQuote && !fallback && available && <Badge label="Stale" tone="amber" />}
         {!available && <Badge label="Unavailable" tone="rose" />}
       </div>
       <div className="mt-2 text-[9px] text-slate-700 font-medium leading-relaxed">
-        <p>{type || 'asset'} · {source || '--'} · {formatDateTime(timestamp)}</p>
-        <p className="truncate" title={provider || error || undefined}>{provider || error || '--'}</p>
+        <p>{type || 'asset'} - {source || '--'} - {formatDateTime(displayTimestamp)}</p>
+        <p className="truncate" title={provider || providerSymbol || displayTimestamp || error || undefined}>{provider || providerSymbol || error || '--'}</p>
         {error && <p className="text-amber-400/75 flex items-center gap-1"><AlertTriangle size={9} />{error}</p>}
       </div>
     </motion.button>

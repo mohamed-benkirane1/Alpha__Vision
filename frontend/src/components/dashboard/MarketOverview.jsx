@@ -49,6 +49,9 @@ const normalizeMarkets = (markets) => {
     const price = getValidNumber(market.price)
     const change = getValidNumber(market.change24h ?? market.changePercent)
     const priceAvailable = market.priceAvailable === true && price !== null
+    const fallback = market.fallback === true
+    const isStale = market.stale === true || market.isStale === true || fallback || !priceAvailable
+    const isLive = market.isLive === true && priceAvailable && !fallback && !isStale
 
     return {
       symbol: market.symbol || 'N/A',
@@ -60,10 +63,12 @@ const normalizeMarkets = (markets) => {
       color: assetColors[index % assetColors.length],
       source: market.source || null,
       provider: market.provider || null,
-      timestamp: market.timestamp || null,
+      timestamp: market.fetchedAt || market.timestamp || null,
       cached: market.cached === true,
-      fallback: market.fallback === true,
+      fallback,
       stale: market.stale === true,
+      isStale,
+      isLive,
       priceAvailable,
       error: market.error || null,
     }
@@ -72,7 +77,7 @@ const normalizeMarkets = (markets) => {
 
 export default function MarketOverview({ markets = [], loading = false, dataQuality = null }) {
   const assets = normalizeMarkets(markets)
-  const hasQualityIssue = dataQuality?.hasErrors || dataQuality?.hasFallbacks || dataQuality?.hasStale
+  const hasQualityIssue = dataQuality?.hasErrors || dataQuality?.hasFallbacks || dataQuality?.hasStale || dataQuality?.hasUnavailable
   const statusLabel = loading
     ? 'Loading'
     : assets.length === 0
@@ -133,12 +138,12 @@ export default function MarketOverview({ markets = [], loading = false, dataQual
               </div>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1">
-              {a.priceAvailable && !a.fallback && !a.stale && <StatusBadge label="Live" tone="emerald" />}
+              {a.isLive && <StatusBadge label="Live" tone="emerald" />}
               {a.cached && <StatusBadge label="Cached" />}
               {a.fallback && <StatusBadge label="Fallback" tone="amber" />}
-              {a.stale && <StatusBadge label="Stale" tone="amber" />}
+              {a.isStale && !a.fallback && a.priceAvailable && <StatusBadge label="Stale" tone="amber" />}
               {!a.priceAvailable && <StatusBadge label="Unavailable" tone="rose" />}
-              <span className="text-[10px] text-slate-700 ml-auto">{a.source || '--'} · {formatDateTime(a.timestamp)}</span>
+              <span className="text-[10px] text-slate-700 ml-auto">{a.provider || a.source || '--'} - {formatDateTime(a.timestamp)}</span>
             </div>
             {a.error && <p className="mt-1 text-[10px] text-amber-400/80 font-semibold flex items-center gap-1"><AlertTriangle size={10} />{a.error}</p>}
           </motion.div>

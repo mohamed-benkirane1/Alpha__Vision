@@ -194,7 +194,7 @@ export default function Dashboard() {
   const portfolioQuality = portfolio?.dataQuality
   const hasPortfolio = Boolean(portfolio)
   const portfolioReliable = hasPortfolio && portfolioQuality?.valuationReliable !== false
-  const marketPartial = marketDataQuality?.hasErrors || marketDataQuality?.hasFallbacks || marketDataQuality?.hasStale
+  const marketPartial = marketDataQuality?.hasErrors || marketDataQuality?.hasFallbacks || marketDataQuality?.hasStale || marketDataQuality?.hasUnavailable
   const failedWidgets = Object.entries(widgetStatus || {})
     .filter(([, value]) => value.status === 'rejected')
     .map(([key]) => key)

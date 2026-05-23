@@ -5,39 +5,79 @@ const {
   getTopCryptos,
   getPricesForSymbols,
   computeDataQuality,
-  normalizeSymbol
+  normalizeSymbol,
+  getMarketCacheTtlSeconds
 } = require('../services/marketService');
 
 function marketTimestamp() {
   return new Date().toISOString();
 }
 
+function createMarketMeta(quotes, fetchedAt) {
+  const data = Array.isArray(quotes) ? quotes.filter(Boolean) : [];
+  const providers = [...new Set(data.map((quote) => quote.provider || quote.source).filter(Boolean))];
+  const hasFallbacks = data.some((quote) => quote.fallback === true);
+  const hasUnavailable = data.some((quote) => quote.priceAvailable === false);
+  const isStale = data.some((quote) => (
+    quote.stale === true ||
+    quote.isStale === true ||
+    quote.fallback === true ||
+    quote.priceAvailable === false
+  ));
+
+  return {
+    provider: providers.length === 1 ? providers[0] : providers.length > 1 ? 'mixed' : null,
+    providers,
+    isLive: data.length > 0 && data.every((quote) => quote.isLive === true),
+    isStale,
+    hasFallbacks,
+    hasUnavailable,
+    fetchedAt,
+    cacheTtlSeconds: getMarketCacheTtlSeconds()
+  };
+}
+
 function createListResponse(quotes) {
   const data = Array.isArray(quotes) ? quotes : [];
+  const timestamp = marketTimestamp();
   return {
     success: true,
     count: data.length,
-    timestamp: marketTimestamp(),
+    timestamp,
     dataQuality: computeDataQuality(data),
+    meta: createMarketMeta(data, timestamp),
     data
   };
 }
 
 function createSingleResponse(quote) {
+  const timestamp = marketTimestamp();
   return {
     success: true,
-    timestamp: marketTimestamp(),
+    timestamp,
+    meta: createMarketMeta(quote ? [quote] : [], timestamp),
     data: quote
   };
 }
 
 function createErrorResponse(message, statusCode = 500) {
+  const timestamp = marketTimestamp();
   return {
     statusCode,
     body: {
       success: false,
-      timestamp: marketTimestamp(),
+      timestamp,
       error: message,
+      meta: {
+        provider: null,
+        providers: [],
+        isLive: false,
+        isStale: true,
+        hasFallbacks: false,
+        hasUnavailable: true,
+        fetchedAt: timestamp,
+        cacheTtlSeconds: getMarketCacheTtlSeconds()
+      },
       data: []
     }
   };
@@ -55,7 +95,11 @@ router.get('/price/:symbol', async (req, res) => {
 
 router.get('/prices', async (req, res) => {
   try {
-    const quotes = await getAllPrices();
+    const symbolsParam = req.query.symbols;
+    const symbols = typeof symbolsParam === 'string'
+      ? symbolsParam.split(',').map(normalizeSymbol).filter(Boolean)
+      : [];
+    const quotes = symbols.length > 0 ? await getPricesForSymbols(symbols) : await getAllPrices();
     res.json(createListResponse(quotes));
   } catch (err) {
     const response = createErrorResponse(err.message);

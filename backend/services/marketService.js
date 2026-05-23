@@ -7,6 +7,7 @@ const cache = new NodeCache({ stdTTL: MARKET_CACHE_TTL_SECONDS });
 const BINANCE_PROVIDER = 'Binance Public API';
 const YAHOO_PROVIDER = 'Yahoo Finance unofficial chart API';
 const FALLBACK_PROVIDER = 'static-fallback';
+const CRYPTO_QUOTE_SUFFIXES = ['USDT'];
 
 const ASSET_NAMES = {
   BTC: 'Bitcoin',
@@ -54,7 +55,12 @@ const INDICES = {
 };
 
 function normalizeSymbol(symbol) {
-  return String(symbol || '').trim().toUpperCase();
+  const value = String(symbol || '').trim().toUpperCase();
+  const quoteSuffix = CRYPTO_QUOTE_SUFFIXES.find((suffix) => (
+    value.endsWith(suffix) && value.length > suffix.length
+  ));
+
+  return quoteSuffix ? value.slice(0, -quoteSuffix.length) : value;
 }
 
 function nowIso() {
@@ -93,6 +99,7 @@ function createQuote({
   marketCap = null,
   source,
   provider,
+  providerSymbol = null,
   timestamp = nowIso(),
   cached = false,
   stale = false,
@@ -108,6 +115,8 @@ function createQuote({
   const available = typeof priceAvailable === 'boolean'
     ? priceAvailable
     : normalizedPrice !== null && normalizedPrice > 0;
+  const isStale = stale === true || fallback === true || available !== true;
+  const isLive = available === true && fallback !== true && stale !== true;
 
   return {
     symbol: normalizedSymbol,
@@ -119,9 +128,14 @@ function createQuote({
     marketCap: normalizedMarketCap,
     source,
     provider,
+    providerSymbol,
     timestamp,
+    fetchedAt: timestamp,
+    cacheTtlSeconds: MARKET_CACHE_TTL_SECONDS,
     cached,
     stale,
+    isStale,
+    isLive,
     fallback,
     priceAvailable: available,
     error
@@ -162,7 +176,11 @@ function createErrorQuote(symbol, message, type = 'unknown') {
 }
 
 function markQuoteCached(quote) {
-  return { ...quote, cached: true };
+  return {
+    ...quote,
+    cached: true,
+    cacheTtlSeconds: quote.cacheTtlSeconds || MARKET_CACHE_TTL_SECONDS
+  };
 }
 
 function markQuotesCached(quotes) {
@@ -170,11 +188,24 @@ function markQuotesCached(quotes) {
 }
 
 function computeDataQuality(quotes = []) {
+  const data = Array.isArray(quotes) ? quotes : [];
+
   return {
-    hasFallbacks: quotes.some((quote) => quote.fallback === true),
-    hasStale: quotes.some((quote) => quote.stale === true),
-    hasErrors: quotes.some((quote) => quote.priceAvailable === false || Boolean(quote.error))
+    hasFallbacks: data.some((quote) => quote.fallback === true),
+    hasStale: data.some((quote) => quote.stale === true || quote.isStale === true),
+    hasErrors: data.some((quote) => quote.priceAvailable === false || Boolean(quote.error)),
+    hasUnavailable: data.some((quote) => quote.priceAvailable === false),
+    allLive: data.length > 0 && data.every((quote) => quote.isLive === true),
+    liveCount: data.filter((quote) => quote.isLive === true).length,
+    staleCount: data.filter((quote) => quote.stale === true || quote.isStale === true).length,
+    fallbackCount: data.filter((quote) => quote.fallback === true).length,
+    unavailableCount: data.filter((quote) => quote.priceAvailable === false).length,
+    cachedCount: data.filter((quote) => quote.cached === true).length
   };
+}
+
+function getMarketCacheTtlSeconds() {
+  return MARKET_CACHE_TTL_SECONDS;
 }
 
 function getYahooPriceMeta(response) {
@@ -212,7 +243,7 @@ async function getTopCryptos(limit = 50) {
       .sort((a, b) => parseFiniteNumber(b.quoteVolume) - parseFiniteNumber(a.quoteVolume))
       .slice(0, safeLimit)
       .map((item) => {
-        const symbol = item.symbol.replace('USDT', '');
+        const symbol = normalizeSymbol(item.symbol);
         return createQuote({
           symbol,
           name: getAssetName(symbol, 'crypto'),
@@ -222,6 +253,7 @@ async function getTopCryptos(limit = 50) {
           volume: item.quoteVolume,
           source: 'binance',
           provider: BINANCE_PROVIDER,
+          providerSymbol: item.symbol,
           fallback: false,
           stale: false,
           priceAvailable: parseFiniteNumber(item.lastPrice) !== null && parseFiniteNumber(item.lastPrice) > 0
@@ -240,12 +272,13 @@ async function getSpecificCryptos(symbols = ['BTC', 'ETH', 'SOL']) {
 
   return Promise.all(
     normalizedSymbols.map(async (symbol) => {
-      const cacheKey = `crypto_${symbol}`;
+      const providerSymbol = `${symbol}USDT`;
+      const cacheKey = `crypto_${providerSymbol}`;
       const cached = cache.get(cacheKey);
       if (cached) return markQuoteCached(cached);
 
       try {
-        const response = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}USDT`, {
+        const response = await axios.get(`https://api.binance.com/api/v3/ticker/24hr?symbol=${providerSymbol}`, {
           timeout: 5000
         });
 
@@ -253,13 +286,15 @@ async function getSpecificCryptos(symbols = ['BTC', 'ETH', 'SOL']) {
           symbol,
           name: getAssetName(symbol, 'crypto'),
           type: 'crypto',
-          price: response.data.price,
-          change24h: 0,
+          price: response.data.lastPrice,
+          change24h: response.data.priceChangePercent,
+          volume: response.data.quoteVolume,
           source: 'binance',
           provider: BINANCE_PROVIDER,
+          providerSymbol,
           fallback: false,
           stale: false,
-          priceAvailable: parseFiniteNumber(response.data.price) !== null && parseFiniteNumber(response.data.price) > 0
+          priceAvailable: parseFiniteNumber(response.data.lastPrice) !== null && parseFiniteNumber(response.data.lastPrice) > 0
         });
 
         cache.set(cacheKey, quote);
@@ -288,7 +323,7 @@ async function getMetalPrice(symbol) {
   }
 
   try {
-    const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/charts/${yahooSymbol}`, {
+    const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}`, {
       timeout: 5000
     });
     const meta = getYahooPriceMeta(response);
@@ -305,6 +340,7 @@ async function getMetalPrice(symbol) {
       change24h: meta.regularMarketChangePercent,
       source: 'yahoo',
       provider: YAHOO_PROVIDER,
+      providerSymbol: yahooSymbol,
       fallback: false,
       stale: false
     });
@@ -337,7 +373,7 @@ async function getStockPrice(symbol) {
   }
 
   try {
-    const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/charts/${upperSymbol}`, {
+    const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${upperSymbol}`, {
       timeout: 5000
     });
     const meta = getYahooPriceMeta(response);
@@ -354,6 +390,7 @@ async function getStockPrice(symbol) {
       change24h: meta.regularMarketChangePercent,
       source: 'yahoo',
       provider: YAHOO_PROVIDER,
+      providerSymbol: upperSymbol,
       fallback: false,
       stale: false
     });
@@ -393,7 +430,7 @@ async function getIndexPrice(symbol) {
   }
 
   try {
-    const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/charts/${yahooSymbol}`, {
+    const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}`, {
       timeout: 5000
     });
     const meta = getYahooPriceMeta(response);
@@ -411,6 +448,7 @@ async function getIndexPrice(symbol) {
       change24h: meta.regularMarketChangePercent,
       source: 'yahoo',
       provider: YAHOO_PROVIDER,
+      providerSymbol: yahooSymbol,
       fallback: false,
       stale: false
     });
@@ -467,7 +505,7 @@ async function getPrice(symbol) {
 
   return createErrorQuote(
     upperSymbol,
-    `Symbol ${upperSymbol} not supported or price unavailable. Try: BTC, ETH, SOL, XAU, GOLD, AAPL, TSLA, IXIC, SPX, DJI`
+    `Symbol ${upperSymbol} not supported or price unavailable. Try: BTC, BTCUSDT, ETH, SOL, XAU, GOLD, AAPL, TSLA, IXIC, SPX, DJI`
   );
 }
 
@@ -506,5 +544,6 @@ module.exports = {
   createErrorQuote,
   createFallbackQuote,
   computeDataQuality,
-  normalizeSymbol
+  normalizeSymbol,
+  getMarketCacheTtlSeconds
 };

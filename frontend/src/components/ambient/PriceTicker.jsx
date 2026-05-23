@@ -1,27 +1,60 @@
-const ITEMS = [
-  { symbol: 'BTC',  price: '$67,432',  change: '+2.34%', up: true  },
-  { symbol: 'ETH',  price: '$3,847',   change: '+1.82%', up: true  },
-  { symbol: 'SOL',  price: '$178.32',  change: '+5.67%', up: true  },
-  { symbol: 'XAU',  price: '$2,345',   change: '+0.43%', up: true  },
-  { symbol: 'AAPL', price: '$189.45',  change: '-0.88%', up: false },
-  { symbol: 'NDX',  price: '18,234',   change: '+0.76%', up: true  },
-  { symbol: 'BNB',  price: '$612.40',  change: '+3.21%', up: true  },
-  { symbol: 'XRP',  price: '$0.6142',  change: '-1.05%', up: false },
-  { symbol: 'ADA',  price: '$0.4820',  change: '+2.18%', up: true  },
-  { symbol: 'DOGE', price: '$0.1634',  change: '+4.72%', up: true  },
-  { symbol: 'AVAX', price: '$36.84',   change: '+1.93%', up: true  },
-  { symbol: 'MATIC',price: '$0.7230',  change: '-0.62%', up: false },
-]
+import { useEffect, useMemo, useState } from 'react'
+import { getMarketPrices } from '../../services/marketService'
 
-function TickerItem({ symbol, price, change, up }) {
+const TICKER_SYMBOLS = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL', 'NDX', 'BNB', 'XRP', 'ADA', 'DOGE', 'AVAX']
+
+const getValidNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+const formatPrice = (quote) => {
+  const price = getValidNumber(quote.price)
+  if (price === null || quote.priceAvailable !== true) return 'Unavailable'
+
+  if (quote.type === 'index') {
+    return price.toLocaleString('en-US', { maximumFractionDigits: 2 })
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: price < 1 ? 4 : 2,
+    maximumFractionDigits: price < 1 ? 4 : price >= 1000 ? 0 : 2,
+  }).format(price)
+}
+
+const formatChange = (change) => {
+  const value = getValidNumber(change)
+  if (value === null) return '--'
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
+}
+
+function getStatus(quote) {
+  if (quote.priceAvailable !== true) return { label: 'Unavailable', className: 'text-rose-400 bg-rose-500/10' }
+  if (quote.fallback) return { label: 'Fallback', className: 'text-amber-400 bg-amber-500/10' }
+  if (quote.stale || quote.isStale) return { label: 'Stale', className: 'text-amber-400 bg-amber-500/10' }
+  if (quote.cached) return { label: 'Cached', className: 'text-slate-400 bg-white/[0.05]' }
+  return { label: 'Live', className: 'text-emerald-400 bg-emerald-500/10' }
+}
+
+function TickerItem({ quote }) {
+  const change = getValidNumber(quote.change24h)
+  const up = (change ?? 0) >= 0
+  const status = getStatus(quote)
+
   return (
     <span className="inline-flex items-center gap-2.5 px-5 select-none">
-      <span className="text-[11px] font-bold text-slate-400 tracking-wider">{symbol}</span>
-      <span className="text-[11px] font-semibold text-white tabular-nums">{price}</span>
+      <span className="text-[11px] font-bold text-slate-400 tracking-wider">{quote.symbol}</span>
+      <span className="text-[11px] font-semibold text-white tabular-nums">{formatPrice(quote)}</span>
       <span className={`text-[10px] font-bold px-1.5 py-px rounded ${
         up ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
       }`}>
-        {change}
+        {formatChange(change)}
+      </span>
+      <span className={`text-[9px] font-black px-1.5 py-px rounded uppercase ${status.className}`}>
+        {status.label}
       </span>
       <span className="text-slate-800 text-[10px] select-none">|</span>
     </span>
@@ -29,14 +62,53 @@ function TickerItem({ symbol, price, change, up }) {
 }
 
 export default function PriceTicker() {
-  const doubled = [...ITEMS, ...ITEMS]
+  const [quotes, setQuotes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadTicker = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const response = await getMarketPrices(TICKER_SYMBOLS)
+        if (cancelled) return
+        setQuotes(Array.isArray(response.quotes) ? response.quotes : [])
+      } catch (err) {
+        if (cancelled) return
+        setQuotes([])
+        setError(err?.normalized?.error || err?.message || 'Market data unavailable')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    loadTicker()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const doubled = useMemo(() => (quotes.length > 0 ? [...quotes, ...quotes] : []), [quotes])
+  const message = loading ? 'Loading market quotes...' : error || 'Market data unavailable'
+
   return (
     <div className="overflow-hidden border-t border-white/[0.05] bg-[#060b18]/95 backdrop-blur-sm h-8 flex items-center shrink-0">
-      <div className="flex animate-ticker whitespace-nowrap">
-        {doubled.map((item, i) => (
-          <TickerItem key={i} {...item} />
-        ))}
-      </div>
+      {doubled.length > 0 ? (
+        <div className="flex animate-ticker whitespace-nowrap">
+          {doubled.map((quote, i) => (
+            <TickerItem key={`${quote.symbol}-${i}`} quote={quote} />
+          ))}
+        </div>
+      ) : (
+        <div className="px-5 text-[11px] font-semibold text-slate-500">
+          {message}
+        </div>
+      )}
     </div>
   )
 }

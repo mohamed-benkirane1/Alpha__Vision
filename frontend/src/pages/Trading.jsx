@@ -38,10 +38,14 @@ const normalizeAsset = (asset) => ({
   change: getValidNumber(asset.change24h ?? asset.changePercent) ?? 0,
   source: asset.source || null,
   provider: asset.provider || null,
+  providerSymbol: asset.providerSymbol || null,
   timestamp: asset.timestamp || null,
+  fetchedAt: asset.fetchedAt || asset.timestamp || null,
   cached: asset.cached === true,
   fallback: asset.fallback === true,
   stale: asset.stale === true,
+  isStale: asset.isStale === true || asset.stale === true || asset.fallback === true || asset.priceAvailable !== true,
+  isLive: asset.isLive === true,
   priceAvailable: asset.priceAvailable === true && getValidNumber(asset.price) !== null,
   error: asset.error || null,
 })
@@ -249,12 +253,12 @@ export default function Trading() {
     change: 0,
     priceAvailable: false,
   }
-  const selectedQuoteBlocked = currentAsset.priceAvailable !== true || currentAsset.price === null || currentAsset.fallback || currentAsset.stale
+  const selectedQuoteBlocked = currentAsset.priceAvailable !== true || currentAsset.price === null || currentAsset.fallback || currentAsset.stale || currentAsset.isStale
   const selectedQuoteWarning = currentAsset.priceAvailable !== true || currentAsset.price === null
     ? currentAsset.error || 'Selected quote is unavailable.'
     : currentAsset.fallback
       ? 'Selected quote is fallback. Backend execution is blocked.'
-      : currentAsset.stale
+      : currentAsset.stale || currentAsset.isStale
         ? 'Selected quote is stale. Backend execution is blocked.'
         : ''
   const balanceLabel = balanceLoading ? 'Loading...' : formatCurrency(balance)

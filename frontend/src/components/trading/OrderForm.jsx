@@ -64,12 +64,14 @@ export default function OrderForm({
   const quote = selectedQuote?.symbol === symbol ? selectedQuote : prices[symbol]
   const price = getValidNumber(quote?.price)
   const hasPrice = price !== null && price > 0 && quote?.priceAvailable !== false
-  const quoteBlocked = !hasPrice || quote?.fallback === true || quote?.stale === true
+  const quoteFallback = quote?.fallback === true
+  const quoteStale = quote?.stale === true || quote?.isStale === true
+  const quoteBlocked = !hasPrice || quoteFallback || quoteStale
   const quoteBlockMessage = blockingMessage || (!hasPrice
     ? 'Selected price is unavailable. This symbol cannot be traded right now.'
-    : quote?.fallback
+    : quoteFallback
       ? 'Selected quote is fallback. Backend will reject execution.'
-      : quote?.stale
+      : quoteStale
         ? 'Selected quote is stale. Backend will reject execution.'
         : '')
   const quantity  = Number(qty)
@@ -182,7 +184,10 @@ export default function OrderForm({
             Estimated price. Final execution price is confirmed by backend.
           </p>
           <div className="text-[10px] text-slate-700 font-medium">
-            Source <span className="text-slate-500">{quote?.source || '--'}</span> · Provider <span className="text-slate-500">{quote?.provider || '--'}</span>
+            Source <span className="text-slate-500">{quote?.source || '--'}</span> - Provider <span className="text-slate-500">{quote?.provider || '--'}</span>
+          </div>
+          <div className="text-[10px] text-slate-700 font-medium">
+            Status <span className="text-slate-500">{quote?.isLive ? 'Live' : quoteFallback ? 'Fallback' : quoteStale ? 'Stale' : hasPrice ? 'Backend quote' : 'Unavailable'}</span>
           </div>
         </div>
 
@@ -193,15 +198,15 @@ export default function OrderForm({
         {lastExecution && (
           <div className="bg-emerald-500/[0.06] border border-emerald-500/18 rounded-xl px-4 py-3 text-[11px] text-emerald-400/90 font-semibold space-y-1">
             <p className="font-black">Executed {lastExecution.action} {lastExecution.quantity} {lastExecution.symbol}</p>
-            <p>Price {formatCurrency(lastExecution.executedPrice)} · Total {formatCurrency(lastExecution.total)}</p>
-            <p className="text-slate-500">{lastExecution.priceProvider || lastExecution.priceSource || '--'} · {formatDateTime(lastExecution.priceTimestamp)}{lastExecution.priceCached ? ' · cached' : ''}</p>
+            <p>Price {formatCurrency(lastExecution.executedPrice)} - Total {formatCurrency(lastExecution.total)}</p>
+            <p className="text-slate-500">{lastExecution.priceProvider || lastExecution.priceSource || '--'} - {formatDateTime(lastExecution.priceTimestamp)}{lastExecution.priceCached ? ' - cached' : ''}</p>
           </div>
         )}
 
         {lastPriceStatus && (
           <div className="bg-amber-500/[0.06] border border-amber-500/18 rounded-xl px-4 py-3 text-[11px] text-amber-400/90 font-semibold space-y-1">
             <p className="font-black">Backend price check rejected {lastPriceStatus.symbol}</p>
-            <p>{lastPriceStatus.provider || lastPriceStatus.source || '--'} · {formatDateTime(lastPriceStatus.timestamp)} · fallback {lastPriceStatus.fallback ? 'yes' : 'no'} · stale {lastPriceStatus.stale ? 'yes' : 'no'}</p>
+            <p>{lastPriceStatus.provider || lastPriceStatus.source || '--'} - {formatDateTime(lastPriceStatus.fetchedAt || lastPriceStatus.timestamp)} - fallback {lastPriceStatus.fallback ? 'yes' : 'no'} - stale {lastPriceStatus.stale || lastPriceStatus.isStale ? 'yes' : 'no'}</p>
             {lastPriceStatus.error && <p className="text-slate-500">{lastPriceStatus.error}</p>}
           </div>
         )}
