@@ -11,6 +11,7 @@ const assistantScope = [
 const dataRules = [
   'Answers are generated through the backend chatbot route.',
   'No AI provider key is exposed in the browser.',
+  'Gemini is used only when configured on the backend.',
   'Fallback responses are labelled when provider access is unavailable.',
 ]
 

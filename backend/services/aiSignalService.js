@@ -1,12 +1,16 @@
-const axios = require('axios');
-const { getPrice } = require('./marketService');
+const { getMarketHistory, getPrice } = require('./marketService');
 const { getNews } = require('./newsService');
+const {
+  generateGeminiJson,
+  getGeminiErrorMessage,
+  getGeminiProviderStatus,
+  hasGeminiKey,
+} = require('./geminiService');
 
 const DEFAULT_SYMBOL = process.env.AI_SIGNAL_DEFAULT_SYMBOL || 'BTC';
-const DEFAULT_PROVIDER = (process.env.AI_SIGNAL_PROVIDER || 'deepseek').trim().toLowerCase();
-const DEEPSEEK_MODEL = 'deepseek-chat';
-const DISCLAIMER = 'Educational signal, not financial advice.';
-const VALID_LABELS = ['BUY', 'SELL', 'HOLD'];
+const DEFAULT_PROVIDER = (process.env.AI_SIGNAL_PROVIDER || process.env.AI_PROVIDER || 'gemini').trim().toLowerCase();
+const DISCLAIMER = 'Educational analysis only, not financial advice.';
+const VALID_LABELS = ['BUY', 'SELL', 'HOLD', 'NEUTRAL'];
 const VALID_RISK_LEVELS = ['low', 'medium', 'high'];
 
 function nowIso() {
@@ -27,7 +31,14 @@ function toFiniteNumber(value, fallback = null) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function getProviderStatus(error = null) {
+  if (DEFAULT_PROVIDER !== 'gemini') return 'fallback';
+  return getGeminiProviderStatus(error);
+}
+
 function createMarketSnapshot(quote = {}) {
+  const isStale = quote.stale === true || quote.isStale === true;
+
   return {
     symbol: quote.symbol || null,
     name: quote.name || quote.symbol || null,
@@ -36,10 +47,14 @@ function createMarketSnapshot(quote = {}) {
     change24h: toFiniteNumber(quote.change24h, 0),
     source: quote.source || null,
     provider: quote.provider || null,
+    providerSymbol: quote.providerSymbol || null,
     timestamp: quote.timestamp || null,
+    fetchedAt: quote.fetchedAt || quote.timestamp || null,
     cached: quote.cached === true,
     fallback: quote.fallback === true,
-    stale: quote.stale === true,
+    stale: isStale,
+    isLive: quote.isLive === true,
+    isStale,
     priceAvailable: quote.priceAvailable === true,
     error: quote.error || null,
   };
@@ -60,6 +75,7 @@ function createNewsSummary(articles = []) {
 }
 
 function createDataQuality({
+  quote = null,
   marketReliable = false,
   usesNewsData = false,
   newsAvailable = false,
@@ -67,8 +83,15 @@ function createDataQuality({
   indicative = false,
   warnings = [],
 } = {}) {
+  const isStale = quote?.stale === true || quote?.isStale === true;
+
   return {
-    usesLiveMarketData: marketReliable,
+    marketDataAvailable: quote?.priceAvailable === true,
+    isLive: quote?.isLive === true,
+    isStale,
+    isCached: quote?.cached === true,
+    isFallback: quote?.fallback === true,
+    usesLiveMarketData: quote?.isLive === true,
     usesNewsData,
     usesLLM,
     marketReliable,
@@ -78,73 +101,103 @@ function createDataQuality({
   };
 }
 
-function buildResponse({
-  success,
-  symbol,
-  provider = null,
-  fallback = false,
-  dataQuality,
-  signal = null,
-  warnings = [],
-  error = null,
-}) {
+function createSignalDetails(signalData, quote, newsArticles) {
   return {
-    success,
-    timestamp: nowIso(),
-    symbol,
-    source: 'backend',
-    provider,
-    fallback,
-    dataQuality,
-    signal,
-    warnings: warnings.filter(Boolean),
-    error,
+    label: signalData.label,
+    confidence: signalData.confidence,
+    riskLevel: signalData.riskLevel,
+    timeHorizon: signalData.timeHorizon || 'short-term',
+    summary: signalData.summary,
+    analysis: signalData.summary,
+    reasons: Array.isArray(signalData.reasons) ? signalData.reasons : [],
+    marketSnapshot: createMarketSnapshot(quote),
+    newsContext: createNewsSummary(newsArticles),
+    disclaimer: DISCLAIMER,
+    notFinancialAdvice: true,
   };
 }
 
-function buildUnavailableResponse(reason, symbol, quote = null) {
-  const warning = reason || 'Live market price unavailable.';
-  const quoteWarning = quote?.fallback
-    ? 'Reliable market quote required. Fallback quote rejected.'
-    : quote?.stale
-      ? 'Reliable market quote required. Stale quote rejected.'
-      : warning;
+function buildResponse({
+  success = true,
+  mode,
+  provider,
+  providerStatus,
+  symbol,
+  quote = null,
+  signalData = null,
+  newsArticles = [],
+  dataQuality,
+  warnings = [],
+  error = null,
+}) {
+  const details = signalData ? createSignalDetails(signalData, quote, newsArticles) : null;
 
-  return buildResponse({
-    success: false,
+  return {
+    success,
+    mode,
+    provider,
+    providerStatus,
+    timestamp: nowIso(),
     symbol,
-    dataQuality: createDataQuality({
-      marketReliable: false,
-      warnings: [quoteWarning],
-    }),
-    warnings: ['Cannot generate a real signal without reliable market data.'],
-    error: warning,
-  });
+    source: 'backend',
+    fallback: mode !== 'ai',
+    signal: details,
+    label: details?.label || null,
+    confidence: details ? Number((details.confidence / 100).toFixed(2)) : null,
+    analysis: details?.analysis || null,
+    reasons: details?.reasons || [],
+    dataQuality,
+    warnings: warnings.filter(Boolean),
+    error,
+    notFinancialAdvice: true,
+  };
 }
 
 function isReliableQuote(quote) {
   const price = Number(quote?.price);
+  const isStale = quote?.stale === true || quote?.isStale === true;
   return quote?.priceAvailable === true
     && quote?.price !== null
     && Number.isFinite(price)
     && price > 0
     && quote?.fallback !== true
-    && quote?.stale !== true;
+    && isStale !== true;
+}
+
+function buildUnavailableResponse(reason, symbol, quote = null) {
+  const warning = reason || 'Market price unavailable.';
+
+  return buildResponse({
+    success: false,
+    mode: 'fallback',
+    provider: 'rules-based',
+    providerStatus: getProviderStatus(),
+    symbol,
+    quote,
+    signalData: null,
+    dataQuality: createDataQuality({
+      quote,
+      marketReliable: false,
+      warnings: [warning],
+    }),
+    warnings: ['Cannot generate a signal without reliable market data.'],
+    error: warning,
+  });
 }
 
 async function getMarketContext(symbol) {
   const quote = await getPrice(symbol);
   if (!isReliableQuote(quote)) {
     if (quote?.priceAvailable !== true || quote?.price === null) {
-      return { error: 'Live market price unavailable.', quote };
+      return { error: 'Market price unavailable.', quote };
     }
     if (quote?.fallback === true) {
       return { error: 'Fallback market price detected.', quote };
     }
-    if (quote?.stale === true) {
+    if (quote?.stale === true || quote?.isStale === true) {
       return { error: 'Stale market price detected.', quote };
     }
-    return { error: 'Live market price unavailable.', quote };
+    return { error: 'Market price unavailable.', quote };
   }
 
   return { quote };
@@ -200,67 +253,95 @@ async function getNewsContext(quote) {
   }
 }
 
-function buildSignalShell(signalData, quote, newsArticles) {
-  return {
-    ...signalData,
-    marketSnapshot: createMarketSnapshot(quote),
-    newsContext: createNewsSummary(newsArticles),
-    disclaimer: DISCLAIMER,
-  };
+function movingAverage(candles, period) {
+  if (!Array.isArray(candles) || candles.length < period) return null;
+  const slice = candles.slice(-period);
+  const total = slice.reduce((sum, candle) => sum + toFiniteNumber(candle.close, 0), 0);
+  return total / period;
 }
 
-function generateRulesBasedSignal(context, reason) {
+async function generateRulesBasedSignal(context, reason, providerStatus = getProviderStatus()) {
+  const warnings = [reason || 'AI provider unavailable. Deterministic rules were used.'];
+  let history = null;
+
+  try {
+    history = await getMarketHistory(context.symbol, '1h', '30d');
+  } catch (error) {
+    warnings.push(error.message || 'OHLC history unavailable for rules-based signal.');
+  }
+
+  const candles = Array.isArray(history?.data) ? history.data : [];
+  const ma20 = movingAverage(candles, 20);
+  const ma50 = movingAverage(candles, 50);
   const change = toFiniteNumber(context.quote?.change24h, 0);
-  const label = change > 3 ? 'BUY' : change < -3 ? 'SELL' : 'HOLD';
-  const confidence = label === 'HOLD' ? 55 : 62;
-  const riskLevel = Math.abs(change) >= 7 ? 'high' : 'medium';
-  const directionReason = label === 'BUY'
-    ? '24h price change is above the positive rules threshold.'
-    : label === 'SELL'
-      ? '24h price change is below the negative rules threshold.'
-      : '24h change is moderate and remains inside the rules hold band.';
-  const providerWarning = reason || 'DeepSeek is not configured. Signal generated by deterministic rules.';
-  const warnings = [
-    'This is not an AI signal. Configure DEEPSEEK_API_KEY for AI analysis.',
-  ];
+  let label = 'NEUTRAL';
+  let summary = 'Rules-based signal generated from market data only.';
+  const reasons = [];
+
+  if (ma20 !== null && ma50 !== null) {
+    if (ma20 > ma50 && change >= -1) {
+      label = 'BUY';
+      reasons.push(`MA20 (${ma20.toFixed(2)}) is above MA50 (${ma50.toFixed(2)}).`);
+    } else if (ma20 < ma50 && change <= 1) {
+      label = 'SELL';
+      reasons.push(`MA20 (${ma20.toFixed(2)}) is below MA50 (${ma50.toFixed(2)}).`);
+    } else {
+      label = 'HOLD';
+      reasons.push(`MA20 (${ma20.toFixed(2)}) and MA50 (${ma50.toFixed(2)}) do not confirm a clear directional signal.`);
+    }
+    summary = 'Rules-based MA20/MA50 signal generated without an AI provider.';
+  } else {
+    label = change > 3 ? 'BUY' : change < -3 ? 'SELL' : 'HOLD';
+    reasons.push('Not enough OHLC history for MA rules; 24h change fallback was used.');
+  }
+
+  reasons.push(`24h change is ${change.toFixed(2)}%.`);
+  reasons.push('No LLM analysis was used.');
+
+  const riskLevel = Math.abs(change) >= 7 ? 'high' : Math.abs(change) >= 3 ? 'medium' : 'low';
+  const confidence = label === 'HOLD' || label === 'NEUTRAL' ? 55 : 62;
 
   return buildResponse({
     success: true,
-    symbol: context.symbol,
+    mode: 'fallback',
     provider: 'rules-based',
-    fallback: true,
+    providerStatus,
+    symbol: context.symbol,
+    quote: context.quote,
+    signalData: {
+      label,
+      confidence,
+      riskLevel,
+      timeHorizon: 'short-term',
+      summary,
+      reasons,
+    },
+    newsArticles: [],
     dataQuality: createDataQuality({
+      quote: context.quote,
       marketReliable: true,
       usesNewsData: false,
       newsAvailable: false,
       usesLLM: false,
       indicative: true,
-      warnings: [providerWarning],
+      warnings,
     }),
-    signal: buildSignalShell({
-      label,
-      confidence,
-      riskLevel,
-      timeHorizon: 'short-term',
-      summary: 'Rules-based signal generated from reliable live price change only.',
-      reasons: [
-        directionReason,
-        'No LLM or news analysis was used.',
-      ],
-    }, context.quote, []),
-    warnings,
+    warnings: [
+      'This signal is rules-based fallback analysis, not an AI provider response.',
+      ...warnings,
+    ],
     error: null,
   });
 }
 
-function buildDeepSeekMessages(context) {
+function buildGeminiSignalPrompt(context) {
   const system = [
     'You are an educational trading analysis assistant.',
     'Produce one structured signal using only the provided market quote and news context.',
     'Do not invent prices, news, historical performance, certainty, or guaranteed returns.',
     'Do not promise gains or give guaranteed financial advice.',
     'Respond only in valid JSON using this exact shape:',
-    '{"label":"BUY|SELL|HOLD","confidence":72,"riskLevel":"low|medium|high","timeHorizon":"short-term","summary":"string","reasons":["string"]}',
+    '{"label":"BUY|SELL|HOLD|NEUTRAL","confidence":72,"riskLevel":"low|medium|high","timeHorizon":"short-term","summary":"string","reasons":["string"]}',
   ].join(' ');
 
   const prompt = {
@@ -275,20 +356,22 @@ function buildDeepSeekMessages(context) {
   };
 
   return [
-    { role: 'system', content: system },
-    { role: 'user', content: JSON.stringify(prompt) },
+    system,
+    JSON.stringify(prompt),
   ];
 }
 
 function parseAndValidateLLMResponse(rawResponse) {
   const content = cleanText(rawResponse, 4000);
-  if (!content) throw new Error('DeepSeek returned an empty signal response.');
+  if (!content) throw new Error('Gemini returned an empty signal response.');
 
   let parsed;
   try {
     parsed = JSON.parse(content);
   } catch {
-    throw new Error('DeepSeek signal response was not valid JSON.');
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Gemini signal response was not valid JSON.');
+    parsed = JSON.parse(jsonMatch[0]);
   }
 
   const label = cleanText(parsed.label, 20).toUpperCase();
@@ -296,47 +379,37 @@ function parseAndValidateLLMResponse(rawResponse) {
   const riskLevel = cleanText(parsed.riskLevel, 20).toLowerCase();
   const summary = cleanText(parsed.summary, 700);
   const reasons = Array.isArray(parsed.reasons)
-    ? parsed.reasons.map((reason) => cleanText(reason, 320)).filter(Boolean).slice(0, 5)
+    ? parsed.reasons.map((item) => cleanText(item, 320)).filter(Boolean).slice(0, 5)
     : [];
 
-  if (!VALID_LABELS.includes(label)) throw new Error('DeepSeek signal label is invalid.');
-  if (confidence === null || confidence < 0 || confidence > 100) throw new Error('DeepSeek confidence is invalid.');
-  if (!VALID_RISK_LEVELS.includes(riskLevel)) throw new Error('DeepSeek risk level is invalid.');
-  if (!summary) throw new Error('DeepSeek signal summary is missing.');
-  if (reasons.length === 0) throw new Error('DeepSeek signal reasons are missing.');
+  if (!VALID_LABELS.includes(label)) throw new Error('Gemini signal label is invalid.');
+  if (confidence === null || confidence < 0 || confidence > 100) throw new Error('Gemini confidence is invalid.');
+  if (!VALID_RISK_LEVELS.includes(riskLevel)) throw new Error('Gemini risk level is invalid.');
+  if (!summary) throw new Error('Gemini signal summary is missing.');
+  if (reasons.length === 0) throw new Error('Gemini signal reasons are missing.');
 
   return {
     label,
     confidence: Number(confidence.toFixed(0)),
     riskLevel,
-    timeHorizon: 'short-term',
+    timeHorizon: cleanText(parsed.timeHorizon, 80) || 'short-term',
     summary,
     reasons,
   };
 }
 
-async function generateDeepSeekSignal(context) {
-  const response = await axios.post(
-    'https://api.deepseek.com/v1/chat/completions',
-    {
-      model: DEEPSEEK_MODEL,
-      messages: buildDeepSeekMessages(context),
-      response_format: { type: 'json_object' },
+async function generateGeminiSignal(context) {
+  const [systemInstruction, prompt] = buildGeminiSignalPrompt(context);
+  const response = await generateGeminiJson({
+    systemInstruction,
+    contents: prompt,
+    generationConfig: {
       temperature: 0.2,
-      max_tokens: 500,
+      maxOutputTokens: 500,
     },
-    {
-      headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}` },
-      timeout: 15000,
-    },
-  );
+  });
 
-  return parseAndValidateLLMResponse(response.data?.choices?.[0]?.message?.content);
-}
-
-function getDeepSeekConfigured() {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  return DEFAULT_PROVIDER === 'deepseek' && Boolean(apiKey && apiKey !== 'sk_placeholder');
+  return parseAndValidateLLMResponse(response.text);
 }
 
 async function generateAiSignal({ symbol }) {
@@ -353,59 +426,57 @@ async function generateAiSignal({ symbol }) {
     quote: market.quote,
     news,
   };
+  const qualityWarnings = [
+    ...(news.warnings || []),
+    ...(market.quote?.isLive !== true ? ['Market data may be delayed or cached depending on the provider.'] : []),
+  ];
 
-  if (!getDeepSeekConfigured()) {
-    const reason = DEFAULT_PROVIDER !== 'deepseek'
-      ? `AI_SIGNAL_PROVIDER ${DEFAULT_PROVIDER} is not implemented. Signal generated by deterministic rules.`
-      : 'DeepSeek is not configured. Signal generated by deterministic rules.';
-    return generateRulesBasedSignal(context, reason);
+  if (DEFAULT_PROVIDER !== 'gemini') {
+    return generateRulesBasedSignal(
+      context,
+      `AI_SIGNAL_PROVIDER=${DEFAULT_PROVIDER} is not configured for this backend. Rules-based fallback was used.`,
+      'fallback',
+    );
+  }
+
+  if (!hasGeminiKey()) {
+    return generateRulesBasedSignal(
+      context,
+      'Gemini API key is missing. Rules-based fallback was used.',
+      'missing_key',
+    );
   }
 
   try {
-    const signalData = await generateDeepSeekSignal(context);
-    const newsWarnings = news.warnings || [];
+    const signalData = await generateGeminiSignal(context);
 
     return buildResponse({
       success: true,
+      mode: 'ai',
+      provider: 'gemini',
+      providerStatus: 'available',
       symbol: normalizedSymbol,
-      provider: 'deepseek',
-      fallback: false,
+      quote: market.quote,
+      signalData,
+      newsArticles: news.articles,
       dataQuality: createDataQuality({
+        quote: market.quote,
         marketReliable: true,
         usesNewsData: news.available,
         newsAvailable: news.available,
         usesLLM: true,
         indicative: false,
-        warnings: newsWarnings,
+        warnings: qualityWarnings,
       }),
-      signal: buildSignalShell(signalData, market.quote, news.articles),
-      warnings: newsWarnings,
+      warnings: qualityWarnings,
       error: null,
     });
   } catch (error) {
-    if (String(error.message || '').includes('DeepSeek signal')) {
-      return generateRulesBasedSignal(
-        context,
-        `${error.message} Deterministic rules were used instead of an unvalidated AI signal.`,
-      );
-    }
-
-    return buildResponse({
-      success: false,
-      symbol: normalizedSymbol,
-      provider: 'deepseek',
-      fallback: false,
-      dataQuality: createDataQuality({
-        marketReliable: true,
-        usesNewsData: news.available,
-        newsAvailable: news.available,
-        usesLLM: false,
-        indicative: false,
-        warnings: news.warnings || [],
-      }),
-      warnings: ['DeepSeek analysis is unavailable. No AI signal was returned.'],
-      error: error?.response?.data?.error?.message || error.message || 'Unable to generate AI signal.',
-    });
+    return generateRulesBasedSignal(
+      context,
+      `Gemini provider error. Rules-based fallback was used: ${getGeminiErrorMessage(error)}`,
+      getProviderStatus(error),
+    );
   }
 }
 
@@ -413,7 +484,7 @@ module.exports = {
   buildDataQuality: createDataQuality,
   buildUnavailableResponse,
   generateAiSignal,
-  generateDeepSeekSignal,
+  generateGeminiSignal,
   generateRulesBasedSignal,
   getMarketContext,
   getNewsContext,

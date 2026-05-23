@@ -26,7 +26,14 @@ export default function ChatMessage({ message }) {
   if (message.isThinking) return <ThinkingDots />
 
   const isUser = message.role === 'user'
-  const hasMeta = !isUser && (message.provider || message.source || message.providerTimestamp || message.fallback)
+  const hasMeta = !isUser && (
+    message.provider
+    || message.source
+    || message.providerTimestamp
+    || message.fallback
+    || message.mode
+    || message.providerStatus
+  )
   const warnings = Array.isArray(message.warnings) ? message.warnings.filter(Boolean) : []
 
   return (
@@ -69,6 +76,12 @@ export default function ChatMessage({ message }) {
               <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300">
                 <AlertTriangle size={9} />
                 Fallback
+              </span>
+            )}
+            {(message.mode || message.providerStatus) && (
+              <span className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                <Server size={9} />
+                {[message.mode, message.providerStatus].filter(Boolean).join(' / ')}
               </span>
             )}
             {(message.provider || message.source) && (

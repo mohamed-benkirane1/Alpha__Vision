@@ -86,7 +86,16 @@ function buildFeatureWarnings(env = process.env) {
     warnings.push('Email reset delivery disabled: SMTP settings are not fully configured.');
   }
 
-  if (!hasValue(env.DEEPSEEK_API_KEY) || String(env.DEEPSEEK_API_KEY).trim() === 'sk_placeholder') {
+  const aiProvider = String(env.AI_PROVIDER || 'gemini').trim().toLowerCase();
+  const aiSignalProvider = String(env.AI_SIGNAL_PROVIDER || aiProvider).trim().toLowerCase();
+
+  if ((aiProvider === 'gemini' || aiSignalProvider === 'gemini')
+    && (!hasValue(env.GEMINI_API_KEY) || String(env.GEMINI_API_KEY).trim() === 'your_gemini_api_key_here')) {
+    warnings.push('AI fallback mode: GEMINI_API_KEY is not configured.');
+  }
+
+  if ((aiProvider === 'deepseek' || aiSignalProvider === 'deepseek')
+    && (!hasValue(env.DEEPSEEK_API_KEY) || String(env.DEEPSEEK_API_KEY).trim() === 'sk_placeholder')) {
     warnings.push('AI fallback mode: DEEPSEEK_API_KEY is not configured.');
   }
 

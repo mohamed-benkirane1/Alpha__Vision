@@ -1,23 +1,13 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
-const { checkPlan } = require('../middleware/CheckPlan');
 const Conversation = require('../models/Conversation');
-const { chat, createErrorResponse } = require('../services/chatbotService');
+const { buildUserContext, chat, createErrorResponse } = require('../services/chatbotService');
 
-router.post('/message', auth, checkPlan('elite'), async (req, res) => {
+router.post('/message', auth, async (req, res) => {
   const input = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
 
   if (!input) {
-    return res.status(400).json({
-      success: false,
-      timestamp: new Date().toISOString(),
-      provider: 'DeepSeek',
-      source: 'deepseek',
-      fallback: false,
-      data: null,
-      warnings: [],
-      error: 'Message required.',
-    });
+    return res.status(400).json(createErrorResponse('Message required.'));
   }
 
   try {
@@ -26,7 +16,11 @@ router.post('/message', auth, checkPlan('elite'), async (req, res) => {
       conversation = await Conversation.create({ userId: req.user.id, messages: [] });
     }
 
-    const response = await chat(input, conversation.messages);
+    const response = await chat({
+      userId: req.user.id,
+      message: input,
+      history: conversation.messages,
+    });
 
     if (response.success) {
       const answer = response.data?.answer || response.data?.message || '';
@@ -48,6 +42,56 @@ router.post('/message', auth, checkPlan('elite'), async (req, res) => {
     return res.status(statusCode).json(response);
   } catch (err) {
     const response = createErrorResponse(err.message || 'Unable to process chatbot message.');
+    return res.status(500).json(response);
+  }
+});
+
+router.get('/history', auth, async (req, res) => {
+  try {
+    const conversation = await Conversation.findOne({ userId: req.user.id });
+
+    return res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      mode: 'history',
+      provider: 'conversation-store',
+      providerStatus: 'available',
+      source: 'backend',
+      fallback: false,
+      data: {
+        messages: conversation?.messages || [],
+      },
+      warnings: [],
+      error: null,
+      notFinancialAdvice: true,
+    });
+  } catch (err) {
+    const response = createErrorResponse(err.message || 'Unable to load chatbot history.');
+    return res.status(500).json(response);
+  }
+});
+
+router.get('/context', auth, async (req, res) => {
+  try {
+    const context = await buildUserContext(req.user.id);
+
+    return res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      mode: 'context',
+      provider: 'backend-context',
+      providerStatus: 'available',
+      source: 'backend',
+      fallback: false,
+      data: {
+        context,
+      },
+      warnings: [],
+      error: null,
+      notFinancialAdvice: true,
+    });
+  } catch (err) {
+    const response = createErrorResponse(err.message || 'Unable to load chatbot context.');
     return res.status(500).json(response);
   }
 });

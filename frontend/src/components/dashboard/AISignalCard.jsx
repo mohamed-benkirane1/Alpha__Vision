@@ -59,16 +59,30 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
     ...(Array.isArray(dataQuality.warnings) ? dataQuality.warnings : []),
     ...(Array.isArray(aiSignal?.warnings) ? aiSignal.warnings : []),
   ].filter(Boolean)
-  const isRulesBased = aiSignal?.provider === 'rules-based' || aiSignal?.fallback === true
+  const mode = aiSignal?.mode || null
+  const providerStatus = aiSignal?.providerStatus || null
+  const providerLabel = aiSignal?.provider === 'gemini'
+    ? 'Gemini'
+    : aiSignal?.provider === 'deepseek'
+      ? 'DeepSeek'
+      : aiSignal?.provider || 'AI provider'
+  const isAiProviderAvailable = dataQuality.usesLLM === true
+    && ['gemini', 'deepseek'].includes(aiSignal?.provider)
+    && providerStatus === 'available'
+  const isRulesBased = aiSignal?.provider === 'rules-based' || aiSignal?.fallback === true || mode === 'rules' || mode === 'fallback'
   const hasSignal = aiSignal?.success === true && signal
   const market = signal?.marketSnapshot || {}
   const news = signal?.newsContext || {}
   const statusText = loading
     ? 'Loading'
     : hasSignal
-      ? dataQuality.usesLLM
-        ? 'AI / DeepSeek'
-        : 'Rules-based'
+      ? isAiProviderAvailable
+        ? `AI / ${providerLabel}`
+        : providerStatus === 'missing_key'
+          ? 'Rules fallback / missing key'
+          : providerStatus === 'error'
+            ? 'Rules fallback / provider error'
+            : 'Rules-based'
       : 'Unavailable'
 
   return (
@@ -83,11 +97,11 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
           </div>
           <h2 className="text-sm font-bold text-white">AI Signal</h2>
         </div>
-        {dataQuality.usesLLM === true && hasSignal && (
-          <SignalBadge className="text-rose-300 bg-rose-500/10 border-rose-500/25">AI / DeepSeek</SignalBadge>
+        {isAiProviderAvailable && hasSignal && (
+          <SignalBadge className="text-rose-300 bg-rose-500/10 border-rose-500/25">AI / {providerLabel}</SignalBadge>
         )}
         {isRulesBased && hasSignal && (
-          <SignalBadge className="text-amber-300 bg-amber-500/10 border-amber-500/25">Indicative</SignalBadge>
+          <SignalBadge className="text-amber-300 bg-amber-500/10 border-amber-500/25">Rules fallback</SignalBadge>
         )}
         {!hasSignal && !loading && (
           <SignalBadge className="text-slate-400 bg-white/[0.035] border-white/[0.08]">Unavailable</SignalBadge>
@@ -125,7 +139,7 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
           <div className="rounded-xl bg-white/[0.025] border border-white/[0.06] p-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                {dataQuality.usesLLM ? (
+                {isAiProviderAvailable ? (
                   <BrainCircuit size={14} className="text-rose-300" />
                 ) : (
                   <ShieldAlert size={14} className="text-amber-300" />
@@ -138,7 +152,9 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
             </div>
             <p className="text-xs text-slate-300 leading-relaxed mt-3">{signal.summary || '--'}</p>
             {isRulesBased && (
-              <p className="text-[11px] text-amber-300/85 font-semibold mt-2">Rules-based signal, not AI.</p>
+              <p className="text-[11px] text-amber-300/85 font-semibold mt-2">
+                Rules-based fallback signal, not an AI provider response.
+              </p>
             )}
           </div>
 
@@ -178,6 +194,9 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
             </p>
             <p className="text-slate-600 mt-1">
               {market.provider || aiSignal.provider || '--'} / {market.source || aiSignal.source || '--'} / {formatDateTime(market.timestamp || aiSignal.timestamp)}
+            </p>
+            <p className="text-slate-600 mt-1">
+              Mode {mode || '--'} / provider status {providerStatus || '--'}
             </p>
             <p className="text-slate-600 mt-1">
               News used {Number.isFinite(Number(news.articlesUsed)) ? Number(news.articlesUsed) : 0} / latest {formatDateTime(news.latestPublishedAt)}

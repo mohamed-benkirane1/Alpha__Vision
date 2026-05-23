@@ -14,12 +14,19 @@ router.get('/', auth, async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       success: false,
+      mode: 'fallback',
       timestamp: new Date().toISOString(),
       symbol: typeof req.query.symbol === 'string' ? req.query.symbol.trim().toUpperCase() : null,
       source: 'backend',
-      provider: null,
-      fallback: false,
+      provider: 'rules-based',
+      providerStatus: 'error',
+      fallback: true,
       dataQuality: {
+        marketDataAvailable: false,
+        isLive: false,
+        isStale: false,
+        isCached: false,
+        isFallback: false,
         usesLiveMarketData: false,
         usesNewsData: false,
         usesLLM: false,
@@ -29,8 +36,13 @@ router.get('/', auth, async (req, res) => {
         warnings: ['AI signal service failed before a signal could be generated.'],
       },
       signal: null,
+      label: null,
+      confidence: null,
+      analysis: null,
+      reasons: [],
       warnings: ['Cannot generate a signal right now.'],
       error: err.message || 'Unable to generate AI signal.',
+      notFinancialAdvice: true,
     });
   }
 });
