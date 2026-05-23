@@ -73,6 +73,18 @@ const normalizeMarkets = (markets) => {
 export default function MarketOverview({ markets = [], loading = false, dataQuality = null }) {
   const assets = normalizeMarkets(markets)
   const hasQualityIssue = dataQuality?.hasErrors || dataQuality?.hasFallbacks || dataQuality?.hasStale
+  const statusLabel = loading
+    ? 'Loading'
+    : assets.length === 0
+      ? 'Unavailable'
+      : hasQualityIssue
+        ? 'Partial'
+        : 'Backend live'
+  const statusClass = assets.length > 0 && !hasQualityIssue
+    ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+    : hasQualityIssue
+      ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+      : 'text-slate-500 bg-white/[0.03] border-white/[0.07]'
 
   return (
     <motion.div
@@ -84,8 +96,8 @@ export default function MarketOverview({ markets = [], loading = false, dataQual
           <Activity size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Market Overview</h2>
         </div>
-        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${hasQualityIssue ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'}`}>
-          {loading ? 'Loading' : hasQualityIssue ? 'Partial' : 'Backend live'}
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${statusClass}`}>
+          {statusLabel}
         </span>
       </div>
 

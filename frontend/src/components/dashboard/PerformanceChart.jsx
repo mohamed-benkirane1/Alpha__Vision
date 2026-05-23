@@ -91,6 +91,18 @@ export default function PerformanceChart({ history = null, loading = false, unav
   const minValue = hasEnoughData ? Math.min(...data.map((point) => point.totalPortfolioValue)) : 0
   const maxValue = hasEnoughData ? Math.max(...data.map((point) => point.totalPortfolioValue)) : 0
   const padding = hasEnoughData ? Math.max((maxValue - minValue) * 0.08, maxValue * 0.01, 1) : 0
+  const badgeLabel = loading
+    ? 'Loading'
+    : unavailable
+      ? 'Unavailable'
+      : hasEnoughData
+        ? 'Real snapshots'
+        : 'Waiting for data'
+  const badgeClass = hasEnoughData
+    ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+    : unavailable
+      ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+      : 'text-slate-500 bg-white/[0.03] border-white/[0.07]'
 
   return (
     <motion.div
@@ -107,8 +119,8 @@ export default function PerformanceChart({ history = null, loading = false, unav
             {history ? `${history.range || '30d'} real snapshot history` : 'Backend portfolio snapshot history'}
           </p>
         </div>
-        <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-black">
-          Real snapshots
+        <span className={`text-[10px] border px-2 py-0.5 rounded-full font-black ${badgeClass}`}>
+          {badgeLabel}
         </span>
       </div>
 

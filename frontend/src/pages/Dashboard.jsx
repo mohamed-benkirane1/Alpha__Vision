@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, TrendingUp, Database, Cpu, Zap, Bell, Search, RefreshCw, AlertTriangle } from 'lucide-react'
+import { Wallet, TrendingUp, Database, Cpu, Zap, RefreshCw, AlertTriangle } from 'lucide-react'
 
 import StatCard         from '../components/dashboard/StatCard'
 import PerformanceChart from '../components/dashboard/PerformanceChart'
@@ -71,6 +71,9 @@ function buildStats({ portfolio, trades, bot, loading }) {
   const holdingsValue = totals.holdingsValue ?? portfolio?.totalValue
   const totalProfit = totals.totalProfit ?? portfolio?.totalProfit
   const totalProfitPercent = totals.totalProfitPercent ?? portfolio?.totalProfitPercent
+  const holdingsCount = Array.isArray(portfolio?.holdings) ? portfolio.holdings.length : 0
+  const investedValue = getValidNumber(totals.totalInvested)
+  const hasPnlData = holdingsCount > 0 || (investedValue !== null && investedValue > 0)
   const hasTradeData = Array.isArray(trades)
   const tradeCount = hasTradeData ? trades.length : 0
   const botStatus = bot?.status || {}
@@ -89,8 +92,8 @@ function buildStats({ portfolio, trades, bot, loading }) {
     ? `Bot status unavailable / ${tradeCount} backend trades loaded`
     : [
         `Mode ${botStatus.mode || '--'}`,
-        botStatus.strategy ? `${botStatus.strategy.toUpperCase()} strategy` : 'No strategy',
-        botStatus.symbol || 'No symbol',
+        botStatus.strategy ? `${botStatus.strategy.toUpperCase()} strategy` : 'No active strategy',
+        botStatus.symbol || 'No active symbol',
         bot?.fallback || bot?.dataQuality?.isIndicative ? 'Indicative' : null,
       ].filter(Boolean).join(' / ')
 
@@ -99,16 +102,16 @@ function buildStats({ portfolio, trades, bot, loading }) {
       icon: Wallet,
       label: 'Portfolio Value',
       value: loading && !portfolio ? 'Loading...' : formatCurrency(totalValue),
-      sub: portfolio ? `${portfolio.holdings?.length || 0} backend holdings` : 'No portfolio data',
+      sub: portfolio ? `${holdingsCount} backend holdings` : 'No portfolio data',
       subUp: true,
       accentColor: 'rose',
     },
     {
       icon: TrendingUp,
       label: 'Total Profit',
-      value: loading && !portfolio ? 'Loading...' : formatCurrency(totalProfit, { sign: true }),
-      sub: `${formatPercent(totalProfitPercent)} all time`,
-      subUp: (getValidNumber(totalProfit) ?? 0) >= 0,
+      value: loading && !portfolio ? 'Loading...' : (hasPnlData ? formatCurrency(totalProfit, { sign: true }) : '--'),
+      sub: hasPnlData ? `${formatPercent(totalProfitPercent)} unrealized PnL` : 'Connect your first trade to see PnL',
+      subUp: hasPnlData ? (getValidNumber(totalProfit) ?? 0) >= 0 : null,
       accentColor: 'emerald',
     },
     {
@@ -138,6 +141,7 @@ export default function Dashboard() {
   const [markets, setMarkets] = useState([])
   const [marketDataQuality, setMarketDataQuality] = useState(null)
   const [serviceQuality, setServiceQuality] = useState(null)
+  const [widgetStatus, setWidgetStatus] = useState(null)
   const [bot, setBot] = useState(null)
   const [aiSignal, setAiSignal] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -160,6 +164,7 @@ export default function Dashboard() {
       setMarkets(Array.isArray(data.markets) ? data.markets : [])
       setMarketDataQuality(data.marketDataQuality)
       setServiceQuality(data.dataQuality)
+      setWidgetStatus(data.widgets)
       setBot(data.bot)
       setAiSignal(data.aiSignal)
       if (!data.success) setError('Some dashboard data could not be refreshed. Showing available backend data only.')
@@ -187,8 +192,12 @@ export default function Dashboard() {
     [portfolio, trades, bot, loading],
   )
   const portfolioQuality = portfolio?.dataQuality
-  const portfolioReliable = portfolioQuality?.valuationReliable !== false
+  const hasPortfolio = Boolean(portfolio)
+  const portfolioReliable = hasPortfolio && portfolioQuality?.valuationReliable !== false
   const marketPartial = marketDataQuality?.hasErrors || marketDataQuality?.hasFallbacks || marketDataQuality?.hasStale
+  const failedWidgets = Object.entries(widgetStatus || {})
+    .filter(([, value]) => value.status === 'rejected')
+    .map(([key]) => key)
 
   return (
     <div className="space-y-5">
@@ -212,22 +221,6 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          {/* Search */}
-          <div className="hidden sm:flex items-center gap-2 bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-2 w-44">
-            <Search size={12} className="text-slate-600 shrink-0" />
-            <input
-              placeholder="Search..."
-              className="bg-transparent text-xs text-slate-400 placeholder-slate-700 outline-none w-full font-medium"
-            />
-          </div>
-
-          {/* Bell */}
-          <button className="relative w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center hover:bg-white/[0.07] transition-colors">
-            <Bell size={13} className="text-slate-400" />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-rose-400 ring-[1.5px] ring-[#070E20]" />
-          </button>
-
-          {/* Live badge */}
           <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/25 text-rose-400 text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(225,29,72,0.12)] tracking-wider">
             <Zap size={10} />
             {loading ? 'SYNCING DATA' : 'BACKEND DATA'}
@@ -255,18 +248,23 @@ export default function Dashboard() {
             <div>
               <p className="text-sm text-white font-black">Dashboard data quality</p>
               <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                Real backend data is shown where available. Missing analytics are labelled as coming soon.
+                Real backend data is shown where available. Empty widgets do not invent values.
               </p>
+              {failedWidgets.length > 0 && (
+                <p className="text-[11px] text-amber-300/85 mt-1 font-semibold">
+                  Unavailable widgets: {failedWidgets.join(', ')}
+                </p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
             <div className="rounded-xl bg-white/[0.025] border border-white/[0.055] px-3 py-2">
               <p className="text-slate-700 uppercase font-black">Portfolio</p>
-              <p className="text-slate-300 font-black">{portfolioReliable ? 'Reliable' : 'Partial'}</p>
+              <p className="text-slate-300 font-black">{!portfolio ? 'Unavailable' : portfolioReliable ? 'Reliable' : 'Partial'}</p>
             </div>
             <div className="rounded-xl bg-white/[0.025] border border-white/[0.055] px-3 py-2">
               <p className="text-slate-700 uppercase font-black">Market</p>
-              <p className="text-slate-300 font-black">{marketPartial ? 'Partial' : 'Live'}</p>
+              <p className="text-slate-300 font-black">{markets.length === 0 ? 'Unavailable' : marketPartial ? 'Partial' : 'Live'}</p>
             </div>
             <div className="rounded-xl bg-white/[0.025] border border-white/[0.055] px-3 py-2">
               <p className="text-slate-700 uppercase font-black">Trades</p>

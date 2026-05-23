@@ -51,6 +51,7 @@ const accents = {
 export default function StatCard({ icon: Icon, label, value, sub, subUp, accentColor = 'rose' }) {
   const c = accents[accentColor] ?? accents.rose
   const shouldReduce = useReducedMotion()
+  const hasDirection = typeof subUp === 'boolean'
 
   return (
     <motion.div
@@ -85,8 +86,9 @@ export default function StatCard({ icon: Icon, label, value, sub, subUp, accentC
       </p>
 
       {sub && (
-        <p className={`text-xs mt-2 font-semibold flex items-center gap-1 ${subUp ? 'text-emerald-400' : 'text-red-400'}`}>
-          <span className="text-[10px]">{subUp ? '↑' : '↓'}</span>
+        <p className={`text-xs mt-2 font-semibold flex items-center gap-1 ${
+          hasDirection ? (subUp ? 'text-emerald-400' : 'text-red-400') : 'text-slate-500'
+        }`}>
           {sub}
         </p>
       )}

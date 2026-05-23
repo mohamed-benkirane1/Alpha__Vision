@@ -130,7 +130,7 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
                 ) : (
                   <ShieldAlert size={14} className="text-amber-300" />
                 )}
-                <SignalBadge className={getLabelTone(signal.label)}>{signal.label || 'HOLD'}</SignalBadge>
+                <SignalBadge className={getLabelTone(signal.label)}>{signal.label || 'No label'}</SignalBadge>
               </div>
               <p className="text-[11px] text-slate-500 font-bold">
                 Confidence <span className="text-white">{Number.isFinite(Number(signal.confidence)) ? `${Number(signal.confidence)}%` : '--'}</span>
