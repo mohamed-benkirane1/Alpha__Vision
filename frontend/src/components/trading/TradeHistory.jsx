@@ -42,9 +42,9 @@ export default function TradeHistory({ trades = [], loading = false, error = '',
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <ClipboardList size={13} className="text-rose-400" />
-          <h2 className="text-sm font-bold text-white">Trade History</h2>
+          <h2 className="text-sm font-bold text-white">Paper Trade History</h2>
         </div>
-        <span className="text-[10px] text-slate-700 font-bold">{loading ? 'Loading' : `${trades.length} orders`}</span>
+        <span className="text-[10px] text-slate-700 font-bold">{loading ? 'Loading' : `${trades.length} paper orders`}</span>
       </div>
 
       {error ? (
@@ -53,7 +53,7 @@ export default function TradeHistory({ trades = [], loading = false, error = '',
             <ClipboardList size={16} className="text-slate-700" />
           </div>
           <p className="text-xs text-amber-400/85 font-semibold">{error}</p>
-          <p className="text-[11px] text-slate-700 mt-1">Trade history could not be loaded from the backend.</p>
+          <p className="text-[11px] text-slate-700 mt-1">Paper trade history could not be loaded from the backend.</p>
           {onRetry && (
             <button
               type="button"
@@ -70,10 +70,10 @@ export default function TradeHistory({ trades = [], loading = false, error = '',
             <ClipboardList size={16} className="text-slate-700" />
           </div>
           <p className="text-xs text-slate-600 font-medium">
-            {loading ? 'Loading trade history...' : 'No trades placed yet.'}
+            {loading ? 'Loading paper trade history...' : 'No paper trades placed yet.'}
           </p>
           <p className="text-[11px] text-slate-700 mt-1">
-            {loading ? 'Orders are being loaded from the backend.' : 'Backend trades will appear here after a real order is accepted.'}
+            {loading ? 'Orders are being loaded from the backend.' : 'Backend paper trades will appear here after a simulated order is accepted.'}
           </p>
         </div>
       ) : (
@@ -113,15 +113,16 @@ export default function TradeHistory({ trades = [], loading = false, error = '',
                     <p className="text-white font-black tabular-nums">{fmt(t.total)}</p>
                     <p className="text-[10px] text-slate-700 font-medium">{fmtDate(t.createdAt)}</p>
                   </div>
-                  <div className="col-span-3 sm:col-span-5 mt-1 pt-2 border-t border-white/[0.035] grid grid-cols-1 sm:grid-cols-4 gap-1.5 text-[10px] font-medium">
+                  <div className="col-span-3 sm:col-span-5 mt-1 pt-2 border-t border-white/[0.035] grid grid-cols-1 sm:grid-cols-5 gap-1.5 text-[10px] font-medium">
                     <span className="text-slate-700">Provider <span className="text-slate-500">{t.priceProvider || t.priceSource || '--'}</span></span>
                     <span className="text-slate-700">Source <span className="text-slate-500">{t.priceSource || '--'}</span></span>
-                    <span className="text-slate-700">Price time <span className="text-slate-500">{fmtDate(t.priceTimestamp)}</span></span>
+                    <span className="text-slate-700">Mode <span className="text-slate-500">{t.mode || 'paper'}</span></span>
+                    <span className="text-slate-700">PnL <span className="text-slate-500">{t.realizedPnl === null || t.realizedPnl === undefined ? '--' : fmt(t.realizedPnl)}</span></span>
                     <span className="flex flex-wrap gap-1 justify-start sm:justify-end">
                       {t.priceCached === true && <MetaBadge label="Cached" />}
                       {t.priceFallback === true && <MetaBadge label="Fallback" tone="amber" />}
                       {t.priceStale === true && <MetaBadge label="Stale" tone="amber" />}
-                      {t.priceCached !== true && t.priceFallback !== true && t.priceStale !== true && <MetaBadge label="Executed" />}
+                      {t.priceCached !== true && t.priceFallback !== true && t.priceStale !== true && <MetaBadge label="Paper" />}
                     </span>
                     {t.priceError && <p className="sm:col-span-4 text-amber-400/80 font-semibold">{t.priceError}</p>}
                   </div>

@@ -146,6 +146,7 @@ function statusResponse(user) {
     stripeSecretConfigured: isStripeSecretConfigured(),
     webhookConfigured: isStripeWebhookConfigured(),
     demoFundingEnabled: isDemoFundingAllowed(),
+    balanceType: 'virtual',
     subscription: getSubscription(user),
     balance: Number.isFinite(balance) ? balance : 0,
     features: FEATURES[user?.plan] || FEATURES.free,
@@ -324,6 +325,7 @@ router.post('/demo-deposit', auth, async (req, res) => {
         source: 'demo',
         provider: 'internal-demo-funding',
         demo: true,
+        balanceType: 'virtual',
         balance: null,
         message: 'Demo funding is disabled',
         warnings: ['Demo funding is disabled on the backend.'],
@@ -336,6 +338,7 @@ router.post('/demo-deposit', auth, async (req, res) => {
         source: 'demo',
         provider: 'internal-demo-funding',
         demo: true,
+        balanceType: 'virtual',
         balance: null,
         message: input.error,
       }));
@@ -347,6 +350,7 @@ router.post('/demo-deposit', auth, async (req, res) => {
         source: 'demo',
         provider: 'internal-demo-funding',
         demo: true,
+        balanceType: 'virtual',
         balance: null,
         message: 'User not found',
       }));
@@ -363,9 +367,10 @@ router.post('/demo-deposit', auth, async (req, res) => {
       source: 'demo',
       provider: 'internal-demo-funding',
       demo: true,
+      balanceType: 'virtual',
       balance: user.balance,
-      message: 'Demo funds added',
-      warnings: ['Demo funding is enabled. This is not a real payment.'],
+      message: 'Demo paper trading funds added',
+      warnings: ['Demo funding is enabled. This updates virtual paper trading balance only. This is not a real payment.'],
       error: null,
     });
   } catch (err) {
@@ -373,6 +378,7 @@ router.post('/demo-deposit', auth, async (req, res) => {
       source: 'demo',
       provider: 'internal-demo-funding',
       demo: true,
+      balanceType: 'virtual',
       balance: null,
       message: 'Unable to add demo funds',
     }));

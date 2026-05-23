@@ -9,19 +9,28 @@ const getValidNumber = (value) => {
   return Number.isFinite(number) ? number : null
 }
 
-const formatPrice = (quote) => {
+const getCurrencyFractionDigits = (price) => {
+  if (!Number.isFinite(price)) return { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+  if (price >= 1000) return { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+  if (price >= 1) return { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+  return { minimumFractionDigits: 4, maximumFractionDigits: 6 }
+}
+
+const formatPrice = (quote = {}) => {
   const price = getValidNumber(quote.price)
-  if (price === null || quote.priceAvailable !== true) return 'Unavailable'
+  if (price === null || price < 0 || quote.priceAvailable !== true) return 'Unavailable'
 
   if (quote.type === 'index') {
-    return price.toLocaleString('en-US', { maximumFractionDigits: 2 })
+    return price.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })
   }
 
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: price < 1 ? 4 : 2,
-    maximumFractionDigits: price < 1 ? 4 : price >= 1000 ? 0 : 2,
+    ...getCurrencyFractionDigits(price),
   }).format(price)
 }
 
@@ -40,14 +49,15 @@ function getStatus(quote) {
 }
 
 function TickerItem({ quote }) {
-  const change = getValidNumber(quote.change24h)
+  const safeQuote = quote || {}
+  const change = getValidNumber(safeQuote.change24h)
   const up = (change ?? 0) >= 0
-  const status = getStatus(quote)
+  const status = getStatus(safeQuote)
 
   return (
     <span className="inline-flex items-center gap-2.5 px-5 select-none">
-      <span className="text-[11px] font-bold text-slate-400 tracking-wider">{quote.symbol}</span>
-      <span className="text-[11px] font-semibold text-white tabular-nums">{formatPrice(quote)}</span>
+      <span className="text-[11px] font-bold text-slate-400 tracking-wider">{safeQuote.symbol || '--'}</span>
+      <span className="text-[11px] font-semibold text-white tabular-nums">{formatPrice(safeQuote)}</span>
       <span className={`text-[10px] font-bold px-1.5 py-px rounded ${
         up ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
       }`}>

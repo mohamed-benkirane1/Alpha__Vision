@@ -102,7 +102,12 @@ export default function OrderForm({
       whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
-      <h2 className="text-sm font-bold text-white mb-5">Place Order</h2>
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <h2 className="text-sm font-bold text-white">Paper Order</h2>
+        <span className="text-[9px] font-black uppercase tracking-[0.08em] rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-amber-400">
+          Virtual
+        </span>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
 
@@ -125,7 +130,7 @@ export default function OrderForm({
 
         {/* Buy / Sell toggle */}
         <div>
-          <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Order Type</label>
+          <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Paper Side</label>
           <div className="grid grid-cols-2 gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1">
             {['BUY', 'SELL'].map((t) => (
               <button
@@ -175,13 +180,16 @@ export default function OrderForm({
             <span className={`font-black tabular-nums ${hasPrice ? 'text-white' : 'text-amber-400/80'}`}>{hasPrice ? formatCurrency(price) : 'Unavailable'}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-600 font-medium">Estimated Value</span>
+            <span className="text-slate-600 font-medium">Estimated Virtual Value</span>
             <span className={`font-black tabular-nums ${estimated > 0 ? 'text-rose-400' : 'text-slate-700'}`}>
               {formatCurrency(estimated)}
             </span>
           </div>
           <p className="text-[10px] text-slate-700 font-medium">
-            Estimated price. Final execution price is confirmed by backend.
+            Backend re-checks the market price before saving the simulated execution.
+          </p>
+          <p className="text-[10px] text-slate-700 font-medium">
+            Paper Trading only. No broker order is sent.
           </p>
           <div className="text-[10px] text-slate-700 font-medium">
             Source <span className="text-slate-500">{quote?.source || '--'}</span> - Provider <span className="text-slate-500">{quote?.provider || '--'}</span>
@@ -197,8 +205,11 @@ export default function OrderForm({
 
         {lastExecution && (
           <div className="bg-emerald-500/[0.06] border border-emerald-500/18 rounded-xl px-4 py-3 text-[11px] text-emerald-400/90 font-semibold space-y-1">
-            <p className="font-black">Executed {lastExecution.action} {lastExecution.quantity} {lastExecution.symbol}</p>
+            <p className="font-black">Paper executed {lastExecution.action} {lastExecution.quantity} {lastExecution.symbol}</p>
             <p>Price {formatCurrency(lastExecution.executedPrice)} - Total {formatCurrency(lastExecution.total)}</p>
+            {lastExecution.realizedPnl !== null && lastExecution.realizedPnl !== undefined && (
+              <p>Realized PnL {formatCurrency(lastExecution.realizedPnl)}</p>
+            )}
             <p className="text-slate-500">{lastExecution.priceProvider || lastExecution.priceSource || '--'} - {formatDateTime(lastExecution.priceTimestamp)}{lastExecution.priceCached ? ' - cached' : ''}</p>
           </div>
         )}
@@ -231,7 +242,7 @@ export default function OrderForm({
           {loading ? (
             <>
               <ShoppingCart size={14} />
-              Sending Order...
+              Sending Paper Order...
             </>
           ) : submitted ? (
             <motion.span
@@ -241,12 +252,12 @@ export default function OrderForm({
               className="flex items-center gap-2"
             >
               <CheckCircle size={14} />
-              Order Placed
+              Paper Order Saved
             </motion.span>
           ) : (
             <>
               <ShoppingCart size={14} />
-              Place {type} Order
+              Place Paper {type}
             </>
           )}
         </motion.button>

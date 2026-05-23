@@ -53,7 +53,7 @@ export default function TradingPanel({ symbol, price, type, quote }) {
     >
       <div className="flex items-center gap-2 mb-4">
         <Shield size={13} className="text-indigo-400" />
-        <h3 className="text-sm font-bold text-white">Risk Preview</h3>
+        <h3 className="text-sm font-bold text-white">Paper Risk Preview</h3>
         <span className={`ml-auto text-[10px] px-2.5 py-0.5 rounded-lg font-black ${
           isLong
             ? 'bg-emerald-500/12 text-emerald-400 border border-emerald-500/22'
@@ -83,7 +83,7 @@ export default function TradingPanel({ symbol, price, type, quote }) {
 
       <div className="mt-4 pt-4 border-t border-white/[0.05]">
         <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
-          Indicative preview only. Final execution price is calculated by backend.
+          Paper Trading only. The backend calculates and saves the simulated execution price.
         </p>
         <p className="text-[10px] text-slate-700 mt-2 font-medium">
           Price status: <span className="text-slate-500">{quoteStatus}</span>

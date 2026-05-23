@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { LineChart, RefreshCw, Zap } from 'lucide-react'
+import { LineChart, RefreshCw, Wallet, Zap } from 'lucide-react'
 import PriceCard    from '../components/trading/PriceCard'
 import OrderForm    from '../components/trading/OrderForm'
 import TradingPanel from '../components/trading/TradingPanel'
 import TradeHistory from '../components/trading/TradeHistory'
 import { getAllPrices } from '../services/marketService'
+import { addDemoFunds, getPaymentStatus } from '../services/paymentService'
 import { getPortfolio } from '../services/portfolioService'
 import { createTrade, getTradeHistory } from '../services/tradingService'
+import { useAuth } from '../context/useAuth'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
 const AUTO_REFRESH_MS = 15000
+const PAPER_DEMO_FUNDING_AMOUNT = 10000
 const assetNames = {
   BTC: 'Bitcoin',
   ETH: 'Ethereum',
@@ -53,10 +56,10 @@ const normalizeAsset = (asset) => ({
 const getTradeErrorMessage = (error) => {
   if (error?.status === 401) return 'Your session has expired. Please log in again.'
   if (error?.message?.toLowerCase().includes('insufficient balance')) {
-    return 'Insufficient balance. Add demo funds from Portfolio or deposit funds.'
+    return 'Insufficient virtual balance. Add demo funds before placing a paper BUY order.'
   }
   if (error?.message) return error.message
-  return 'Unable to place order right now.'
+  return 'Unable to place paper order right now.'
 }
 
 const getValidNumber = (value) => {
@@ -78,6 +81,7 @@ const formatCurrency = (value) => {
 }
 
 export default function Trading() {
+  const { refreshUser } = useAuth()
   const [selectedSymbol, setSelectedSymbol] = useState('BTC')
   const [orderType, setOrderType] = useState('BUY')
   const [assets, setAssets] = useState([])
@@ -94,6 +98,9 @@ export default function Trading() {
   const [tradeError, setTradeError] = useState('')
   const [lastExecution, setLastExecution] = useState(null)
   const [lastPriceStatus, setLastPriceStatus] = useState(null)
+  const [demoFundingEnabled, setDemoFundingEnabled] = useState(false)
+  const [fundingLoading, setFundingLoading] = useState(false)
+  const [fundingMessage, setFundingMessage] = useState('')
   const pricesLoadingRef = useRef(false)
 
   const loadPrices = useCallback(async () => {
@@ -145,10 +152,21 @@ export default function Trading() {
     setBalanceLoading(true)
 
     try {
-      const response = await getPortfolio()
-      const data = getResponseData(response)
-      const nextBalance = getValidNumber(data?.balance)
-      setBalance(nextBalance)
+      const [portfolioResult, paymentStatusResult] = await Promise.allSettled([
+        getPortfolio(),
+        getPaymentStatus(),
+      ])
+      const portfolioData = portfolioResult.status === 'fulfilled'
+        ? getResponseData(portfolioResult.value)
+        : null
+      const paymentStatus = paymentStatusResult.status === 'fulfilled'
+        ? paymentStatusResult.value
+        : null
+      const portfolioBalance = getValidNumber(portfolioData?.balance)
+      const paymentBalance = getValidNumber(paymentStatus?.balance)
+
+      setBalance(portfolioBalance ?? paymentBalance)
+      setDemoFundingEnabled(paymentStatus?.demoFundingEnabled === true)
     } catch (err) {
       console.error('Trading balance load failed:', err)
       setBalance(null)
@@ -156,6 +174,36 @@ export default function Trading() {
       setBalanceLoading(false)
     }
   }, [])
+
+  const handleDemoFunding = useCallback(async () => {
+    if (fundingLoading) return
+    setFundingLoading(true)
+    setFundingMessage('')
+    setTradeError('')
+
+    try {
+      const response = await addDemoFunds(PAPER_DEMO_FUNDING_AMOUNT)
+
+      if (!response.success) {
+        setTradeError(response.error || response.message || 'Unable to add demo paper funds.')
+        return
+      }
+
+      const nextBalance = getValidNumber(response.balance)
+      if (nextBalance !== null) setBalance(nextBalance)
+      const successMessage = `${response.message || 'Demo paper funds added'}. Virtual balance: ${formatCurrency(nextBalance)}.`
+      setFundingMessage(successMessage)
+      setTradeMessage(successMessage)
+      await Promise.all([
+        loadBalance(),
+        refreshUser?.(),
+      ])
+    } catch (err) {
+      setTradeError(err?.message || 'Unable to add demo paper funds.')
+    } finally {
+      setFundingLoading(false)
+    }
+  }, [fundingLoading, loadBalance, refreshUser])
 
   const refreshTrading = useCallback(async () => {
     setRefreshing(true)
@@ -208,6 +256,7 @@ export default function Trading() {
         symbol: normalizedSymbol,
         type: normalizedType,
         quantity,
+        orderType: 'market',
       })
       const data = getResponseData(response)
 
@@ -218,7 +267,10 @@ export default function Trading() {
       const nextBalance = getValidNumber(data.balance)
       if (nextBalance !== null) setBalance(nextBalance)
       setLastExecution(data.execution || null)
-      setTradeMessage(data.message || `${normalizedType} order placed.`)
+      const warnings = Array.isArray(data.warnings) && data.warnings.length > 0
+        ? ` ${data.warnings.join(' ')}`
+        : ''
+      setTradeMessage(`${data.message || `Paper ${normalizedType} order executed.`}${warnings}`)
       await Promise.all([
         loadTradeHistory(),
         loadPrices(),
@@ -263,6 +315,7 @@ export default function Trading() {
         : ''
   const balanceLabel = balanceLoading ? 'Loading...' : formatCurrency(balance)
   const busy = pricesLoading || historyLoading || balanceLoading || refreshing
+  const zeroBalance = !balanceLoading && getValidNumber(balance) === 0
 
   return (
     <div className="space-y-5">
@@ -272,17 +325,17 @@ export default function Trading() {
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <LineChart size={16} className="text-rose-400" />
-            <h1 className="text-2xl font-black text-white">Trading</h1>
+            <h1 className="text-2xl font-black text-white">Paper Trading</h1>
           </div>
-          <p className="text-xs text-slate-500 font-medium">Place real demo orders backed by your account balance</p>
+          <p className="text-xs text-slate-500 font-medium">Place simulated market orders backed by your virtual balance. No broker order is sent.</p>
           <p className="text-[11px] text-slate-600 mt-1 font-bold tabular-nums">
-            Cash balance <span className="text-slate-300">{balanceLabel}</span>
+            Virtual cash balance <span className="text-slate-300">{balanceLabel}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/22 text-emerald-400 text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.10)] tracking-wider">
             <Zap size={10} />
-            BACKEND
+            PAPER MODE
           </span>
           <button
             type="button"
@@ -296,6 +349,40 @@ export default function Trading() {
           </button>
         </div>
       </motion.div>
+
+      {zeroBalance && (
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+          className="flex flex-col gap-3 rounded-2xl border border-amber-500/18 bg-amber-500/[0.06] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-2">
+            <Wallet size={15} className="mt-0.5 shrink-0 text-amber-300" />
+            <div>
+              <p className="text-xs font-black text-amber-300">Your paper trading balance is 0.</p>
+              <p className="text-[11px] font-medium text-slate-500">
+                Demo funding updates your virtual backend balance only. It is not a real payment.
+              </p>
+              {fundingMessage && <p className="mt-1 text-[11px] font-semibold text-emerald-300">{fundingMessage}</p>}
+            </div>
+          </div>
+          {demoFundingEnabled ? (
+            <button
+              type="button"
+              onClick={handleDemoFunding}
+              disabled={fundingLoading || busy || submitting}
+              className="shrink-0 rounded-xl border border-amber-500/24 bg-amber-500/12 px-3 py-2 text-[11px] font-black text-amber-300 transition hover:bg-amber-500/18 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {fundingLoading ? 'Adding demo funds...' : `Add ${formatCurrency(PAPER_DEMO_FUNDING_AMOUNT)} virtual funds`}
+            </button>
+          ) : (
+            <p className="text-[11px] font-semibold text-slate-600">
+              Demo funding is disabled by the backend.
+            </p>
+          )}
+        </motion.div>
+      )}
 
       {/* Asset cards */}
       <motion.div initial="hidden" animate="visible" variants={stagger}

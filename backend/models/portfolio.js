@@ -7,4 +7,6 @@ const PortfolioSchema = new mongoose.Schema({
   avgPrice: { type: Number, required: true }
 });
 
+PortfolioSchema.index({ userId: 1, symbol: 1 });
+
 module.exports = mongoose.model('Portfolio', PortfolioSchema);

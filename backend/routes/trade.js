@@ -10,37 +10,50 @@ const { getSubscriptionAccess } = require('../utils/subscription');
 
 const TRADE_LIMITS = { free: 5, pro: 50, elite: 1000 };
 const MIN_HOLDING_QUANTITY = 0.0001;
+const PAPER_TRADING_MODE = 'paper';
+const SUPPORTED_ORDER_TYPES = ['market'];
+const PAPER_FEES = 0;
 
 function parseTradeInput(body) {
   const symbol = typeof body.symbol === 'string' ? body.symbol.trim().toUpperCase() : '';
-  const type = typeof body.type === 'string' ? body.type.trim().toUpperCase() : '';
+  const rawSide = body.side ?? body.type ?? body.action;
+  const type = typeof rawSide === 'string' ? rawSide.trim().toUpperCase() : '';
+  const rawOrderType = body.orderType ?? body.executionType ?? 'market';
+  const orderType = typeof rawOrderType === 'string' ? rawOrderType.trim().toLowerCase() : '';
   const rawQuantity = body.quantity;
   const quantity = typeof rawQuantity === 'number' || typeof rawQuantity === 'string'
     ? Number(rawQuantity)
     : NaN;
 
   if (!symbol) return { error: 'symbol is required' };
-  if (!type) return { error: 'type is required' };
-  if (!['BUY', 'SELL'].includes(type)) return { error: 'type must be BUY or SELL' };
+  if (!type) return { error: 'side is required' };
+  if (!['BUY', 'SELL'].includes(type)) return { error: 'side must be BUY or SELL' };
+  if (!SUPPORTED_ORDER_TYPES.includes(orderType)) return { error: 'Only market paper orders are supported right now.' };
   if (!Number.isFinite(quantity) || quantity <= 0) {
     return { error: 'quantity must be a positive number' };
   }
 
-  return { symbol, type, quantity };
+  return { symbol, type, quantity, orderType };
 }
 
 function createPriceStatus(quote = {}, symbol) {
   const statusQuote = quote || {};
+  const isStale = statusQuote.stale === true || statusQuote.isStale === true;
   return {
     symbol: statusQuote.symbol || symbol,
     price: statusQuote.price ?? null,
     priceAvailable: statusQuote.priceAvailable === true,
     source: statusQuote.source || null,
     provider: statusQuote.provider || null,
+    providerSymbol: statusQuote.providerSymbol || null,
     timestamp: statusQuote.timestamp || null,
+    fetchedAt: statusQuote.fetchedAt || statusQuote.timestamp || null,
+    cacheTtlSeconds: statusQuote.cacheTtlSeconds ?? null,
     cached: statusQuote.cached === true,
     fallback: statusQuote.fallback === true,
-    stale: statusQuote.stale === true,
+    stale: isStale,
+    isLive: statusQuote.isLive === true,
+    isStale,
     error: statusQuote.error || null,
   };
 }
@@ -71,7 +84,7 @@ async function resolveTradeQuote(symbol) {
       throw rejectTradeForQuote(`Fallback price detected for ${symbol}. Trade rejected.`, quote, symbol);
     }
 
-    if (quote?.stale === true) {
+    if (quote?.stale === true || quote?.isStale === true) {
       throw rejectTradeForQuote(`Stale price detected for ${symbol}. Trade rejected.`, quote, symbol);
     }
 
@@ -88,23 +101,43 @@ function roundMoney(value) {
   return Number.isFinite(number) ? Number(number.toFixed(2)) : 0;
 }
 
+function roundQuantity(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Number(number.toFixed(8)) : 0;
+}
+
 function serializeHolding(holding) {
   return holding ? holding.toObject() : null;
 }
 
-function createExecutionPayload({ symbol, type, quantity, price, total, quote }) {
+function toDateOrNull(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function createExecutionPayload({ symbol, type, quantity, orderType, price, total, quote, fees, realizedPnl }) {
   return {
     symbol,
+    mode: PAPER_TRADING_MODE,
+    status: 'executed',
+    orderType,
     action: type,
     quantity,
     executedPrice: price,
     total,
+    fees,
+    realizedPnl,
     priceSource: quote.source || null,
     priceProvider: quote.provider || null,
+    priceProviderSymbol: quote.providerSymbol || null,
     priceTimestamp: quote.timestamp || null,
+    priceFetchedAt: quote.fetchedAt || quote.timestamp || null,
     priceCached: quote.cached === true,
     priceFallback: quote.fallback === true,
-    priceStale: quote.stale === true,
+    priceStale: quote.stale === true || quote.isStale === true,
+    priceIsLive: quote.isLive === true,
+    priceIsStale: quote.stale === true || quote.isStale === true,
     priceError: quote.error || null,
   };
 }
@@ -113,13 +146,28 @@ function serializeTrade(trade) {
   const data = trade.toObject ? trade.toObject() : trade;
   return {
     ...data,
+    mode: data.mode || PAPER_TRADING_MODE,
+    status: data.status || 'executed',
+    orderType: data.orderType || 'market',
     executedPrice: data.executedPrice ?? data.price ?? null,
+    fees: data.fees ?? 0,
+    realizedPnl: data.realizedPnl ?? null,
+    balanceBefore: data.balanceBefore ?? null,
+    balanceAfter: data.balanceAfter ?? null,
+    holdingQuantityBefore: data.holdingQuantityBefore ?? null,
+    holdingQuantityAfter: data.holdingQuantityAfter ?? null,
+    avgPriceBefore: data.avgPriceBefore ?? null,
+    avgPriceAfter: data.avgPriceAfter ?? null,
     priceSource: data.priceSource ?? null,
     priceProvider: data.priceProvider ?? null,
+    priceProviderSymbol: data.priceProviderSymbol ?? null,
     priceTimestamp: data.priceTimestamp ?? null,
+    priceFetchedAt: data.priceFetchedAt ?? data.priceTimestamp ?? null,
     priceCached: data.priceCached ?? null,
     priceFallback: data.priceFallback ?? null,
     priceStale: data.priceStale ?? null,
+    priceIsLive: data.priceIsLive ?? null,
+    priceIsStale: data.priceIsStale ?? data.priceStale ?? null,
     priceError: data.priceError ?? null,
   };
 }
@@ -140,7 +188,7 @@ function isTransactionUnsupported(error) {
     || message.includes('transaction is not supported');
 }
 
-async function performTradeWrite({ userId, symbol, type, quantity, quote, price, total }, session = null) {
+async function performTradeWrite({ userId, symbol, type, quantity, orderType, quote, price, total }, session = null) {
   const user = await applySession(User.findById(userId), session);
   if (!user) throw tradeError(404, 'User not found');
 
@@ -161,6 +209,14 @@ async function performTradeWrite({ userId, symbol, type, quantity, quote, price,
 
   let portfolio = await applySession(Portfolio.findOne({ userId, symbol }), session);
   let holdingRemoved = false;
+  const fees = PAPER_FEES;
+  let realizedPnl = null;
+  const balanceBefore = roundMoney(user.balance);
+  let balanceAfter = balanceBefore;
+  const holdingQuantityBefore = roundQuantity(portfolio?.quantity || 0);
+  const avgPriceBefore = portfolio ? Number(portfolio.avgPrice) : null;
+  let holdingQuantityAfter = holdingQuantityBefore;
+  let avgPriceAfter = avgPriceBefore;
 
   if (type === 'SELL') {
     if (!portfolio) {
@@ -172,14 +228,13 @@ async function performTradeWrite({ userId, symbol, type, quantity, quote, price,
   }
 
   if (type === 'BUY') {
-    const currentBalance = roundMoney(user.balance);
-    if (currentBalance < total) {
-      throw tradeError(400, `Insufficient balance. Available: ${currentBalance}, required: ${total}.`);
+    if (balanceBefore < total + fees) {
+      throw tradeError(400, `Insufficient virtual balance. Available: ${balanceBefore}, required: ${roundMoney(total + fees)}.`);
     }
 
     if (portfolio) {
       const oldQuantity = portfolio.quantity;
-      const newQuantity = oldQuantity + quantity;
+      const newQuantity = roundQuantity(oldQuantity + quantity);
       portfolio.avgPrice = ((oldQuantity * portfolio.avgPrice) + (quantity * price)) / newQuantity;
       portfolio.quantity = newQuantity;
       await saveWithSession(portfolio, session);
@@ -193,21 +248,29 @@ async function performTradeWrite({ userId, symbol, type, quantity, quote, price,
       await saveWithSession(portfolio, session);
     }
 
-    user.balance = roundMoney(currentBalance - total);
+    holdingQuantityAfter = roundQuantity(portfolio.quantity);
+    avgPriceAfter = Number(portfolio.avgPrice);
+    balanceAfter = roundMoney(balanceBefore - total - fees);
+    user.balance = balanceAfter;
     await saveWithSession(user, session);
   } else {
-    const currentBalance = roundMoney(user.balance);
-    portfolio.quantity -= quantity;
+    realizedPnl = Number.isFinite(avgPriceBefore) ? roundMoney((price - avgPriceBefore) * quantity) : null;
+    portfolio.quantity = roundQuantity(portfolio.quantity - quantity);
+    holdingQuantityAfter = roundQuantity(portfolio.quantity);
 
     if (portfolio.quantity < MIN_HOLDING_QUANTITY) {
       await applySession(Portfolio.deleteOne({ _id: portfolio._id, userId }), session);
       portfolio = null;
       holdingRemoved = true;
+      holdingQuantityAfter = 0;
+      avgPriceAfter = null;
     } else {
       await saveWithSession(portfolio, session);
+      avgPriceAfter = Number(portfolio.avgPrice);
     }
 
-    user.balance = roundMoney(currentBalance + total);
+    balanceAfter = roundMoney(balanceBefore + total - fees);
+    user.balance = balanceAfter;
     await saveWithSession(user, session);
   }
 
@@ -215,15 +278,30 @@ async function performTradeWrite({ userId, symbol, type, quantity, quote, price,
     userId,
     symbol,
     type,
+    orderType,
+    mode: PAPER_TRADING_MODE,
+    status: 'executed',
     quantity,
     price,
     executedPrice: price,
+    fees,
+    realizedPnl,
+    balanceBefore,
+    balanceAfter,
+    holdingQuantityBefore,
+    holdingQuantityAfter,
+    avgPriceBefore,
+    avgPriceAfter,
     priceSource: quote.source || null,
     priceProvider: quote.provider || null,
-    priceTimestamp: quote.timestamp ? new Date(quote.timestamp) : null,
+    priceProviderSymbol: quote.providerSymbol || null,
+    priceTimestamp: toDateOrNull(quote.timestamp),
+    priceFetchedAt: toDateOrNull(quote.fetchedAt || quote.timestamp),
     priceCached: quote.cached === true,
     priceFallback: quote.fallback === true,
-    priceStale: quote.stale === true,
+    priceStale: quote.stale === true || quote.isStale === true,
+    priceIsLive: quote.isLive === true,
+    priceIsStale: quote.stale === true || quote.isStale === true,
     priceError: quote.error || null,
     total,
   });
@@ -272,37 +350,59 @@ async function executeTradeWrite(params) {
   }
 }
 
-router.post('/', auth, async (req, res) => {
+async function handlePaperTradeOrder(req, res) {
   try {
     const input = parseTradeInput(req.body);
-    if (input.error) return res.status(400).json({ success: false, message: input.error });
+    if (input.error) return res.status(400).json({ success: false, mode: PAPER_TRADING_MODE, message: input.error });
 
-    const { symbol, type, quantity } = input;
+    const { symbol, type, quantity, orderType } = input;
     const { quote, price } = await resolveTradeQuote(symbol);
     const total = roundMoney(quantity * price);
+    if (total <= 0) {
+      return res.status(400).json({
+        success: false,
+        mode: PAPER_TRADING_MODE,
+        message: 'Order total is too small for paper execution.',
+      });
+    }
     const result = await executeTradeWrite({
       userId: req.user.id,
       symbol,
       type,
       quantity,
+      orderType,
       quote,
       price,
       total,
     });
-    const execution = createExecutionPayload({ symbol, type, quantity, price, total, quote });
+    const tradePayload = serializeTrade(result.trade);
+    const execution = createExecutionPayload({
+      symbol,
+      type,
+      quantity,
+      orderType,
+      price,
+      total,
+      quote,
+      fees: tradePayload.fees,
+      realizedPnl: tradePayload.realizedPnl,
+    });
     const warnings = [];
 
     try {
       await createPortfolioSnapshotFromState(req.user.id, 'trade');
     } catch (snapshotError) {
       console.warn('Trade portfolio snapshot failed:', snapshotError.message);
-      warnings.push('Trade executed, but its portfolio performance snapshot could not be recorded.');
+      warnings.push('Paper trade executed, but its portfolio performance snapshot could not be recorded.');
     }
 
     return res.status(201).json({
       success: true,
-      message: `${type} ${quantity} ${symbol} at $${price}`,
-      trade: serializeTrade(result.trade),
+      mode: PAPER_TRADING_MODE,
+      status: 'executed',
+      orderType,
+      message: `Paper ${type} ${quantity} ${symbol} at $${price}`,
+      trade: tradePayload,
       execution,
       portfolio: {
         balance: result.user.balance,
@@ -318,18 +418,39 @@ router.post('/', auth, async (req, res) => {
   } catch (err) {
     return res.status(err.statusCode || 500).json({
       success: false,
+      mode: PAPER_TRADING_MODE,
       message: err.message || 'Server error',
       ...(err.priceStatus ? { priceStatus: err.priceStatus } : {}),
     });
   }
-});
+}
+
+router.post('/', auth, handlePaperTradeOrder);
+router.post('/order', auth, handlePaperTradeOrder);
 
 router.get('/history', auth, async (req, res) => {
   try {
-    const trades = await Trade.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(50);
-    return res.json(trades.map(serializeTrade));
+    const requestedLimit = Number.parseInt(req.query.limit, 10);
+    const limit = Math.min(Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 50, 1), 100);
+    const trades = await Trade.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(limit);
+    const data = trades.map(serializeTrade);
+    return res.json({
+      success: true,
+      mode: PAPER_TRADING_MODE,
+      count: data.length,
+      limit,
+      timestamp: new Date().toISOString(),
+      data,
+      trades: data,
+    });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({
+      success: false,
+      mode: PAPER_TRADING_MODE,
+      message: err.message || 'Unable to load paper trade history.',
+      data: [],
+      trades: [],
+    });
   }
 });
 
