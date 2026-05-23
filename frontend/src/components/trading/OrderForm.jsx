@@ -32,6 +32,7 @@ export default function OrderForm({
   prices,
   symbols = [],
   selectedSymbol,
+  onSymbolChange,
   selectedQuote,
   selectedType = 'BUY',
   onTypeChange,
@@ -61,12 +62,29 @@ export default function OrderForm({
     onTypeChange?.(nextType)
   }
 
+  const handleSymbolChange = (nextSymbol) => {
+    setSymbol(nextSymbol)
+    onSymbolChange?.(nextSymbol)
+  }
+
   const quote = selectedQuote?.symbol === symbol ? selectedQuote : prices[symbol]
   const price = getValidNumber(quote?.price)
   const hasPrice = price !== null && price > 0 && quote?.priceAvailable !== false
   const quoteFallback = quote?.fallback === true
   const quoteStale = quote?.stale === true || quote?.isStale === true
+  const quoteDelayed = /yahoo/i.test(quote?.provider || '')
   const quoteBlocked = !hasPrice || quoteFallback || quoteStale
+  const quoteStatus = !hasPrice
+    ? 'Unavailable'
+    : quoteFallback
+      ? 'Fallback'
+      : quoteStale
+        ? 'Stale'
+        : quoteDelayed
+          ? 'Delayed provider'
+          : quote?.isLive
+            ? 'Live'
+            : 'Backend quote'
   const quoteBlockMessage = blockingMessage || (!hasPrice
     ? 'Selected price is unavailable. This symbol cannot be traded right now.'
     : quoteFallback
@@ -117,7 +135,7 @@ export default function OrderForm({
           <div className="relative">
             <select
               value={symbol}
-              onChange={(e) => setSymbol(e.target.value)}
+              onChange={(e) => handleSymbolChange(e.target.value)}
               className={fieldCls + ' pr-9 cursor-pointer'}
               style={{ backgroundImage: 'none' }}
               disabled={loading || symbols.length === 0}
@@ -195,8 +213,13 @@ export default function OrderForm({
             Source <span className="text-slate-500">{quote?.source || '--'}</span> - Provider <span className="text-slate-500">{quote?.provider || '--'}</span>
           </div>
           <div className="text-[10px] text-slate-700 font-medium">
-            Status <span className="text-slate-500">{quote?.isLive ? 'Live' : quoteFallback ? 'Fallback' : quoteStale ? 'Stale' : hasPrice ? 'Backend quote' : 'Unavailable'}</span>
+            Status <span className="text-slate-500">{quoteStatus}</span>
           </div>
+          {quoteDelayed && hasPrice && !quoteBlocked && (
+            <p className="text-[10px] text-slate-700 font-medium">
+              Provider data may be delayed. Backend re-checks the market price before saving.
+            </p>
+          )}
         </div>
 
         {quoteBlockMessage && (

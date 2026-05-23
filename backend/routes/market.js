@@ -4,6 +4,7 @@ const {
   getAllPrices,
   getTopCryptos,
   getPricesForSymbols,
+  getMarketHistory,
   computeDataQuality,
   normalizeSymbol,
   getMarketCacheTtlSeconds
@@ -104,6 +105,17 @@ router.get('/prices', async (req, res) => {
   } catch (err) {
     const response = createErrorResponse(err.message);
     res.status(response.statusCode).json(response.body);
+  }
+});
+
+router.get('/history', async (req, res) => {
+  try {
+    const result = await getMarketHistory(req.query.symbol, req.query.interval, req.query.range);
+    const statusCode = result.message === 'Symbol is required' ? 400 : 200;
+    return res.status(statusCode).json(result);
+  } catch (err) {
+    const response = createErrorResponse(err.message);
+    return res.status(response.statusCode).json(response.body);
   }
 });
 

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { LineChart, RefreshCw, Wallet, Zap } from 'lucide-react'
 import PriceCard    from '../components/trading/PriceCard'
 import OrderForm    from '../components/trading/OrderForm'
+import TradingChart from '../components/trading/TradingChart'
 import TradingPanel from '../components/trading/TradingPanel'
 import TradeHistory from '../components/trading/TradeHistory'
 import { getAllPrices } from '../services/marketService'
@@ -422,6 +423,10 @@ export default function Trading() {
       <motion.div initial="hidden" animate="visible" variants={stagger}
         className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         <motion.div variants={fadeUp} className="lg:col-span-2 space-y-3.5">
+          <TradingChart
+            symbol={currentAsset.symbol}
+            quote={currentAsset}
+          />
           <TradingPanel
             symbol={currentAsset.symbol}
             price={currentAsset.price}
@@ -441,6 +446,7 @@ export default function Trading() {
             prices={priceMap}
             symbols={symbols}
             selectedSymbol={selectedSymbol}
+            onSymbolChange={setSelectedSymbol}
             selectedQuote={currentAsset}
             selectedType={orderType}
             onTypeChange={setOrderType}

@@ -31,7 +31,8 @@ const ASSET_NAMES = {
   GOOGL: 'Alphabet Inc.',
   AMZN: 'Amazon.com Inc.',
   META: 'Meta Platforms Inc.',
-  NFLX: 'Netflix Inc.'
+  NFLX: 'Netflix Inc.',
+  SP500: 'S&P 500'
 };
 
 const STOCK_SYMBOLS = {
@@ -48,10 +49,27 @@ const STOCK_SYMBOLS = {
 const INDICES = {
   IXIC: '^IXIC',
   SPX: '^GSPC',
+  SP500: '^GSPC',
   DJI: '^DJI',
   NDX: '^NDX',
   RUT: '^RUT',
   VIX: '^VIX'
+};
+
+const HISTORY_INTERVALS = {
+  '1m': { binance: '1m', yahoo: '1m', seconds: 60 },
+  '5m': { binance: '5m', yahoo: '5m', seconds: 300 },
+  '15m': { binance: '15m', yahoo: '15m', seconds: 900 },
+  '1h': { binance: '1h', yahoo: '60m', seconds: 3600 },
+  '1d': { binance: '1d', yahoo: '1d', seconds: 86400 }
+};
+
+const HISTORY_RANGES = {
+  '1d': 1,
+  '7d': 7,
+  '30d': 30,
+  '90d': 90,
+  '1y': 365
 };
 
 function normalizeSymbol(symbol) {
@@ -76,6 +94,7 @@ function getIndexName(symbol) {
   const names = {
     IXIC: 'NASDAQ Composite',
     SPX: 'S&P 500',
+    SP500: 'S&P 500',
     DJI: 'Dow Jones Industrial Average',
     NDX: 'NASDAQ 100',
     RUT: 'Russell 2000',
@@ -208,8 +227,341 @@ function getMarketCacheTtlSeconds() {
   return MARKET_CACHE_TTL_SECONDS;
 }
 
+function getYahooMetalSymbol(symbol) {
+  if (symbol === 'XAU' || symbol === 'GOLD') return 'GC=F';
+  if (symbol === 'XAG' || symbol === 'SILVER') return 'SI=F';
+  return null;
+}
+
+function normalizeHistoryInterval(interval, warnings) {
+  const value = String(interval || '1h').trim().toLowerCase();
+  if (HISTORY_INTERVALS[value]) return value;
+
+  warnings.push(`Unsupported interval "${interval}", using 1h.`);
+  return '1h';
+}
+
+function normalizeHistoryRange(range, warnings) {
+  const value = String(range || '30d').trim().toLowerCase();
+  if (HISTORY_RANGES[value]) return value;
+
+  warnings.push(`Unsupported range "${range}", using 30d.`);
+  return '30d';
+}
+
+function getBinanceHistoryLimit(interval, range) {
+  const seconds = HISTORY_INTERVALS[interval].seconds;
+  const days = HISTORY_RANGES[range];
+  const estimatedCandles = Math.ceil((days * 24 * 60 * 60) / seconds);
+  return Math.min(Math.max(estimatedCandles, 1), 1000);
+}
+
+function getYahooHistoryRange(interval, range, warnings) {
+  if (interval === '1m' && !['1d', '7d'].includes(range)) {
+    warnings.push(`Yahoo does not reliably support ${interval} candles for ${range}; using 7d.`);
+    return '7d';
+  }
+
+  if (interval !== '1d' && range === '1y') {
+    warnings.push(`Yahoo intraday candles for ${range} are limited; using 30d.`);
+    return '30d';
+  }
+
+  return range;
+}
+
+function resolveHistoryMarket(symbol) {
+  const normalizedSymbol = normalizeSymbol(symbol);
+
+  if (!normalizedSymbol) {
+    return {
+      symbol: '',
+      type: 'unknown',
+      provider: null,
+      providerSymbol: null,
+      error: 'Symbol is required'
+    };
+  }
+
+  if (INDICES[normalizedSymbol]) {
+    return {
+      symbol: normalizedSymbol,
+      type: 'index',
+      provider: YAHOO_PROVIDER,
+      providerSymbol: INDICES[normalizedSymbol]
+    };
+  }
+
+  if (STOCK_SYMBOLS[normalizedSymbol]) {
+    return {
+      symbol: normalizedSymbol,
+      type: 'stock',
+      provider: YAHOO_PROVIDER,
+      providerSymbol: STOCK_SYMBOLS[normalizedSymbol]
+    };
+  }
+
+  const metalSymbol = getYahooMetalSymbol(normalizedSymbol);
+  if (metalSymbol) {
+    return {
+      symbol: normalizedSymbol,
+      type: 'metal',
+      provider: YAHOO_PROVIDER,
+      providerSymbol: metalSymbol
+    };
+  }
+
+  return {
+    symbol: normalizedSymbol,
+    type: 'crypto',
+    provider: BINANCE_PROVIDER,
+    providerSymbol: `${normalizedSymbol}USDT`
+  };
+}
+
+function createHistoryResponse({
+  success,
+  symbol,
+  interval,
+  range,
+  data = [],
+  provider = null,
+  providerSymbol = null,
+  fetchedAt = nowIso(),
+  isLive = false,
+  isStale = true,
+  cached = false,
+  warnings = [],
+  message = null
+}) {
+  return {
+    success,
+    symbol,
+    interval,
+    range,
+    count: data.length,
+    data,
+    message,
+    meta: {
+      provider,
+      providerSymbol,
+      isLive,
+      isStale,
+      fetchedAt,
+      cacheTtlSeconds: MARKET_CACHE_TTL_SECONDS,
+      cached,
+      warnings
+    }
+  };
+}
+
+function markHistoryCached(history) {
+  return {
+    ...history,
+    meta: {
+      ...history.meta,
+      cached: true,
+      cacheTtlSeconds: history.meta?.cacheTtlSeconds || MARKET_CACHE_TTL_SECONDS
+    }
+  };
+}
+
+function normalizeHistoryCandles(candles) {
+  return candles
+    .map((candle) => {
+      const time = Number.parseInt(candle.time, 10);
+      const open = parseFiniteNumber(candle.open);
+      const high = parseFiniteNumber(candle.high);
+      const low = parseFiniteNumber(candle.low);
+      const close = parseFiniteNumber(candle.close);
+      const volume = parseFiniteNumber(candle.volume);
+
+      if (!Number.isFinite(time) || open === null || high === null || low === null || close === null) {
+        return null;
+      }
+
+      return {
+        time,
+        open,
+        high,
+        low,
+        close,
+        volume
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.time - b.time);
+}
+
 function getYahooPriceMeta(response) {
   return response.data?.chart?.result?.[0]?.meta || {};
+}
+
+async function getBinanceHistory({ symbol, providerSymbol, interval, range, warnings }) {
+  const response = await axios.get('https://api.binance.com/api/v3/klines', {
+    params: {
+      symbol: providerSymbol,
+      interval: HISTORY_INTERVALS[interval].binance,
+      limit: getBinanceHistoryLimit(interval, range)
+    },
+    timeout: 10000
+  });
+
+  const candles = Array.isArray(response.data)
+    ? normalizeHistoryCandles(response.data.map((item) => ({
+      time: Math.floor(Number(item[0]) / 1000),
+      open: item[1],
+      high: item[2],
+      low: item[3],
+      close: item[4],
+      volume: item[5]
+    })))
+    : [];
+
+  if (candles.length === 0) {
+    return createHistoryResponse({
+      success: false,
+      symbol,
+      interval,
+      range,
+      provider: BINANCE_PROVIDER,
+      providerSymbol,
+      warnings,
+      message: `No Binance candle data available for ${symbol}`
+    });
+  }
+
+  return createHistoryResponse({
+    success: true,
+    symbol,
+    interval,
+    range,
+    data: candles,
+    provider: BINANCE_PROVIDER,
+    providerSymbol,
+    isLive: true,
+    isStale: false,
+    warnings
+  });
+}
+
+async function getYahooHistory({ symbol, providerSymbol, interval, range, warnings }) {
+  const yahooRange = getYahooHistoryRange(interval, range, warnings);
+  const response = await axios.get(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(providerSymbol)}`,
+    {
+      params: {
+        interval: HISTORY_INTERVALS[interval].yahoo,
+        range: yahooRange,
+        includePrePost: false
+      },
+      timeout: 10000
+    }
+  );
+
+  const result = response.data?.chart?.result?.[0];
+  const timestamps = Array.isArray(result?.timestamp) ? result.timestamp : [];
+  const quote = result?.indicators?.quote?.[0] || {};
+
+  const candles = normalizeHistoryCandles(timestamps.map((time, index) => ({
+    time,
+    open: quote.open?.[index],
+    high: quote.high?.[index],
+    low: quote.low?.[index],
+    close: quote.close?.[index],
+    volume: quote.volume?.[index]
+  })));
+
+  if (candles.length === 0) {
+    return createHistoryResponse({
+      success: false,
+      symbol,
+      interval,
+      range,
+      provider: YAHOO_PROVIDER,
+      providerSymbol,
+      warnings,
+      message: `No Yahoo candle data available for ${symbol}`
+    });
+  }
+
+  return createHistoryResponse({
+    success: true,
+    symbol,
+    interval,
+    range,
+    data: candles,
+    provider: YAHOO_PROVIDER,
+    providerSymbol,
+    isLive: false,
+    isStale: false,
+    warnings
+  });
+}
+
+async function getMarketHistory(symbol, interval = '1h', range = '30d') {
+  const warnings = [];
+  const normalizedInterval = normalizeHistoryInterval(interval, warnings);
+  const normalizedRange = normalizeHistoryRange(range, warnings);
+  const market = resolveHistoryMarket(symbol);
+
+  if (market.error) {
+    return createHistoryResponse({
+      success: false,
+      symbol: market.symbol,
+      interval: normalizedInterval,
+      range: normalizedRange,
+      warnings,
+      message: market.error
+    });
+  }
+
+  const cacheKey = `history_${market.symbol}_${normalizedInterval}_${normalizedRange}`;
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    const cachedHistory = markHistoryCached(cached);
+    if (warnings.length === 0) return cachedHistory;
+
+    return {
+      ...cachedHistory,
+      meta: {
+        ...cachedHistory.meta,
+        warnings: [...(cachedHistory.meta?.warnings || []), ...warnings]
+      }
+    };
+  }
+
+  try {
+    const history = market.provider === BINANCE_PROVIDER
+      ? await getBinanceHistory({
+        symbol: market.symbol,
+        providerSymbol: market.providerSymbol,
+        interval: normalizedInterval,
+        range: normalizedRange,
+        warnings
+      })
+      : await getYahooHistory({
+        symbol: market.symbol,
+        providerSymbol: market.providerSymbol,
+        interval: normalizedInterval,
+        range: normalizedRange,
+        warnings
+      });
+
+    if (history.success) cache.set(cacheKey, history);
+    return history;
+  } catch (error) {
+    return createHistoryResponse({
+      success: false,
+      symbol: market.symbol,
+      interval: normalizedInterval,
+      range: normalizedRange,
+      provider: market.provider,
+      providerSymbol: market.providerSymbol,
+      warnings,
+      message: `Unable to fetch candle data for ${market.symbol}: ${error.message}`
+    });
+  }
 }
 
 function getFallbackCryptos(limit, error) {
@@ -537,6 +889,7 @@ module.exports = {
   getTopCryptos,
   getSpecificCryptos,
   getPricesForSymbols,
+  getMarketHistory,
   getMetalPrice,
   getStockPrice,
   getIndexPrice,

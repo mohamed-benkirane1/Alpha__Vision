@@ -65,6 +65,7 @@ const normalizeDataQuality = (dataQuality = {}) => ({
 
 const normalizeMeta = (meta = {}) => ({
   provider: meta.provider || null,
+  providerSymbol: meta.providerSymbol || null,
   providers: Array.isArray(meta.providers) ? meta.providers : [],
   isLive: toBoolean(meta.isLive),
   isStale: toBoolean(meta.isStale),
@@ -72,6 +73,8 @@ const normalizeMeta = (meta = {}) => ({
   hasUnavailable: toBoolean(meta.hasUnavailable),
   fetchedAt: meta.fetchedAt || null,
   cacheTtlSeconds: toNumberOrNull(meta.cacheTtlSeconds),
+  cached: toBoolean(meta.cached),
+  warnings: Array.isArray(meta.warnings) ? meta.warnings.filter(Boolean) : [],
 })
 
 export const normalizeMarketResponse = (payload = {}) => {
@@ -98,6 +101,46 @@ export const normalizeSingleMarketResponse = (payload = {}) => {
     meta: normalizeMeta(payload.meta),
     quote,
     data: quote, // Temporary legacy alias for older consumers.
+    raw: payload,
+  }
+}
+
+const normalizeHistoryCandle = (candle = {}) => {
+  const time = toNumberOrNull(candle.time)
+  const open = toNumberOrNull(candle.open)
+  const high = toNumberOrNull(candle.high)
+  const low = toNumberOrNull(candle.low)
+  const close = toNumberOrNull(candle.close)
+
+  if (time === null || open === null || high === null || low === null || close === null) {
+    return null
+  }
+
+  return {
+    time,
+    open,
+    high,
+    low,
+    close,
+    volume: toNumberOrNull(candle.volume),
+  }
+}
+
+export const normalizeMarketHistoryResponse = (payload = {}) => {
+  const candles = Array.isArray(payload.data)
+    ? payload.data.map(normalizeHistoryCandle).filter(Boolean)
+    : []
+
+  return {
+    success: payload.success === true,
+    symbol: normalizeMarketSymbol(payload.symbol),
+    interval: payload.interval || null,
+    range: payload.range || null,
+    count: Number.isFinite(Number(payload.count)) ? Number(payload.count) : candles.length,
+    candles,
+    data: candles,
+    meta: normalizeMeta(payload.meta),
+    message: payload.message || payload.error || null,
     raw: payload,
   }
 }
@@ -160,6 +203,36 @@ export const getMarketPrice = async (symbol) => {
         raw: apiError.data,
       },
     })
+  }
+}
+
+export const getMarketHistory = async (symbol, interval = '1h', range = '30d') => {
+  try {
+    const normalizedSymbol = normalizeMarketSymbol(symbol)
+    const response = await api.get('/market/history', {
+      params: {
+        symbol: normalizedSymbol,
+        interval,
+        range,
+      },
+      skipAuth: true,
+    })
+    return normalizeMarketHistoryResponse(response.data)
+  } catch (error) {
+    const apiError = extractApiError(error)
+    return {
+      success: false,
+      symbol: normalizeMarketSymbol(symbol),
+      interval,
+      range,
+      count: 0,
+      candles: [],
+      data: [],
+      meta: normalizeMeta(apiError.data?.meta),
+      message: apiError.message,
+      status: apiError.status,
+      raw: apiError.data,
+    }
   }
 }
 
