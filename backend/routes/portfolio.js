@@ -34,11 +34,30 @@ function getQuoteMetadata(quote = {}) {
   return {
     priceSource: quote.source || null,
     priceProvider: quote.provider || null,
+    priceProviderSymbol: quote.providerSymbol || null,
     priceTimestamp: quote.timestamp || null,
+    priceFetchedAt: quote.fetchedAt || quote.timestamp || null,
     priceCached: quote.cached === true,
     priceFallback: quote.fallback === true,
-    priceStale: quote.stale === true,
+    priceStale: quote.stale === true || quote.isStale === true,
+    priceIsLive: quote.isLive === true,
+    priceIsStale: quote.stale === true || quote.isStale === true,
     priceError: quote.error || null
+  };
+}
+
+function createPriceMeta(quote = {}) {
+  return {
+    source: quote.source || null,
+    provider: quote.provider || null,
+    providerSymbol: quote.providerSymbol || null,
+    isLive: quote.isLive === true,
+    isStale: quote.stale === true || quote.isStale === true,
+    cached: quote.cached === true,
+    fallback: quote.fallback === true,
+    fetchedAt: quote.fetchedAt || quote.timestamp || null,
+    timestamp: quote.timestamp || null,
+    error: quote.error || null
   };
 }
 
@@ -53,7 +72,7 @@ function buildQualityWarnings(symbol, quote) {
     warnings.push(`${symbol} is valued using fallback price. Totals may be inaccurate.`);
   }
 
-  if (quote?.stale === true) {
+  if (quote?.stale === true || quote?.isStale === true) {
     warnings.push(`${symbol} is valued using stale price. Totals may be inaccurate.`);
   }
 
@@ -95,14 +114,20 @@ async function enrichHolding(holding) {
     type: quote.type || 'unknown',
     currentPrice: null,
     currentValue: null,
+    marketValue: null,
     investedValue: roundMoney(costBasis),
     costBasis: formatMoney(costBasis),
+    costBasisValue: roundMoney(costBasis),
+    avgPrice: Number.isFinite(avgPrice) ? avgPrice : null,
     averagePrice: Number.isFinite(avgPrice) ? avgPrice : null,
     profit: null,
+    unrealizedPnl: null,
     profitPercent: null,
+    unrealizedPnlPercent: null,
     allocation: 0,
     priceAvailable: false,
     ...getQuoteMetadata(quote),
+    priceMeta: createPriceMeta(quote),
     priceError: quote.error || reason,
     warning: buildUnavailableWarning(symbol || baseHolding.symbol, quote.error || reason),
     warnings: [buildUnavailableWarning(symbol || baseHolding.symbol, quote.error || reason)]
@@ -136,14 +161,20 @@ async function enrichHolding(holding) {
       type: quote.type || 'unknown',
       currentPrice: price,
       currentValue: roundMoney(currentValue),
+      marketValue: roundMoney(currentValue),
       investedValue: roundMoney(costBasis),
       costBasis: formatMoney(costBasis),
+      costBasisValue: roundMoney(costBasis),
+      avgPrice: Number.isFinite(avgPrice) ? avgPrice : null,
       averagePrice: Number.isFinite(avgPrice) ? avgPrice : null,
       profit: roundMoney(profit),
+      unrealizedPnl: roundMoney(profit),
       profitPercent: roundPercent(profitPercent),
+      unrealizedPnlPercent: roundPercent(profitPercent),
       allocation: 0,
       priceAvailable: true,
       ...getQuoteMetadata(quote),
+      priceMeta: createPriceMeta(quote),
       warning: qualityWarnings[0] || null,
       warnings: qualityWarnings
     };
@@ -295,6 +326,8 @@ router.get('/', auth, async (req, res) => {
       totals,
       dataQuality: createDataQuality(holdingsWithAllocation),
       totalValue: formatMoney(holdingsValue),
+      holdingsValue: roundedHoldingsValue,
+      totalPortfolioValue: totals.totalPortfolioValue,
       totalProfit: formatMoney(totalProfit),
       totalProfitPercent: pricedInvested > 0 ? formatPercent((totalProfit / pricedInvested) * 100) : 0,
       warnings

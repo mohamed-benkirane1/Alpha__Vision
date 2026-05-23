@@ -5,7 +5,9 @@ import { Wallet, TrendingUp, Layers, Lightbulb, AlertTriangle, CheckCircle, Refr
 import PortfolioCard  from '../components/portfolio/PortfolioCard'
 import HoldingsTable  from '../components/portfolio/HoldingsTable'
 import PortfolioChart from '../components/portfolio/PortfolioChart'
+import WatchlistPanel from '../components/portfolio/WatchlistPanel'
 import { demoDeposit, getPortfolio } from '../services/portfolioService'
+import { addWatchlistSymbol, getWatchlist, removeWatchlistSymbol } from '../services/watchlistService'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
@@ -68,6 +70,13 @@ const getPortfolioErrorMessage = (error) => {
 
   return 'Impossible de charger votre portfolio pour le moment. Veuillez réessayer.'
 }
+
+const getWatchlistErrorMessage = (error) => (
+  error?.normalized?.message ||
+  error?.response?.data?.message ||
+  error?.message ||
+  'Unable to update watchlist right now.'
+)
 
 function buildSummaryCards(portfolio, loading) {
   const holdings = Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
@@ -176,8 +185,14 @@ export default function Portfolio() {
   const [funding, setFunding] = useState(false)
   const [fundingMessage, setFundingMessage] = useState('')
   const [error, setError] = useState('')
+  const [watchlist, setWatchlist] = useState([])
+  const [watchlistLoading, setWatchlistLoading] = useState(true)
+  const [watchlistError, setWatchlistError] = useState('')
+  const [watchlistMessage, setWatchlistMessage] = useState('')
+  const [watchlistMutating, setWatchlistMutating] = useState(false)
   const mountedRef = useRef(false)
   const loadingRef = useRef(false)
+  const watchlistLoadingRef = useRef(false)
 
   const loadPortfolio = useCallback(async ({ refresh = false, silent = false } = {}) => {
     if (loadingRef.current) return
@@ -211,6 +226,26 @@ export default function Portfolio() {
     }
   }, [])
 
+  const loadWatchlist = useCallback(async ({ silent = false } = {}) => {
+    if (watchlistLoadingRef.current) return
+    watchlistLoadingRef.current = true
+    if (!silent) setWatchlistLoading(true)
+    setWatchlistError('')
+
+    try {
+      const response = await getWatchlist()
+      if (!mountedRef.current) return
+      setWatchlist(Array.isArray(response.watchlist) ? response.watchlist : [])
+    } catch (err) {
+      if (!mountedRef.current) return
+      console.error('Watchlist load failed:', err)
+      setWatchlistError(getWatchlistErrorMessage(err))
+    } finally {
+      watchlistLoadingRef.current = false
+      if (mountedRef.current && !silent) setWatchlistLoading(false)
+    }
+  }, [])
+
   const handleDemoDeposit = useCallback(async () => {
     setFunding(true)
     setFundingMessage('')
@@ -236,13 +271,59 @@ export default function Portfolio() {
     }
   }, [loadPortfolio])
 
+  const handleAddWatchlist = useCallback(async (symbol) => {
+    const normalizedSymbol = String(symbol || '').trim().toUpperCase()
+    if (!normalizedSymbol || watchlistMutating) return false
+
+    setWatchlistMutating(true)
+    setWatchlistError('')
+    setWatchlistMessage('')
+
+    try {
+      const response = await addWatchlistSymbol(normalizedSymbol)
+      if (!mountedRef.current) return false
+      setWatchlist(Array.isArray(response.watchlist) ? response.watchlist : [])
+      setWatchlistMessage(response.message || `${normalizedSymbol} added to watchlist.`)
+      return true
+    } catch (err) {
+      if (!mountedRef.current) return false
+      setWatchlistError(getWatchlistErrorMessage(err))
+      return false
+    } finally {
+      if (mountedRef.current) setWatchlistMutating(false)
+    }
+  }, [watchlistMutating])
+
+  const handleRemoveWatchlist = useCallback(async (symbol) => {
+    const normalizedSymbol = String(symbol || '').trim().toUpperCase()
+    if (!normalizedSymbol || watchlistMutating) return
+
+    setWatchlistMutating(true)
+    setWatchlistError('')
+    setWatchlistMessage('')
+
+    try {
+      const response = await removeWatchlistSymbol(normalizedSymbol)
+      if (!mountedRef.current) return
+      setWatchlist(Array.isArray(response.watchlist) ? response.watchlist : [])
+      setWatchlistMessage(response.message || `${normalizedSymbol} removed from watchlist.`)
+    } catch (err) {
+      if (!mountedRef.current) return
+      setWatchlistError(getWatchlistErrorMessage(err))
+    } finally {
+      if (mountedRef.current) setWatchlistMutating(false)
+    }
+  }, [watchlistMutating])
+
   useEffect(() => {
     mountedRef.current = true
     const timer = window.setTimeout(() => {
       loadPortfolio()
+      loadWatchlist()
     }, 0)
     const interval = window.setInterval(() => {
       loadPortfolio({ refresh: true, silent: true })
+      loadWatchlist({ silent: true })
     }, AUTO_REFRESH_MS)
 
     return () => {
@@ -250,7 +331,7 @@ export default function Portfolio() {
       window.clearInterval(interval)
       mountedRef.current = false
     }
-  }, [loadPortfolio])
+  }, [loadPortfolio, loadWatchlist])
 
   const holdings = useMemo(() => (
     Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
@@ -395,6 +476,19 @@ export default function Portfolio() {
         <motion.div variants={fadeUp}>
           <PortfolioChart holdings={holdings} totalValue={portfolio?.totals?.holdingsValue ?? portfolio?.totalValue} loading={loading} />
         </motion.div>
+      </motion.div>
+
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+        <WatchlistPanel
+          items={watchlist}
+          loading={watchlistLoading}
+          error={watchlistError}
+          message={watchlistMessage}
+          mutating={watchlistMutating}
+          onAdd={handleAddWatchlist}
+          onRemove={handleRemoveWatchlist}
+          onRefresh={() => loadWatchlist()}
+        />
       </motion.div>
 
       {/* Insights */}

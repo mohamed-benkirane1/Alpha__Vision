@@ -93,6 +93,7 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
         {hasHoldings ? (
           holdings.map((h, i) => {
             const priceAvailable = h.priceAvailable !== false
+            const priceMeta = h.priceMeta || {}
             const profit = getValidNumber(h.profit)
             const hasProfit = priceAvailable && profit !== null
             const up = hasProfit ? profit >= 0 : true
@@ -134,10 +135,11 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                       {formatNumber(quantity)} {h.symbol || ''} · {h.name || h.type || 'Asset'}
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      {priceAvailable && !h.priceFallback && !h.priceStale && <StatusBadge label="Live" tone="emerald" />}
-                      {h.priceCached && <StatusBadge label="Cached" />}
-                      {h.priceFallback && <StatusBadge label="Fallback" tone="amber" />}
-                      {h.priceStale && <StatusBadge label="Stale" tone="amber" />}
+                      {priceAvailable && priceMeta.isLive && !priceMeta.fallback && !priceMeta.isStale && <StatusBadge label="Live" tone="emerald" />}
+                      {priceAvailable && !priceMeta.isLive && !priceMeta.cached && !priceMeta.fallback && !priceMeta.isStale && <StatusBadge label="Delayed" />}
+                      {priceMeta.cached && <StatusBadge label="Cached" />}
+                      {priceMeta.fallback && <StatusBadge label="Fallback" tone="amber" />}
+                      {priceMeta.isStale && <StatusBadge label="Stale" tone="amber" />}
                       {!priceAvailable && <StatusBadge label="Unavailable" tone="rose" />}
                     </div>
                   </div>
@@ -163,13 +165,13 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                 </div>
                 <div className="col-span-3 md:col-span-6 mt-1 pt-2 border-t border-white/[0.035] grid grid-cols-1 md:grid-cols-4 gap-1.5 text-[10px] font-medium">
                   <span className="text-slate-700">
-                    Provider <span className="text-slate-500">{h.priceProvider || h.priceSource || '--'}</span>
+                    Provider <span className="text-slate-500">{priceMeta.provider || h.priceProvider || h.priceSource || '--'}</span>
                   </span>
                   <span className="text-slate-700">
-                    Source <span className="text-slate-500">{h.priceSource || '--'}</span>
+                    Source <span className="text-slate-500">{priceMeta.source || h.priceSource || '--'}</span>
                   </span>
                   <span className="text-slate-700">
-                    Price time <span className="text-slate-500">{formatDateTime(h.priceTimestamp)}</span>
+                    Price time <span className="text-slate-500">{formatDateTime(priceMeta.fetchedAt || h.priceFetchedAt || h.priceTimestamp)}</span>
                   </span>
                   <span className="text-slate-700">
                     Invested <span className="text-slate-500 tabular-nums">{fmt(h.investedValue ?? h.costBasis)}</span>

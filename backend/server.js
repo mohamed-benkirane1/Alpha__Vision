@@ -98,6 +98,7 @@ app.use('/api/chatbot', require('./routes/chatbot'));
 app.use('/api/ai-signal', require('./routes/aiSignal'));
 app.use('/api/trade', require('./routes/trade'));
 app.use('/api/portfolio', require('./routes/portfolio'));
+app.use('/api/watchlist', require('./routes/watchlist'));
 app.use('/api/bot', require('./routes/bot'));
 app.use('/api/backtest', require('./routes/backtest'));
 app.use('/api/payment', require('./routes/Payment'));
