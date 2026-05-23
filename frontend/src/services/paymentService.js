@@ -20,8 +20,12 @@ const normalizePaymentResponse = (payload = {}) => ({
   provider: payload.provider || null,
   source: payload.source || null,
   stripeConfigured: payload.stripeConfigured === true,
+  stripeCheckoutConfigured: payload.stripeCheckoutConfigured === true,
+  stripeMode: payload.stripeMode || null,
+  stripeTestMode: payload.stripeTestMode === true,
   stripeSecretConfigured: payload.stripeSecretConfigured === true,
   webhookConfigured: payload.webhookConfigured === true,
+  fulfillmentMode: payload.fulfillmentMode || null,
   demoFundingEnabled: payload.demoFundingEnabled === true,
   balanceType: payload.balanceType || null,
   subscription: payload.subscription ? normalizeSubscription(payload.subscription) : null,
@@ -29,9 +33,16 @@ const normalizePaymentResponse = (payload = {}) => ({
   plans: normalizeArray(payload.plans),
   checkoutUrl: payload.checkoutUrl || payload.url || null,
   sessionId: payload.sessionId || payload.id || null,
+  checkoutMode: payload.checkoutMode || null,
   paymentStatus: payload.paymentStatus || payload.status || null,
+  fulfilled: payload.fulfilled === true,
+  fulfillmentReason: payload.fulfillmentReason || null,
   currentPlan: payload.currentPlan || payload.subscription?.plan || null,
   transactions: normalizeArray(payload.transactions),
+  endpoint: payload.endpoint || null,
+  requiredEvents: normalizeArray(payload.requiredEvents),
+  localForwardCommand: payload.localForwardCommand || null,
+  rawBodyRequired: payload.rawBodyRequired === true,
   demo: payload.demo === true,
   balance: toNumberOrNull(payload.balance),
   message: payload.message || '',
@@ -50,6 +61,8 @@ const normalizePaymentError = (error, fallbackMessage) => {
     provider: payload.provider || 'stripe',
     source: payload.source || 'backend',
     stripeConfigured: Boolean(payload.stripeConfigured),
+    stripeCheckoutConfigured: Boolean(payload.stripeCheckoutConfigured),
+    stripeMode: payload.stripeMode || null,
     subscription: payload.subscription || null,
     checkoutUrl: payload.checkoutUrl || null,
     sessionId: payload.sessionId || null,
@@ -123,6 +136,15 @@ export const createDepositCheckoutSession = async (amount) => {
   }
 }
 
+export const getWebhookInfo = async () => {
+  try {
+    const response = await api.get('/payment/webhook-info', { skipAuth: true })
+    return normalizePaymentResponse(response.data)
+  } catch (error) {
+    return normalizePaymentError(error, 'Unable to load Stripe webhook documentation.')
+  }
+}
+
 export const addDemoFunds = async (amount) => {
   try {
     const response = await api.post('/payment/demo-deposit', { amount })
@@ -153,4 +175,5 @@ export default {
   getPlanFeatures,
   getPlans,
   getSubscription,
+  getWebhookInfo,
 }

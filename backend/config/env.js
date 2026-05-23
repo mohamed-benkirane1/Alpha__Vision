@@ -120,6 +120,7 @@ function createConfig(env = process.env) {
       apiMax: positiveInteger(env.RATE_LIMIT_MAX, 300),
       authMax: authRateLimitMax,
       paymentMax: positiveInteger(env.PAYMENT_RATE_LIMIT_MAX, authRateLimitMax),
+      paymentReadMax: positiveInteger(env.PAYMENT_READ_RATE_LIMIT_MAX, positiveInteger(env.RATE_LIMIT_MAX, 300)),
       chatbotMax: positiveInteger(env.CHATBOT_RATE_LIMIT_MAX, authRateLimitMax),
     }),
     warnings: Object.freeze(buildFeatureWarnings(env)),

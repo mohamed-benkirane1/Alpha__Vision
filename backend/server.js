@@ -22,6 +22,7 @@ const defaultRateLimitWindowMs = env.rateLimits.windowMs;
 const globalRateLimitMax = env.rateLimits.apiMax;
 const sensitiveRateLimitMax = env.rateLimits.authMax;
 const paymentRateLimitMax = env.rateLimits.paymentMax;
+const paymentReadRateLimitMax = env.rateLimits.paymentReadMax;
 const chatbotRateLimitMax = env.rateLimits.chatbotMax;
 
 function createRateLimitMessage(message) {
@@ -37,7 +38,7 @@ const apiLimiter = rateLimit({
   limit: globalRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.originalUrl.startsWith('/api/payment/webhook'),
+  skip: (req) => req.originalUrl.split('?')[0] === '/api/payment/webhook',
   handler: createRateLimitMessage('Too many API requests. Please retry later.'),
 });
 
@@ -62,8 +63,28 @@ const paymentLimiter = rateLimit({
   limit: paymentRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.originalUrl.startsWith('/api/payment/webhook'),
+  skip: (req) => {
+    if (req.originalUrl.split('?')[0] === '/api/payment/webhook') return true;
+    if (req.method !== 'GET') return false;
+
+    const path = req.originalUrl.split('?')[0];
+    return [
+      '/api/payment/plans',
+      '/api/payment/status',
+      '/api/payment/transactions',
+      '/api/payment/features',
+      '/api/payment/webhook-info',
+    ].includes(path);
+  },
   handler: createRateLimitMessage('Too many payment requests. Please retry later.'),
+});
+
+const paymentReadLimiter = rateLimit({
+  windowMs: defaultRateLimitWindowMs,
+  limit: paymentReadRateLimitMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: createRateLimitMessage('Too many payment read requests. Please retry later.'),
 });
 
 const chatbotLimiter = rateLimit({
@@ -77,12 +98,17 @@ const chatbotLimiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({ origin: frontendUrl }));
-app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
+app.post('/api/payment/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(passport.initialize());
 app.use('/api', apiLimiter);
 app.use('/api/auth', authLimiter);
 app.use('/api/auth/forgot-password', forgotPasswordLimiter);
+app.use('/api/payment/plans', paymentReadLimiter);
+app.use('/api/payment/status', paymentReadLimiter);
+app.use('/api/payment/transactions', paymentReadLimiter);
+app.use('/api/payment/features', paymentReadLimiter);
+app.use('/api/payment/webhook-info', paymentReadLimiter);
 app.use('/api/payment', paymentLimiter);
 app.use('/api/chatbot', chatbotLimiter);
 

@@ -12,10 +12,12 @@ import {
 import {
   addDemoFunds,
   checkCheckoutSession,
+  createDepositCheckoutSession,
   createCheckoutSession,
   getPaymentStatus,
   getPaymentTransactions,
   getPlans,
+  getWebhookInfo,
 } from '../services/paymentService'
 import { useAuth } from '../context/useAuth'
 
@@ -42,13 +44,13 @@ function formatCurrency(value) {
   }).format(number)
 }
 
-function formatTransactionAmount(value) {
+function formatTransactionAmount(value, currency = 'EUR') {
   const number = Number(value)
   if (!Number.isFinite(number)) return '--'
 
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
-    currency: 'EUR',
+    currency: String(currency || 'EUR').toUpperCase(),
   }).format(number)
 }
 
@@ -86,11 +88,14 @@ export default function Payments() {
   const [status, setStatus] = useState(null)
   const [plans, setPlans] = useState([])
   const [transactions, setTransactions] = useState([])
+  const [webhookInfo, setWebhookInfo] = useState(null)
   const [checkoutStatus, setCheckoutStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(null)
   const [demoLoading, setDemoLoading] = useState(false)
+  const [depositLoading, setDepositLoading] = useState(false)
+  const [depositAmount, setDepositAmount] = useState('10')
   const [error, setError] = useState(null)
   const [message, setMessage] = useState(null)
 
@@ -102,10 +107,11 @@ export default function Payments() {
     else setLoading(true)
     setError(null)
 
-    const [statusResult, plansResult, transactionsResult] = await Promise.all([
+    const [statusResult, plansResult, transactionsResult, webhookResult] = await Promise.all([
       getPaymentStatus(),
       getPlans(),
       getPaymentTransactions(),
+      getWebhookInfo(),
     ])
 
     if (statusResult.success) setStatus(statusResult)
@@ -116,6 +122,9 @@ export default function Payments() {
 
     if (transactionsResult.success) setTransactions(transactionsResult.transactions)
     else setError((current) => current || transactionsResult.error || 'Unable to load payment transactions.')
+
+    if (webhookResult.success) setWebhookInfo(webhookResult)
+    else setError((current) => current || webhookResult.error || 'Unable to load webhook documentation.')
 
     if (refresh) setRefreshing(false)
     else setLoading(false)
@@ -134,7 +143,9 @@ export default function Payments() {
       setCheckoutStatus(response)
 
       if (response.success && response.paymentStatus === 'paid') {
-        setMessage('Stripe reports this checkout session as paid. Subscription fulfillment remains confirmed by the backend webhook.')
+        setMessage(response.fulfilled
+          ? 'Stripe checkout is paid and backend fulfillment is confirmed.'
+          : `Stripe checkout is paid. Fulfillment status: ${response.fulfillmentReason || 'pending webhook'}.`)
         await loadPayments({ refresh: true })
         await refreshUser()
       }
@@ -166,6 +177,22 @@ export default function Payments() {
     setCheckoutLoading(null)
   }
 
+  const handleStripeDeposit = async () => {
+    setDepositLoading(true)
+    setError(null)
+    setMessage(null)
+
+    const response = await createDepositCheckoutSession(depositAmount)
+
+    if (response.success && response.checkoutUrl) {
+      window.location.assign(response.checkoutUrl)
+      return
+    }
+
+    setError(response.error || 'Unable to start Stripe deposit checkout.')
+    setDepositLoading(false)
+  }
+
   const handleDemoFunds = async () => {
     setDemoLoading(true)
     setError(null)
@@ -194,7 +221,7 @@ export default function Payments() {
               <h1 className="text-2xl font-black text-white">Payments</h1>
             </div>
             <p className="text-xs text-slate-500 font-medium">
-              Stripe checkout and backend subscription status. No paid plan is activated locally.
+              Stripe checkout, subscription status, transactions, and separate demo funding.
             </p>
           </div>
           <button
@@ -231,11 +258,18 @@ export default function Payments() {
                   <p className="text-xs font-medium text-slate-600">Read from `/api/payment/status`.</p>
                 </div>
                 <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
-                  status?.stripeConfigured
+                  status?.stripeCheckoutConfigured
                     ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
                     : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
                 }`}>
-                  Stripe {status?.stripeConfigured ? 'ready' : 'not ready'}
+                  Stripe {status?.stripeCheckoutConfigured ? status?.stripeMode || 'ready' : 'not ready'}
+                </span>
+                <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
+                  status?.stripeTestMode
+                    ? 'border-sky-500/20 bg-sky-500/10 text-sky-300'
+                    : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+                }`}>
+                  {status?.stripeTestMode ? 'Test mode' : status?.stripeMode === 'live' ? 'Live mode' : 'Mode unknown'}
                 </span>
               </div>
 
@@ -244,7 +278,7 @@ export default function Payments() {
                   { label: 'Current plan', value: status?.subscription?.plan || '--' },
                   { label: 'Subscription state', value: status?.subscription?.status || '--' },
                   { label: 'Plan expires', value: formatDateTime(status?.subscription?.planExpiresAt) },
-                  { label: 'Trading balance', value: formatCurrency(status?.balance) },
+                  { label: 'Virtual trading balance', value: formatCurrency(status?.balance) },
                 ].map((item) => (
                   <div key={item.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">{item.label}</p>
@@ -260,7 +294,7 @@ export default function Payments() {
                 <h2 className="text-sm font-bold text-white">Demo Funding</h2>
               </div>
               <p className="mb-4 text-xs font-medium leading-relaxed text-slate-500">
-                Demo funds change backend balance for testing. They are not a Stripe payment.
+                Demo funds change the virtual balance without Stripe. They are not a real payment and are stored as demo transactions.
               </p>
               <button
                 type="button"
@@ -276,6 +310,38 @@ export default function Payments() {
             </motion.div>
           </div>
 
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/88 p-5 shadow-[0_4px_28px_rgba(0,0,0,0.28)]">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-white">Stripe Balance Deposit</h2>
+                <p className="text-xs font-medium text-slate-600">
+                  Opens Stripe Checkout. In test mode use Stripe test cards. This is separate from demo funding.
+                </p>
+              </div>
+              <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-300">
+                {status?.stripeMode || 'stripe'} mode
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr]">
+              <input
+                type="number"
+                min="10"
+                step="1"
+                value={depositAmount}
+                onChange={(event) => setDepositAmount(event.target.value)}
+                className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm font-bold text-white outline-none transition focus:border-rose-500/40"
+              />
+              <button
+                type="button"
+                onClick={handleStripeDeposit}
+                disabled={!status?.stripeCheckoutConfigured || depositLoading}
+                className="rounded-xl bg-gradient-to-r from-sky-600 to-indigo-700 px-3 py-2.5 text-xs font-black text-white transition hover:from-sky-500 hover:to-indigo-600 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {depositLoading ? 'Opening Stripe...' : 'Open Stripe deposit checkout'}
+              </button>
+            </div>
+          </motion.div>
+
           <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
             {plans.length === 0 ? (
               <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/88 p-8 text-center text-sm font-bold text-slate-500 md:col-span-3">
@@ -284,7 +350,7 @@ export default function Payments() {
             ) : plans.map((plan, index) => {
               const isCurrent = plan.id === currentPlan
               const isFree = Number(plan.price) <= 0
-              const canCheckout = status?.stripeConfigured && !isFree && !isCurrent
+              const canCheckout = status?.stripeCheckoutConfigured && !isFree && !isCurrent
 
               return (
                 <motion.div
@@ -329,7 +395,7 @@ export default function Payments() {
                         ? 'No checkout'
                         : isCurrent
                           ? 'Current plan'
-                          : status?.stripeConfigured
+                            : status?.stripeCheckoutConfigured
                             ? 'Open Stripe Checkout'
                             : 'Stripe not configured'}
                   </button>
@@ -354,11 +420,11 @@ export default function Payments() {
                         {transaction.type || 'transaction'} {transaction.plan ? `- ${transaction.plan}` : ''}
                       </p>
                       <p className="text-[11px] font-medium text-slate-600">
-                        {formatDateTime(transaction.createdAt)} / {transaction.paymentMethod || 'payment'}
+                        {formatDateTime(transaction.createdAt)} / {transaction.provider || transaction.paymentMethod || 'payment'} / {transaction.mode || '--'}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-black text-slate-300">{formatTransactionAmount(transaction.amount)}</p>
+                      <p className="text-xs font-black text-slate-300">{formatTransactionAmount(transaction.amount, transaction.currency)}</p>
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">{transaction.status || '--'}</p>
                     </div>
                   </div>
@@ -369,6 +435,24 @@ export default function Payments() {
                 No backend payment transactions yet. Self-service cancellation still needs a dedicated backend endpoint.
               </p>
             )}
+          </div>
+
+          <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/70 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-black text-white">Stripe Webhook</p>
+              <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
+                status?.webhookConfigured
+                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                  : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+              }`}>
+                {status?.webhookConfigured ? 'configured' : 'not configured'}
+              </span>
+            </div>
+            <div className="space-y-1 text-xs font-medium text-slate-500">
+              <p>Endpoint: <span className="font-black text-slate-300">{webhookInfo?.endpoint || '/api/payment/webhook'}</span></p>
+              <p>Raw body required: <span className="font-black text-slate-300">{webhookInfo?.rawBodyRequired ? 'yes' : '--'}</span></p>
+              <p>Local test: <span className="font-black text-slate-300">{webhookInfo?.localForwardCommand || 'stripe listen --forward-to localhost:5000/api/payment/webhook'}</span></p>
+            </div>
           </div>
         </>
       )}

@@ -11,6 +11,8 @@ const PLANS = {
     label: 'Free',
     price: 0,
     currency: 'eur',
+    billingInterval: null,
+    checkoutType: 'none',
     features: ['1 API call/min', '5 trades/jour'],
   },
   pro: {
@@ -18,6 +20,8 @@ const PLANS = {
     label: 'Pro',
     price: 2999,
     currency: 'eur',
+    billingInterval: 'month',
+    checkoutType: 'stripe_subscription',
     features: ['10 API calls/min', '50 trades/jour', 'Backtesting'],
   },
   elite: {
@@ -25,6 +29,8 @@ const PLANS = {
     label: 'Elite',
     price: 9999,
     currency: 'eur',
+    billingInterval: 'month',
+    checkoutType: 'stripe_subscription',
     features: ['Unlimited API calls', '1000 trades/jour', 'AI Assistant', 'Trading bot'],
   },
 };
@@ -80,7 +86,19 @@ function isStripeWebhookConfigured() {
 }
 
 function isStripeConfigured() {
-  return isStripeSecretConfigured() && isStripeWebhookConfigured();
+  return isStripeSecretConfigured();
+}
+
+function getStripeMode() {
+  const secret = String(process.env.STRIPE_SECRET_KEY || '').trim();
+  if (!secret) return 'not_configured';
+  if (secret.startsWith('sk_test_') || secret.startsWith('rk_test_')) return 'test';
+  if (secret.startsWith('sk_live_') || secret.startsWith('rk_live_')) return 'live';
+  return 'unknown';
+}
+
+function getTransactionMode() {
+  return getStripeMode() === 'live' ? 'stripe_live' : 'stripe_test';
 }
 
 function getFrontendUrl() {
@@ -100,7 +118,8 @@ function getStripeClient() {
 function getStripeWarnings() {
   const warnings = [];
   if (!isStripeSecretConfigured()) warnings.push('Stripe secret key is not configured on the backend.');
-  if (!isStripeWebhookConfigured()) warnings.push('Stripe webhook secret is not configured on the backend.');
+  if (!isStripeWebhookConfigured()) warnings.push('Stripe webhook secret is not configured. Checkout can open, but fulfillment depends on webhook or session verification.');
+  if (getStripeMode() === 'live' && process.env.NODE_ENV !== 'production') warnings.push('Stripe live key detected outside production.');
   return warnings;
 }
 
@@ -131,6 +150,8 @@ function getSubscription(user) {
     plan,
     planExpiresAt,
     status,
+    stripeSubscriptionId: user?.stripeSubscriptionId || null,
+    stripeSubscriptionStatus: user?.stripeSubscriptionStatus || null,
   };
 }
 
@@ -143,8 +164,12 @@ function statusResponse(user) {
     source: 'backend',
     provider: 'stripe',
     stripeConfigured: isStripeConfigured(),
+    stripeCheckoutConfigured: isStripeConfigured(),
+    stripeMode: getStripeMode(),
+    stripeTestMode: getStripeMode() === 'test',
     stripeSecretConfigured: isStripeSecretConfigured(),
     webhookConfigured: isStripeWebhookConfigured(),
+    fulfillmentMode: isStripeWebhookConfigured() ? 'webhook' : 'session-verification',
     demoFundingEnabled: isDemoFundingAllowed(),
     balanceType: 'virtual',
     subscription: getSubscription(user),
@@ -158,6 +183,8 @@ function statusResponse(user) {
 function checkoutUnavailableResponse() {
   return paymentError('Payment provider unavailable', {
     stripeConfigured: false,
+    stripeCheckoutConfigured: false,
+    stripeMode: getStripeMode(),
     checkoutUrl: null,
     sessionId: null,
     warnings: getStripeWarnings().length
@@ -209,12 +236,22 @@ function createCheckoutConfig(userId, body = {}) {
     return {
       sessionConfig: {
         ...checkoutBaseConfig(userId, { type: 'subscription', plan: plan.id }),
+        mode: 'subscription',
+        subscription_data: {
+          metadata: {
+            userId: String(userId),
+            plan: plan.id,
+          },
+        },
         line_items: [{
           price_data: {
             currency: plan.currency,
             product_data: {
               name: `Alpha Vision ${plan.label}`,
-              description: `Access to the ${plan.label} plan for 30 days`,
+              description: `Access to the ${plan.label} plan`,
+            },
+            recurring: {
+              interval: 'month',
             },
             unit_amount: plan.price,
           },
@@ -236,7 +273,7 @@ function createCheckoutConfig(userId, body = {}) {
             currency: 'eur',
             product_data: {
               name: `Trading balance deposit`,
-              description: `Add ${input.amount} EUR to your Alpha Vision trading balance`,
+              description: `Add ${input.amount} EUR to your Alpha Vision virtual paper trading balance`,
             },
             unit_amount: Math.round(input.amount * 100),
           },
@@ -250,45 +287,62 @@ function createCheckoutConfig(userId, body = {}) {
 }
 
 async function fulfillCheckoutSession(session) {
-  if (!session || session.payment_status !== 'paid') return;
+  if (!session || session.payment_status !== 'paid') return { fulfilled: false, reason: 'session_not_paid' };
 
   const userId = session.metadata?.userId;
   const type = session.metadata?.type;
   const plan = session.metadata?.plan;
   const existing = await Transaction.findOne({ transactionId: session.id });
 
-  if (!userId || existing) return;
+  if (!userId) return { fulfilled: false, reason: 'missing_user' };
+  if (existing) return { fulfilled: false, reason: 'already_fulfilled' };
 
   if (type === 'subscription' && PLANS[plan] && plan !== 'free') {
     const user = await User.findById(userId);
-    if (!user) return;
+    if (!user) return { fulfilled: false, reason: 'user_not_found' };
 
     user.plan = plan;
     user.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    user.stripeCustomerId = session.customer || user.stripeCustomerId || null;
+    user.stripeSubscriptionId = session.subscription || user.stripeSubscriptionId || null;
+    user.stripeSubscriptionStatus = 'active';
     user.updatedAt = new Date();
     await user.save();
 
     await Transaction.create({
       userId,
       type: 'subscription',
-      amount: PLANS[plan].price / 100,
+      amount: Number(session.amount_total || PLANS[plan].price) / 100,
+      currency: session.currency || PLANS[plan].currency,
       plan,
-      paymentMethod: 'card',
+      provider: 'stripe',
+      mode: getTransactionMode(),
+      paymentMethod: 'stripe_checkout',
       transactionId: session.id,
       stripeSessionId: session.id,
+      stripeSubscriptionId: session.subscription || null,
+      stripeCustomerId: session.customer || null,
       status: 'completed',
+      description: `Stripe subscription checkout for ${plan}`,
+      metadata: {
+        checkoutMode: session.mode || 'subscription',
+        paymentStatus: session.payment_status,
+      },
     });
+
+    return { fulfilled: true, type: 'subscription', plan };
   }
 
   if (type === 'deposit') {
     const amount = Number(session.amount_total) / 100;
-    if (!Number.isFinite(amount) || amount <= 0) return;
+    if (!Number.isFinite(amount) || amount <= 0) return { fulfilled: false, reason: 'invalid_amount' };
 
     const user = await User.findById(userId);
-    if (!user) return;
+    if (!user) return { fulfilled: false, reason: 'user_not_found' };
 
     const balance = Number(user.balance);
     user.balance = Number(((Number.isFinite(balance) ? balance : 0) + amount).toFixed(2));
+    user.stripeCustomerId = session.customer || user.stripeCustomerId || null;
     user.updatedAt = new Date();
     await user.save();
 
@@ -296,12 +350,25 @@ async function fulfillCheckoutSession(session) {
       userId,
       type: 'deposit',
       amount,
-      paymentMethod: 'card',
+      currency: session.currency || 'eur',
+      provider: 'stripe',
+      mode: getTransactionMode(),
+      paymentMethod: 'stripe_checkout',
       transactionId: session.id,
       stripeSessionId: session.id,
+      stripeCustomerId: session.customer || null,
       status: 'completed',
+      description: 'Stripe checkout deposit to virtual paper trading balance',
+      metadata: {
+        checkoutMode: session.mode || 'payment',
+        paymentStatus: session.payment_status,
+      },
     });
+
+    return { fulfilled: true, type: 'deposit', amount };
   }
+
+  return { fulfilled: false, reason: 'unsupported_checkout_type' };
 }
 
 router.get('/plans', (req, res) => {
@@ -311,7 +378,33 @@ router.get('/plans', (req, res) => {
     source: 'backend',
     provider: 'stripe',
     stripeConfigured: isStripeConfigured(),
-    plans: Object.values(PLANS),
+    stripeCheckoutConfigured: isStripeConfigured(),
+    stripeMode: getStripeMode(),
+    stripeTestMode: getStripeMode() === 'test',
+    plans: Object.values(PLANS).map((plan) => ({
+      ...plan,
+      provider: plan.id === 'free' ? 'internal' : 'stripe',
+      testMode: getStripeMode() === 'test',
+    })),
+    warnings: getStripeWarnings(),
+    error: null,
+  });
+});
+
+router.get('/webhook-info', (req, res) => {
+  res.json({
+    success: true,
+    timestamp: nowIso(),
+    source: 'backend',
+    provider: 'stripe',
+    endpoint: '/api/payment/webhook',
+    requiredEvents: [
+      'checkout.session.completed',
+      'customer.subscription.deleted',
+    ],
+    rawBodyRequired: true,
+    localForwardCommand: 'stripe listen --forward-to localhost:5000/api/payment/webhook',
+    envVariables: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'FRONTEND_URL'],
     warnings: getStripeWarnings(),
     error: null,
   });
@@ -361,6 +454,23 @@ router.post('/demo-deposit', auth, async (req, res) => {
     user.updatedAt = new Date();
     await user.save();
 
+    await Transaction.create({
+      userId: req.user.id,
+      type: 'demo_deposit',
+      amount: input.amount,
+      currency: 'usd',
+      provider: 'internal-demo-funding',
+      mode: 'demo',
+      paymentMethod: 'demo',
+      transactionId: `demo_${req.user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      status: 'completed',
+      description: 'Demo funding added to virtual paper trading balance',
+      metadata: {
+        demo: true,
+        notRealPayment: true,
+      },
+    });
+
     return res.json({
       success: true,
       timestamp: nowIso(),
@@ -409,9 +519,15 @@ router.post('/create-checkout-session', auth, async (req, res) => {
       source: 'backend',
       provider: 'stripe',
       stripeConfigured: true,
+      stripeCheckoutConfigured: true,
+      stripeMode: getStripeMode(),
+      stripeTestMode: getStripeMode() === 'test',
+      checkoutMode: input.sessionConfig.mode,
       checkoutUrl: session.url || null,
       sessionId: session.id || null,
-      warnings: [],
+      warnings: isStripeWebhookConfigured()
+        ? []
+        : ['Stripe webhook is not configured. The app will verify the returned session, but webhook fulfillment is recommended.'],
       error: null,
     });
   } catch (err) {
@@ -449,6 +565,18 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       await fulfillCheckoutSession(event.data.object);
     }
 
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object;
+      const user = await User.findOne({ stripeSubscriptionId: subscription.id });
+      if (user) {
+        user.plan = 'free';
+        user.planExpiresAt = null;
+        user.stripeSubscriptionStatus = 'canceled';
+        user.updatedAt = new Date();
+        await user.save();
+      }
+    }
+
     return res.json({
       success: true,
       timestamp: nowIso(),
@@ -456,6 +584,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       provider: 'stripe',
       received: true,
       eventType: event.type,
+      webhookMode: getStripeMode(),
       warnings: [],
       error: null,
     });
@@ -478,14 +607,24 @@ router.get('/check-session/:sessionId', auth, async (req, res) => {
       }));
     }
 
+    const fulfillment = session.payment_status === 'paid'
+      ? await fulfillCheckoutSession(session)
+      : { fulfilled: false, reason: 'session_not_paid' };
+
     return res.json({
       success: true,
       timestamp: nowIso(),
       source: 'backend',
       provider: 'stripe',
       stripeConfigured: isStripeConfigured(),
+      stripeCheckoutConfigured: isStripeConfigured(),
+      stripeMode: getStripeMode(),
+      stripeTestMode: getStripeMode() === 'test',
       sessionId: session.id,
+      checkoutMode: session.mode || null,
       paymentStatus: session.payment_status || null,
+      fulfilled: fulfillment.fulfilled === true,
+      fulfillmentReason: fulfillment.reason || null,
       warnings: [],
       error: null,
     });
@@ -500,7 +639,7 @@ router.get('/check-session/:sessionId', auth, async (req, res) => {
 
 router.get('/status', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('balance plan planExpiresAt');
+    const user = await User.findById(req.user.id).select('balance plan planExpiresAt stripeCustomerId stripeSubscriptionId stripeSubscriptionStatus');
     if (!user) {
       return res.status(404).json(paymentError('User not found'));
     }
