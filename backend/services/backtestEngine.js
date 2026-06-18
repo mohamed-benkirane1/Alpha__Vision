@@ -1,4 +1,6 @@
 const axios = require('axios');
+const { calculateRSI } = require('../utils/rsi');
+const { calculateEMA, calculateBollinger } = require('../utils/indicators');
 
 const PROVIDER = 'internal-backtest-engine';
 const REAL_SOURCE = 'binance-historical-klines';
@@ -65,44 +67,6 @@ function createErrorBacktest(error, params = null) {
   };
 }
 
-function calculateRSI(prices, period = 14) {
-  if (prices.length < period + 1) return 50;
-
-  let gains = 0;
-  let losses = 0;
-
-  for (let i = 1; i <= period; i += 1) {
-    const diff = prices[i] - prices[i - 1];
-    if (diff >= 0) gains += diff;
-    else losses -= diff;
-  }
-
-  let avgGain = gains / period;
-  let avgLoss = losses / period;
-
-  for (let i = period + 1; i < prices.length; i += 1) {
-    const diff = prices[i] - prices[i - 1];
-    avgGain = (avgGain * (period - 1) + Math.max(diff, 0)) / period;
-    avgLoss = (avgLoss * (period - 1) + Math.max(-diff, 0)) / period;
-  }
-
-  if (avgLoss === 0) return 100;
-  return 100 - 100 / (1 + avgGain / avgLoss);
-}
-
-function calculateEMA(values, period) {
-  if (!values.length) return [];
-
-  const multiplier = 2 / (period + 1);
-  const ema = [values[0]];
-
-  for (let i = 1; i < values.length; i += 1) {
-    ema.push((values[i] - ema[i - 1]) * multiplier + ema[i - 1]);
-  }
-
-  return ema;
-}
-
 function calculateSignal(strategy, prices) {
   const current = prices[prices.length - 1];
 
@@ -130,12 +94,7 @@ function calculateSignal(strategy, prices) {
 
   if (strategy === 'bollinger') {
     if (prices.length < 20) return 'HOLD';
-    const window = prices.slice(-20);
-    const mean = window.reduce((sum, value) => sum + value, 0) / window.length;
-    const variance = window.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / window.length;
-    const deviation = Math.sqrt(variance);
-    const lower = mean - 2 * deviation;
-    const upper = mean + 2 * deviation;
+    const { upper, lower } = calculateBollinger(prices, 20, 2);
     if (current < lower) return 'BUY';
     if (current > upper) return 'SELL';
     return 'HOLD';
@@ -165,35 +124,105 @@ async function getHistoricalPrices(symbol, limit = 120) {
   return response.data
     .map((kline) => ({
       timestamp: new Date(kline[0]).toISOString(),
+      open: toNumber(kline[1]),
+      high: toNumber(kline[2]),
+      low: toNumber(kline[3]),
       close: toNumber(kline[4]),
     }))
     .filter((point) => point.close && point.close > 0);
 }
 
-function runStrategy({ prices, strategy, initialCapital, positionSize }) {
+function runStrategy({ prices, strategy, initialCapital, positionSize, stopLoss, takeProfit }) {
   let cash = initialCapital;
   let quantity = 0;
   let entryPrice = 0;
+  let entryIndex = 0;
   let wins = 0;
   let losses = 0;
   let peak = initialCapital;
   let maxDrawdown = 0;
   let grossProfit = 0;
   let grossLoss = 0;
+  let tradesClosedByStopLoss = 0;
+  let tradesClosedByTakeProfit = 0;
+  let tradesClosedBySignal = 0;
+  let totalHoldingCandles = 0;
+  let closedTradesCount = 0;
   const trades = [];
   const equityCurve = [];
+
+  const hasStopLoss = Number.isFinite(stopLoss) && stopLoss > 0;
+  const hasTakeProfit = Number.isFinite(takeProfit) && takeProfit > 0;
+
+  function closeTrade(closePrice, closeTimestamp, reason, closeIndex) {
+    const total = quantity * closePrice;
+    const profit = quantity * (closePrice - entryPrice);
+    cash += total;
+    trades.push({
+      type: 'SELL',
+      symbol: null,
+      price: round(closePrice),
+      quantity: round(quantity, 8),
+      total: round(total),
+      profit: round(profit),
+      timestamp: closeTimestamp,
+      reason,
+    });
+    if (profit > 0) {
+      wins += 1;
+      grossProfit += profit;
+    } else {
+      losses += 1;
+      grossLoss += Math.abs(profit);
+    }
+    if (reason === 'stop_loss') tradesClosedByStopLoss += 1;
+    else if (reason === 'take_profit') tradesClosedByTakeProfit += 1;
+    else if (reason === 'signal') tradesClosedBySignal += 1;
+    if (typeof closeIndex === 'number') {
+      totalHoldingCandles += closeIndex - entryIndex;
+      closedTradesCount += 1;
+    }
+    quantity = 0;
+    entryPrice = 0;
+    entryIndex = 0;
+  }
 
   for (let i = 20; i < prices.length; i += 1) {
     const history = prices.slice(0, i + 1).map((point) => point.close);
     const current = prices[i];
     const price = current.close;
+    const low = toNumber(current.low, price);
+    const high = toNumber(current.high, price);
+
+    // ── 1. SL/TP checks — priority: stop loss before take profit ─────
+    let slTpExited = false;
+
+    if (quantity > 0) {
+      if (hasStopLoss) {
+        const stopLossPrice = entryPrice * (1 - stopLoss / 100);
+        if (low <= stopLossPrice) {
+          closeTrade(stopLossPrice, current.timestamp, 'stop_loss', i);
+          slTpExited = true;
+        }
+      }
+      if (quantity > 0 && hasTakeProfit) {
+        const takeProfitPrice = entryPrice * (1 + takeProfit / 100);
+        if (high >= takeProfitPrice) {
+          closeTrade(takeProfitPrice, current.timestamp, 'take_profit', i);
+          slTpExited = true;
+        }
+      }
+    }
+
+    // ── 2. Strategy signal ────────────────────────────────────────────
     const signal = calculateSignal(strategy, history);
     const equity = cash + quantity * price;
 
-    if (signal === 'BUY' && quantity === 0 && cash > 0) {
+    if (signal === 'BUY' && quantity === 0 && cash > 0 && !slTpExited) {
       const investment = cash * positionSize;
       quantity = investment / price;
       entryPrice = price;
+      entryIndex = i;
       cash -= investment;
       trades.push({
         type: 'BUY',
@@ -204,29 +233,10 @@ function runStrategy({ prices, strategy, initialCapital, positionSize }) {
         timestamp: current.timestamp,
       });
     } else if (signal === 'SELL' && quantity > 0) {
-      const total = quantity * price;
-      const profit = quantity * (price - entryPrice);
-      cash += total;
-      trades.push({
-        type: 'SELL',
-        symbol: null,
-        price: round(price),
-        quantity: round(quantity, 8),
-        total: round(total),
-        profit: round(profit),
-        timestamp: current.timestamp,
-      });
-      if (profit > 0) {
-        wins += 1;
-        grossProfit += profit;
-      } else {
-        losses += 1;
-        grossLoss += Math.abs(profit);
-      }
-      quantity = 0;
-      entryPrice = 0;
+      closeTrade(price, current.timestamp, 'signal', i);
     }
 
+    // ── 3. Equity curve & drawdown ────────────────────────────────────
     const updatedEquity = cash + quantity * price;
     peak = Math.max(peak, updatedEquity);
     maxDrawdown = Math.max(maxDrawdown, peak > 0 ? ((peak - updatedEquity) / peak) * 100 : 0);
@@ -243,34 +253,18 @@ function runStrategy({ prices, strategy, initialCapital, positionSize }) {
     }
   }
 
+  // ── Force-close open position at end of period ────────────────────
   if (quantity > 0) {
     const final = prices[prices.length - 1];
-    const total = quantity * final.close;
-    const profit = quantity * (final.close - entryPrice);
-    cash += total;
-    trades.push({
-      type: 'SELL',
-      symbol: null,
-      price: round(final.close),
-      quantity: round(quantity, 8),
-      total: round(total),
-      profit: round(profit),
-      timestamp: final.timestamp,
-      reason: 'End of period',
-    });
-    if (profit > 0) {
-      wins += 1;
-      grossProfit += profit;
-    } else {
-      losses += 1;
-      grossLoss += Math.abs(profit);
-    }
+    closeTrade(final.close, final.timestamp, 'end_of_period', prices.length - 1);
   }
 
   const finalCapital = cash;
   const totalReturn = initialCapital > 0 ? ((finalCapital - initialCapital) / initialCapital) * 100 : 0;
   const sellTrades = trades.filter((trade) => trade.type === 'SELL');
   const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? grossProfit : null);
+  const riskRewardRatio = hasStopLoss && hasTakeProfit ? round(takeProfit / stopLoss, 2) : null;
+  const averageHoldingPeriod = closedTradesCount > 0 ? round(totalHoldingCandles / closedTradesCount, 1) : null;
 
   return {
     results: {
@@ -283,6 +277,11 @@ function runStrategy({ prices, strategy, initialCapital, positionSize }) {
       losses,
       maxDrawdown: round(maxDrawdown, 1),
       profitFactor: profitFactor === null ? null : round(profitFactor, 2),
+      tradesClosedByStopLoss,
+      tradesClosedByTakeProfit,
+      tradesClosedBySignal,
+      averageHoldingPeriod,
+      riskRewardRatio,
     },
     trades,
     equityCurve,
@@ -295,6 +294,9 @@ async function runBacktest(params) {
   const initialCapital = toNumber(params.initialCapital, 10000);
   const positionSize = toNumber(params.positionSize, 0.2);
 
+  const stopLoss = toNumber(params.stopLoss, null);
+  const takeProfit = toNumber(params.takeProfit, null);
+
   const normalizedParams = {
     symbol,
     strategy,
@@ -302,6 +304,8 @@ async function runBacktest(params) {
     endDate: params.endDate || null,
     initialCapital,
     positionSize,
+    stopLoss,
+    takeProfit,
   };
 
   if (!symbol) return createErrorBacktest('symbol required', normalizedParams);
@@ -317,7 +321,7 @@ async function runBacktest(params) {
 
   try {
     const prices = await getHistoricalPrices(symbol, 120);
-    const { results, trades, equityCurve } = runStrategy({ prices, strategy, initialCapital, positionSize });
+    const { results, trades, equityCurve } = runStrategy({ prices, strategy, initialCapital, positionSize, stopLoss, takeProfit });
 
     return {
       success: true,

@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const { checkPlan } = require('../middleware/CheckPlan');
+const { validate } = require('../middleware/validate');
+const backtestValidator = require('../validators/backtestValidator');
 const {
   runBacktest,
   createErrorBacktest,
@@ -38,7 +40,7 @@ function normalizeInput(body = {}) {
   };
 }
 
-router.post('/', auth, checkPlan('pro'), async (req, res) => {
+router.post('/', auth, checkPlan('pro'), validate(backtestValidator), async (req, res) => {
   try {
     const input = normalizeInput(req.body);
 

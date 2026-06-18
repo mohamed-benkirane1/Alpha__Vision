@@ -1,5 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
+const { validate } = require('../middleware/validate');
+const tradeValidator = require('../validators/tradeValidator');
 const {
   PAPER_TRADING_MODE,
   executePaperTrade,
@@ -38,8 +40,8 @@ async function handlePaperTradeOrder(req, res) {
   }
 }
 
-router.post('/', auth, handlePaperTradeOrder);
-router.post('/order', auth, handlePaperTradeOrder);
+router.post('/', auth, validate(tradeValidator), handlePaperTradeOrder);
+router.post('/order', auth, validate(tradeValidator), handlePaperTradeOrder);
 
 router.get('/history', auth, async (req, res) => {
   try {

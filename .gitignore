@@ -70,6 +70,10 @@ web_modules/
 .env.*
 !.env.example
 
+# Explicit env overrides (never commit real secrets)
+backend/.env
+frontend/.env
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

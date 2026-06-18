@@ -1,9 +1,10 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
+const { checkPlan } = require('../middleware/CheckPlan');
 const Conversation = require('../models/Conversation');
 const { buildUserContext, chat, createErrorResponse } = require('../services/chatbotService');
 
-router.post('/message', auth, async (req, res) => {
+router.post('/message', auth, checkPlan('pro'), async (req, res) => {
   const input = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
 
   if (!input) {
@@ -46,7 +47,7 @@ router.post('/message', auth, async (req, res) => {
   }
 });
 
-router.get('/history', auth, async (req, res) => {
+router.get('/history', auth, checkPlan('pro'), async (req, res) => {
   try {
     const conversation = await Conversation.findOne({ userId: req.user.id });
 
@@ -71,7 +72,7 @@ router.get('/history', auth, async (req, res) => {
   }
 });
 
-router.get('/context', auth, async (req, res) => {
+router.get('/context', auth, checkPlan('pro'), async (req, res) => {
   try {
     const context = await buildUserContext(req.user.id);
 

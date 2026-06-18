@@ -15,6 +15,7 @@ const helmet = require('helmet');
 const mongoose = require('mongoose');
 const { rateLimit } = require('express-rate-limit');
 const passport = require('./config/passport');
+const { startBotScheduler } = require('./services/botScheduler');
 
 const app = express();
 const frontendUrl = env.frontendUrl;
@@ -133,5 +134,8 @@ const port = env.port;
 app.listen(port, () => console.log(`✅ Server on port ${port}`));
 
 mongoose.connect(env.mongoUri)
-  .then(() => console.log('✅ MongoDB connected'))
+  .then(() => {
+    console.log('✅ MongoDB connected');
+    startBotScheduler();
+  })
   .catch(err => console.log('❌ MongoDB error:', err));

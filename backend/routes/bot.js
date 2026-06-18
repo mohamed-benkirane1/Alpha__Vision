@@ -1,5 +1,9 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
+const { checkPlan } = require('../middleware/CheckPlan');
+const { validate } = require('../middleware/validate');
+const botStartValidator = require('../validators/botValidator');
+const BotInstance = require('../models/BotInstance');
 const {
   getBotStatus,
   startBot,
@@ -8,6 +12,7 @@ const {
   getBotActionsResponse,
   createErrorResponse,
 } = require('../services/botService');
+const { registerBot, unregisterBot } = require('../services/botScheduler');
 
 function sendBotError(res, err, fallbackMessage) {
   return res.status(err.statusCode || 500).json(
@@ -15,7 +20,15 @@ function sendBotError(res, err, fallbackMessage) {
   );
 }
 
-router.get('/status', auth, async (req, res) => {
+async function findRunningBotId(userId) {
+  const bot = await BotInstance.findOne({
+    user: userId,
+    $or: [{ isRunning: true }, { status: 'running' }],
+  }).select('_id intervalSeconds');
+  return bot || null;
+}
+
+router.get('/status', auth, checkPlan('pro'), async (req, res) => {
   try {
     return res.json(await getBotStatus(req.user.id));
   } catch (err) {
@@ -23,24 +36,36 @@ router.get('/status', auth, async (req, res) => {
   }
 });
 
-router.post('/start', auth, async (req, res) => {
+router.post('/start', auth, checkPlan('elite'), validate(botStartValidator), async (req, res) => {
   try {
     const response = await startBot(req.user.id, req.body);
+
+    if (response.success) {
+      const bot = await findRunningBotId(req.user.id);
+      if (bot) registerBot(bot._id.toString(), bot.intervalSeconds);
+    }
+
     return res.status(response.success ? 200 : 400).json(response);
   } catch (err) {
     return sendBotError(res, err, 'Unable to start bot');
   }
 });
 
-router.post('/stop', auth, async (req, res) => {
+router.post('/stop', auth, checkPlan('elite'), async (req, res) => {
   try {
-    return res.json(await stopBot(req.user.id));
+    const runningBot = await findRunningBotId(req.user.id);
+
+    const response = await stopBot(req.user.id);
+
+    if (runningBot) unregisterBot(runningBot._id.toString());
+
+    return res.json(response);
   } catch (err) {
     return sendBotError(res, err, 'Unable to stop bot');
   }
 });
 
-router.post('/tick', auth, async (req, res) => {
+router.post('/tick', auth, checkPlan('elite'), async (req, res) => {
   try {
     return res.json(await runBotTick(req.user.id));
   } catch (err) {
@@ -48,7 +73,7 @@ router.post('/tick', auth, async (req, res) => {
   }
 });
 
-router.get('/actions', auth, async (req, res) => {
+router.get('/actions', auth, checkPlan('pro'), async (req, res) => {
   try {
     return res.json(await getBotActionsResponse(req.user.id, req.query.limit));
   } catch (err) {
@@ -56,7 +81,7 @@ router.get('/actions', auth, async (req, res) => {
   }
 });
 
-router.get('/history', auth, async (req, res) => {
+router.get('/history', auth, checkPlan('pro'), async (req, res) => {
   try {
     return res.json(await getBotActionsResponse(req.user.id, req.query.limit));
   } catch (err) {

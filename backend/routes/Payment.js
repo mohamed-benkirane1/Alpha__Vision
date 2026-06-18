@@ -401,6 +401,8 @@ router.get('/webhook-info', (req, res) => {
     requiredEvents: [
       'checkout.session.completed',
       'customer.subscription.deleted',
+      'invoice.payment_succeeded',
+      'invoice.payment_failed',
     ],
     rawBodyRequired: true,
     localForwardCommand: 'stripe listen --forward-to localhost:5000/api/payment/webhook',
@@ -574,6 +576,54 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         user.stripeSubscriptionStatus = 'canceled';
         user.updatedAt = new Date();
         await user.save();
+      }
+    }
+
+    if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object;
+      const subscriptionId = invoice.subscription;
+
+      if (subscriptionId) {
+        const user = await User.findOne({ stripeSubscriptionId: subscriptionId });
+        if (user && (user.plan === 'pro' || user.plan === 'elite')) {
+          user.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          user.stripeSubscriptionStatus = 'active';
+          user.updatedAt = new Date();
+          await user.save();
+          console.log(`[Stripe] Renouvellement pour user ${user._id} — plan ${user.plan} prolongé jusqu'au ${user.planExpiresAt.toISOString()}`);
+        }
+      }
+    }
+
+    if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object;
+      const subscriptionId = invoice.subscription;
+
+      if (subscriptionId) {
+        const user = await User.findOne({ stripeSubscriptionId: subscriptionId });
+        if (user && (user.plan === 'pro' || user.plan === 'elite')) {
+          const nextPaymentAttempt = invoice.next_payment_attempt;
+          const invoiceCreated = invoice.created;
+          const GRACE_PERIOD_SECONDS = 7 * 24 * 60 * 60;
+          const nowSeconds = Math.floor(Date.now() / 1000);
+          const graceExpired = nextPaymentAttempt === null
+            || (typeof invoiceCreated === 'number' && nowSeconds - invoiceCreated > GRACE_PERIOD_SECONDS);
+
+          if (graceExpired) {
+            const previousPlan = user.plan;
+            user.plan = 'free';
+            user.planExpiresAt = null;
+            user.stripeSubscriptionStatus = 'past_due';
+            user.updatedAt = new Date();
+            await user.save();
+            console.log(`[Stripe] Paiement échoué — user ${user._id} rétrogradé de ${previousPlan} vers free (période de grâce expirée)`);
+          } else {
+            const nextAttemptDate = typeof nextPaymentAttempt === 'number'
+              ? new Date(nextPaymentAttempt * 1000).toISOString()
+              : 'aucune date planifiée';
+            console.warn(`[Stripe] Paiement échoué pour user ${user._id} (plan ${user.plan}) — prochaine tentative : ${nextAttemptDate}`);
+          }
+        }
       }
     }
 
