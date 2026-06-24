@@ -163,10 +163,20 @@ export const checkCheckoutSession = async (sessionId) => {
   }
 }
 
+export const cancelSubscription = async () => {
+  try {
+    const response = await api.post('/payment/cancel-subscription')
+    return normalizePaymentResponse(response.data)
+  } catch (error) {
+    return normalizePaymentError(error, 'Unable to cancel subscription.')
+  }
+}
+
 export const getSubscription = getPaymentStatus
 
 export default {
   addDemoFunds,
+  cancelSubscription,
   checkCheckoutSession,
   createCheckoutSession,
   createDepositCheckoutSession,

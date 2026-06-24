@@ -1,4 +1,4 @@
-import api, { API_BASE_URL, extractApiError, removeToken } from './api'
+import api, { API_BASE_URL, extractApiError } from './api'
 
 export const signup = (userData) =>
   api.post('/auth/signup', userData, { skipAuth: true })
@@ -44,6 +44,7 @@ const normalizeAuthActionResponse = (payload = {}) => ({
   timestamp: payload.timestamp || null,
   message: payload.message || '',
   expiresMinutes: Number.isFinite(Number(payload.expiresMinutes)) ? Number(payload.expiresMinutes) : null,
+  devReset: payload.devReset || null,
   warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
   error: payload.error || null,
   raw: payload,
@@ -104,7 +105,4 @@ export const resetPassword = async ({ token, password, newPassword }) => {
   }
 }
 
-export const logout = () => {
-  removeToken()
-  localStorage.removeItem('user')
-}
+export const logout = () => api.post('/auth/logout')

@@ -13,6 +13,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 const { rateLimit } = require('express-rate-limit');
 const passport = require('./config/passport');
 const { startBotScheduler } = require('./services/botScheduler');
@@ -25,6 +26,17 @@ const sensitiveRateLimitMax = env.rateLimits.authMax;
 const paymentRateLimitMax = env.rateLimits.paymentMax;
 const paymentReadRateLimitMax = env.rateLimits.paymentReadMax;
 const chatbotRateLimitMax = env.rateLimits.chatbotMax;
+
+function getMongoHealth() {
+  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  const readyState = mongoose.connection.readyState;
+
+  return {
+    connected: readyState === 1,
+    readyState,
+    status: states[readyState] || 'unknown',
+  };
+}
 
 function createRateLimitMessage(message) {
   return (req, res) => res.status(429).json({
@@ -96,13 +108,33 @@ const chatbotLimiter = rateLimit({
   handler: createRateLimitMessage('Too many chatbot requests. Please retry later.'),
 });
 
+// Market routes are public (home page ticker) but stricter than the global limit
+const marketLimiter = rateLimit({
+  windowMs: defaultRateLimitWindowMs,
+  limit: Math.min(globalRateLimitMax, 120),
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: createRateLimitMessage('Too many market data requests. Please retry later.'),
+});
+
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: frontendUrl }));
-app.post('/api/payment/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json());
+app.use(cors({
+  origin: [
+    frontendUrl,
+    ...(process.env.FRONTEND_URL_ALT ? [process.env.FRONTEND_URL_ALT] : []),
+  ].filter(Boolean),
+  credentials: true,
+}));
+app.use(cookieParser());
+// Parse JSON for all routes except the Stripe webhook (which needs raw body)
+app.use((req, res, next) => {
+  if (req.originalUrl.split('?')[0] === '/api/payment/webhook') return next();
+  return express.json()(req, res, next);
+});
 app.use(passport.initialize());
 app.use('/api', apiLimiter);
+app.use('/api/market', marketLimiter);
 app.use('/api/auth', authLimiter);
 app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/payment/plans', paymentReadLimiter);
@@ -115,7 +147,13 @@ app.use('/api/chatbot', chatbotLimiter);
 
 // Routes
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'Backend is running' });
+  const mongo = getMongoHealth();
+
+  res.status(mongo.connected ? 200 : 503).json({
+    success: mongo.connected,
+    message: mongo.connected ? 'Backend is running' : 'Backend is running but MongoDB is not connected',
+    mongo,
+  });
 });
 
 app.use('/api/auth', require('./routes/auth'));
@@ -131,11 +169,18 @@ app.use('/api/backtest', require('./routes/backtest'));
 app.use('/api/payment', require('./routes/Payment'));
 
 const port = env.port;
-app.listen(port, () => console.log(`✅ Server on port ${port}`));
 
-mongoose.connect(env.mongoUri)
-  .then(() => {
+async function startServer() {
+  try {
+    await mongoose.connect(env.mongoUri);
     console.log('✅ MongoDB connected');
+
     startBotScheduler();
-  })
-  .catch(err => console.log('❌ MongoDB error:', err));
+    app.listen(port, () => console.log(`✅ Server on port ${port}`));
+  } catch (err) {
+    console.error('❌ MongoDB connection failed:', err.message || err);
+    process.exit(1);
+  }
+}
+
+startServer();

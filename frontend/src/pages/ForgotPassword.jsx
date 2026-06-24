@@ -169,6 +169,17 @@ export default function ForgotPassword() {
             <motion.p variants={fadeUp} className="text-xs text-slate-500 leading-relaxed mb-4">
               {result.message}
             </motion.p>
+            {result.devReset?.resetUrl && (
+              <motion.div variants={fadeUp} className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/8 p-3 text-left">
+                <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-amber-300">Development reset link</p>
+                <a
+                  href={result.devReset.resetUrl}
+                  className="break-all text-[11px] font-bold text-rose-300 transition-colors hover:text-rose-200"
+                >
+                  {result.devReset.resetUrl}
+                </a>
+              </motion.div>
+            )}
             <motion.button
               variants={fadeUp}
               type="button"

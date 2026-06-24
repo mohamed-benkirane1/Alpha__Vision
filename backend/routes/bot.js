@@ -28,7 +28,7 @@ async function findRunningBotId(userId) {
   return bot || null;
 }
 
-router.get('/status', auth, checkPlan('pro'), async (req, res) => {
+router.get('/status', auth, checkPlan('elite'), async (req, res) => {
   try {
     return res.json(await getBotStatus(req.user.id));
   } catch (err) {
@@ -73,7 +73,7 @@ router.post('/tick', auth, checkPlan('elite'), async (req, res) => {
   }
 });
 
-router.get('/actions', auth, checkPlan('pro'), async (req, res) => {
+router.get('/actions', auth, checkPlan('elite'), async (req, res) => {
   try {
     return res.json(await getBotActionsResponse(req.user.id, req.query.limit));
   } catch (err) {
@@ -81,7 +81,7 @@ router.get('/actions', auth, checkPlan('pro'), async (req, res) => {
   }
 });
 
-router.get('/history', auth, checkPlan('pro'), async (req, res) => {
+router.get('/history', auth, checkPlan('elite'), async (req, res) => {
   try {
     return res.json(await getBotActionsResponse(req.user.id, req.query.limit));
   } catch (err) {

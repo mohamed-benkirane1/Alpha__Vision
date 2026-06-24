@@ -111,9 +111,26 @@ function calculateSignal(strategy, prices) {
   return 'HOLD';
 }
 
-async function getHistoricalPrices(symbol, limit = 120) {
+async function getHistoricalPrices(symbol, startDate = null, endDate = null) {
+  const params = { symbol: `${symbol}USDT`, interval: '1d', limit: 1000 };
+
+  if (startDate) {
+    const start = new Date(startDate);
+    if (!Number.isNaN(start.getTime())) params.startTime = start.getTime();
+  }
+
+  if (endDate) {
+    const end = new Date(endDate);
+    if (!Number.isNaN(end.getTime())) params.endTime = end.getTime();
+  }
+
+  // Without explicit dates, use the last 120 days
+  if (!params.startTime && !params.endTime) {
+    params.limit = 120;
+  }
+
   const response = await axios.get('https://api.binance.com/api/v3/klines', {
-    params: { symbol: `${symbol}USDT`, interval: '1d', limit },
+    params,
     timeout: 10000,
   });
 
@@ -320,7 +337,7 @@ async function runBacktest(params) {
   if (!positionSize || positionSize <= 0 || positionSize > 1) return createErrorBacktest('positionSize must be between 0 and 1.', normalizedParams);
 
   try {
-    const prices = await getHistoricalPrices(symbol, 120);
+    const prices = await getHistoricalPrices(symbol, normalizedParams.startDate, normalizedParams.endDate);
     const { results, trades, equityCurve } = runStrategy({ prices, strategy, initialCapital, positionSize, stopLoss, takeProfit });
 
     return {

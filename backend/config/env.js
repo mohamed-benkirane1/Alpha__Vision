@@ -12,6 +12,10 @@ const UNSAFE_JWT_SECRET_VALUES = new Set([
   'defaultsecret',
   'test',
 ]);
+const PLACEHOLDER_API_KEYS = new Set([
+  'your_gemini_api_key',
+  'your_gemini_api_key_here',
+]);
 
 function hasValue(value) {
   return typeof value === 'string' && value.trim().length > 0;
@@ -31,6 +35,10 @@ function normalizeSecretCandidate(value) {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
+}
+
+function isPlaceholderApiKey(value) {
+  return PLACEHOLDER_API_KEYS.has(String(value || '').trim().toLowerCase());
 }
 
 function requireEnvValue(env, variableName) {
@@ -90,7 +98,7 @@ function buildFeatureWarnings(env = process.env) {
   const aiSignalProvider = String(env.AI_SIGNAL_PROVIDER || aiProvider).trim().toLowerCase();
 
   if ((aiProvider === 'gemini' || aiSignalProvider === 'gemini')
-    && (!hasValue(env.GEMINI_API_KEY) || String(env.GEMINI_API_KEY).trim() === 'your_gemini_api_key_here')) {
+    && (!hasValue(env.GEMINI_API_KEY) || isPlaceholderApiKey(env.GEMINI_API_KEY))) {
     warnings.push('AI fallback mode: GEMINI_API_KEY is not configured.');
   }
 

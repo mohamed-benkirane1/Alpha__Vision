@@ -13,7 +13,7 @@ const PLANS = {
     currency: 'eur',
     billingInterval: null,
     checkoutType: 'none',
-    features: ['1 API call/min', '5 trades/jour'],
+    features: ['Market data', '5 paper trades/day'],
   },
   pro: {
     id: 'pro',
@@ -22,7 +22,7 @@ const PLANS = {
     currency: 'eur',
     billingInterval: 'month',
     checkoutType: 'stripe_subscription',
-    features: ['10 API calls/min', '50 trades/jour', 'Backtesting'],
+    features: ['Market data', '50 paper trades/day', 'Backtesting', 'AI chatbot'],
   },
   elite: {
     id: 'elite',
@@ -31,7 +31,7 @@ const PLANS = {
     currency: 'eur',
     billingInterval: 'month',
     checkoutType: 'stripe_subscription',
-    features: ['Unlimited API calls', '1000 trades/jour', 'AI Assistant', 'Trading bot'],
+    features: ['Market data', '1000 paper trades/day', 'Backtesting', 'AI chatbot', 'Trading bot automation'],
   },
 };
 
@@ -50,7 +50,7 @@ const FEATURES = {
     news: true,
     tradesPerDay: 50,
     backtesting: true,
-    chatbot: false,
+    chatbot: true,
     tradingBot: false,
     apiCallsPerDay: 100,
   },
@@ -585,12 +585,28 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
       if (subscriptionId) {
         const user = await User.findOne({ stripeSubscriptionId: subscriptionId });
-        if (user && (user.plan === 'pro' || user.plan === 'elite')) {
-          user.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-          user.stripeSubscriptionStatus = 'active';
-          user.updatedAt = new Date();
-          await user.save();
-          console.log(`[Stripe] Renouvellement pour user ${user._id} — plan ${user.plan} prolongé jusqu'au ${user.planExpiresAt.toISOString()}`);
+        if (user) {
+          // Determine which plan to activate based on subscription metadata or existing plan
+          const stripe = getStripeClient();
+          let planToActivate = user.plan && user.plan !== 'free' ? user.plan : null;
+
+          if (!planToActivate) {
+            try {
+              const sub = await stripe.subscriptions.retrieve(subscriptionId);
+              planToActivate = sub.metadata?.plan || null;
+            } catch {
+              planToActivate = null;
+            }
+          }
+
+          if (planToActivate && PLANS[planToActivate] && planToActivate !== 'free') {
+            user.plan = planToActivate;
+            user.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            user.stripeSubscriptionStatus = 'active';
+            user.updatedAt = new Date();
+            await user.save();
+            console.log(`[Stripe] Renouvellement pour user ${user._id} — plan ${user.plan} prolongé jusqu'au ${user.planExpiresAt.toISOString()}`);
+          }
         }
       }
     }
@@ -702,9 +718,14 @@ router.get('/status', auth, async (req, res) => {
 
 router.get('/transactions', auth, async (req, res) => {
   try {
-    const transactions = await Transaction.find({ userId: req.user.id })
-      .sort({ createdAt: -1 })
-      .limit(50);
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
+    const skip = (page - 1) * limit;
+
+    const [transactions, total] = await Promise.all([
+      Transaction.find({ userId: req.user.id }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Transaction.countDocuments({ userId: req.user.id }),
+    ]);
 
     return res.json({
       success: true,
@@ -712,6 +733,12 @@ router.get('/transactions', auth, async (req, res) => {
       source: 'backend',
       provider: 'stripe',
       transactions,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
       warnings: [],
       error: null,
     });
@@ -719,6 +746,64 @@ router.get('/transactions', auth, async (req, res) => {
     return res.status(500).json(paymentError(err.message || 'Unable to load transactions', {
       transactions: [],
     }));
+  }
+});
+
+router.post('/cancel-subscription', auth, async (req, res) => {
+  try {
+    if (!isStripeConfigured()) {
+      return res.status(503).json(paymentError('Payment provider unavailable', {
+        stripeConfigured: false,
+        warnings: getStripeWarnings(),
+      }));
+    }
+
+    const user = await User.findById(req.user.id).select('plan planExpiresAt stripeSubscriptionId stripeSubscriptionStatus');
+    if (!user) {
+      return res.status(404).json(paymentError('User not found'));
+    }
+
+    if (!user.stripeSubscriptionId) {
+      return res.status(400).json(paymentError('No active Stripe subscription found.', {
+        currentPlan: user.plan,
+      }));
+    }
+
+    if (user.stripeSubscriptionStatus === 'canceled') {
+      return res.status(400).json(paymentError('Subscription is already canceled.', {
+        currentPlan: user.plan,
+        planExpiresAt: user.planExpiresAt,
+      }));
+    }
+
+    const stripe = getStripeClient();
+    const updated = await stripe.subscriptions.update(user.stripeSubscriptionId, {
+      cancel_at_period_end: true,
+    });
+
+    const cancelAt = updated.cancel_at
+      ? new Date(updated.cancel_at * 1000).toISOString()
+      : user.planExpiresAt?.toISOString() || null;
+
+    user.stripeSubscriptionStatus = 'cancel_at_period_end';
+    user.updatedAt = new Date();
+    await user.save();
+
+    return res.json({
+      success: true,
+      timestamp: nowIso(),
+      source: 'backend',
+      provider: 'stripe',
+      message: 'Subscription will be canceled at the end of the current billing period.',
+      cancelAt,
+      currentPlan: user.plan,
+      planExpiresAt: cancelAt,
+      stripeSubscriptionStatus: 'cancel_at_period_end',
+      warnings: [],
+      error: null,
+    });
+  } catch (err) {
+    return res.status(err.statusCode || 500).json(paymentError(err.message || 'Unable to cancel subscription'));
   }
 });
 

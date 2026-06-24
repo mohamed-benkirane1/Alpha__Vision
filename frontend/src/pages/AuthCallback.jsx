@@ -1,40 +1,31 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
 import { getCurrentUser } from '../services/authService'
-import { removeToken, setToken } from '../services/api'
 
 const normalizeUser = (payload) => payload?.user || payload || null
 
 export default function AuthCallback() {
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { login } = useAuth()
   const [error, setError] = useState('')
-  const token = searchParams.get('token')
 
   useEffect(() => {
     let active = true
 
     async function finishGoogleLogin() {
-      if (!token) {
-        setError('OAuth callback token is missing.')
-        return
-      }
-
       try {
-        setToken(token)
+        // Cookie httpOnly already set by backend redirect — just load user via /auth/me
         const response = await getCurrentUser()
         const user = normalizeUser(response.data)
 
         if (!user) throw new Error('Unable to load OAuth user.')
         if (!active) return
 
-        login(user, token)
+        login(user)
         navigate('/dashboard', { replace: true })
       } catch (err) {
-        removeToken()
         if (active) setError(err?.message || 'OAuth login failed.')
       }
     }
@@ -43,7 +34,7 @@ export default function AuthCallback() {
     return () => {
       active = false
     }
-  }, [login, navigate, token])
+  }, [login, navigate])
 
   return (
     <div className="min-h-screen bg-[#06020c] flex items-center justify-center px-6">

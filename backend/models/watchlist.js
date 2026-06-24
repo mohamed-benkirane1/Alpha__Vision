@@ -6,5 +6,6 @@ const WatchlistSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 WatchlistSchema.index({ userId: 1, symbol: 1 }, { unique: true });
+WatchlistSchema.index({ userId: 1 });
 
 module.exports = mongoose.model('Watchlist', WatchlistSchema);

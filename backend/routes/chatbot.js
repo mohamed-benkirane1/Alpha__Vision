@@ -1,10 +1,25 @@
 const router = require('express').Router();
+const { body } = require('express-validator');
 const auth = require('../middleware/auth');
 const { checkPlan } = require('../middleware/CheckPlan');
+const { validate } = require('../middleware/validate');
 const Conversation = require('../models/Conversation');
 const { buildUserContext, chat, createErrorResponse } = require('../services/chatbotService');
 
-router.post('/message', auth, checkPlan('pro'), async (req, res) => {
+const MAX_MESSAGE_LENGTH = 2000;
+
+const messageValidator = [
+  body('message')
+    .isString().withMessage('message must be a string.')
+    .trim()
+    .isLength({ min: 1, max: MAX_MESSAGE_LENGTH })
+    .withMessage(`message must be between 1 and ${MAX_MESSAGE_LENGTH} characters.`),
+  // No .escape() here — React renders text nodes (not HTML), so XSS is already prevented
+  // by the framework. Escaping at storage level would double-encode user input.
+];
+
+router.post('/message', auth, checkPlan('pro'), validate(messageValidator), async (req, res) => {
+  // After validation, the message is already trimmed and HTML-escaped
   const input = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
 
   if (!input) {

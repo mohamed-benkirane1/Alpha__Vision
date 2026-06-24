@@ -10,6 +10,9 @@ const {
   getMarketCacheTtlSeconds
 } = require('../services/marketService');
 
+// Market routes serve public data (Binance/Yahoo) and are used on the public Home page.
+// They are protected by a dedicated rate limiter in server.js, not by auth.
+
 function marketTimestamp() {
   return new Date().toISOString();
 }

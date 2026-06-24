@@ -126,11 +126,11 @@ export default function Signup() {
         password: form.password,
       })
 
-      if (data?.success !== true || !data?.token || !data?.user) {
+      if (data?.success !== true || !data?.user) {
         throw new Error(data?.message || 'Invalid authentication response.')
       }
 
-      authLogin(data?.user, data?.token)
+      authLogin(data?.user)
 
       setSuccess('Account created successfully. Redirecting...')
       setTimeout(() => navigate('/dashboard'), 500)

@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { addDemoFunds } from './paymentService'
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null
@@ -168,11 +169,12 @@ export const getPortfolioHistory = async (range = '30d') => {
 }
 
 export const demoDeposit = async (amount) => {
-  const response = await api.post('/payment/demo-deposit', { amount })
+  const response = await addDemoFunds(amount)
+
   return {
-    success: response.data?.success === true,
-    message: response.data?.message || '',
-    balance: toNumberOrNull(response.data?.balance),
-    raw: response.data,
+    success: response.success === true,
+    message: response.message || '',
+    balance: toNumberOrNull(response.balance),
+    raw: response.raw,
   }
 }

@@ -565,10 +565,11 @@ async function getMarketHistory(symbol, interval = '1h', range = '30d') {
 }
 
 function getFallbackCryptos(limit, error) {
+  // Fallback prices — update manually when significantly off from market
   const fallback = [
-    { symbol: 'BTC', name: 'Bitcoin', price: 43000, change24h: 2.5, volume: 15000000000 },
-    { symbol: 'ETH', name: 'Ethereum', price: 2200, change24h: 1.8, volume: 8000000000 },
-    { symbol: 'SOL', name: 'Solana', price: 95, change24h: 5.2, volume: 2000000000 }
+    { symbol: 'BTC', name: 'Bitcoin', price: 105000, change24h: 0, volume: 15000000000 },
+    { symbol: 'ETH', name: 'Ethereum', price: 3800, change24h: 0, volume: 8000000000 },
+    { symbol: 'SOL', name: 'Solana', price: 170, change24h: 0, volume: 2000000000 }
   ];
 
   const message = error?.message || 'Binance unavailable, using fallback price';
@@ -705,7 +706,8 @@ async function getMetalPrice(symbol) {
 }
 
 function getFallbackMetalQuote(symbol, message) {
-  const prices = { XAU: 2320.50, GOLD: 2320.50, XAG: 27.35, SILVER: 27.35 };
+  // Fallback prices — update manually when significantly off from market
+  const prices = { XAU: 3300, GOLD: 3300, XAG: 33, SILVER: 33 };
   return createFallbackQuote({
     symbol,
     type: 'metal',
@@ -755,7 +757,8 @@ async function getStockPrice(symbol) {
 }
 
 function getFallbackStockQuote(symbol, message) {
-  const prices = { AAPL: 175, TSLA: 240, NVDA: 850, MSFT: 420, GOOGL: 155, AMZN: 185, META: 480, NFLX: 620 };
+  // Fallback prices — update manually when significantly off from market
+  const prices = { AAPL: 220, TSLA: 310, NVDA: 130, MSFT: 450, GOOGL: 190, AMZN: 220, META: 590, NFLX: 1100 };
   const price = prices[symbol];
 
   if (!price) {
@@ -813,10 +816,11 @@ async function getIndexPrice(symbol) {
 }
 
 function getFallbackIndexQuote(symbol, message) {
+  // Fallback prices — update manually when significantly off from market
   const fallback = {
-    IXIC: { price: 16500, name: 'NASDAQ Composite' },
-    SPX: { price: 5200, name: 'S&P 500' },
-    DJI: { price: 39000, name: 'Dow Jones Industrial Average' }
+    IXIC: { price: 19500, name: 'NASDAQ Composite' },
+    SPX: { price: 5900, name: 'S&P 500' },
+    DJI: { price: 43000, name: 'Dow Jones Industrial Average' }
   };
 
   if (!fallback[symbol]) {
@@ -883,12 +887,89 @@ async function getPricesForSymbols(symbols = []) {
   return Promise.all(normalizedSymbols.map((symbol) => getPrice(symbol)));
 }
 
+/**
+ * Batch-fetch prices for a list of symbols with a single Binance call for all
+ * crypto symbols, while stocks/metals/indices are fetched in parallel.
+ * Significantly reduces the number of outbound HTTP requests compared to N
+ * individual getPrice() calls.
+ */
+async function getPricesBatch(symbols = []) {
+  const normalizedSymbols = [...new Set(symbols.map(normalizeSymbol).filter(Boolean))];
+  if (normalizedSymbols.length === 0) return [];
+
+  const cryptoSymbols = [];
+  const otherSymbols = [];
+
+  for (const symbol of normalizedSymbols) {
+    if (INDICES[symbol] || STOCK_SYMBOLS[symbol] || getYahooMetalSymbol(symbol)) {
+      otherSymbols.push(symbol);
+    } else {
+      cryptoSymbols.push(symbol);
+    }
+  }
+
+  // Batch Binance: single ticker/24hr call for all crypto symbols at once
+  const cryptoResultsMap = new Map();
+  if (cryptoSymbols.length > 0) {
+    try {
+      const providerSymbols = cryptoSymbols.map((s) => `${s}USDT`);
+      const symbolsParam = JSON.stringify(providerSymbols);
+      const response = await axios.get('https://api.binance.com/api/v3/ticker/24hr', {
+        params: { symbols: symbolsParam },
+        timeout: 10000,
+      });
+
+      const data = Array.isArray(response.data) ? response.data : [];
+      for (const item of data) {
+        const symbol = normalizeSymbol(item.symbol);
+        const cacheKey = `crypto_${item.symbol}`;
+        const quote = createQuote({
+          symbol,
+          name: getAssetName(symbol, 'crypto'),
+          type: 'crypto',
+          price: item.lastPrice,
+          change24h: item.priceChangePercent,
+          volume: item.quoteVolume,
+          source: 'binance',
+          provider: BINANCE_PROVIDER,
+          providerSymbol: item.symbol,
+          fallback: false,
+          stale: false,
+          priceAvailable: parseFiniteNumber(item.lastPrice) !== null && parseFiniteNumber(item.lastPrice) > 0,
+        });
+        cache.set(cacheKey, quote);
+        cryptoResultsMap.set(symbol, quote);
+      }
+    } catch {
+      // On batch failure, fall back to individual calls per symbol
+    }
+
+    for (const symbol of cryptoSymbols) {
+      if (!cryptoResultsMap.has(symbol)) {
+        const [quote] = await getSpecificCryptos([symbol]);
+        cryptoResultsMap.set(symbol, quote);
+      }
+    }
+  }
+
+  // Non-crypto: parallel individual calls (Yahoo doesn't have a free batch endpoint)
+  const otherResults = await Promise.all(otherSymbols.map((symbol) => getPrice(symbol)));
+
+  // Rebuild in original order
+  return normalizedSymbols.map((symbol) => {
+    if (cryptoResultsMap.has(symbol)) return cryptoResultsMap.get(symbol);
+    const idx = otherSymbols.indexOf(symbol);
+    return idx !== -1 ? otherResults[idx] : createErrorQuote(symbol, 'Price unavailable');
+  });
+}
+
 module.exports = {
   getPrice,
   getAllPrices,
   getTopCryptos,
   getSpecificCryptos,
   getPricesForSymbols,
+  getPricesBatch,
   getMarketHistory,
   getMetalPrice,
   getStockPrice,

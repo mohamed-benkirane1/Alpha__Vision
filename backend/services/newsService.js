@@ -31,9 +31,39 @@ function analyzeFinancialSentiment(text = '') {
   return 'neutral';
 }
 
-function normalizeArticle(article = {}) {
+function normalizeSearchTerm(value, maxLength = 60) {
+  return String(value || '')
+    .trim()
+    .replace(/[^\w\s.-]/g, '')
+    .slice(0, maxLength);
+}
+
+function buildNewsQuery({ symbol, category } = {}) {
+  const cleanSymbol = normalizeSearchTerm(symbol, 20).toUpperCase();
+  const cleanCategory = normalizeSearchTerm(category, 40).toLowerCase();
+
+  if (cleanSymbol) {
+    return `${cleanSymbol} finance OR ${cleanSymbol} stock OR ${cleanSymbol} crypto OR ${cleanSymbol} trading`;
+  }
+
+  if (cleanCategory) {
+    return `${cleanCategory} finance OR ${cleanCategory} markets OR ${cleanCategory} investing`;
+  }
+
+  return 'stock market OR finance OR trading OR cryptocurrency OR investing OR economy';
+}
+
+function getNewsCacheKey({ symbol, category } = {}) {
+  const cleanSymbol = normalizeSearchTerm(symbol, 20).toUpperCase() || 'all';
+  const cleanCategory = normalizeSearchTerm(category, 40).toLowerCase() || 'all';
+  return `financial_news_response_${cleanSymbol}_${cleanCategory}`;
+}
+
+function normalizeArticle(article = {}, context = {}) {
   const sourceName = article.source?.name || 'Unknown source';
   const textForSentiment = `${article.title || ''} ${article.description || ''}`;
+  const symbol = normalizeSearchTerm(context.symbol, 20).toUpperCase() || null;
+  const category = normalizeSearchTerm(context.category, 40).toLowerCase() || 'financial-markets';
 
   return {
     title: article.title || 'Untitled market news',
@@ -44,8 +74,8 @@ function normalizeArticle(article = {}) {
     source: sourceName,
     provider: GNEWS_PROVIDER,
     fallback: false,
-    symbol: null,
-    category: 'financial-markets',
+    symbol,
+    category,
     sentiment: analyzeFinancialSentiment(textForSentiment)
   };
 }
@@ -90,8 +120,9 @@ function createErrorResponse(error) {
   };
 }
 
-async function getNews() {
-  const cached = cache.get('financial_news_response');
+async function getNews(filters = {}) {
+  const cacheKey = getNewsCacheKey(filters);
+  const cached = cache.get(cacheKey);
   if (cached) return { ...cached, cached: true };
 
   const apiKey = process.env.GNEWS_API_KEY || '';
@@ -105,7 +136,7 @@ async function getNews() {
     const response = await axios.get('https://gnews.io/api/v4/search', {
       params: {
         apikey: apiKey,
-        q: 'stock market OR finance OR trading OR cryptocurrency OR investing OR economy',
+        q: buildNewsQuery(filters),
         lang: 'en',
         country: 'us',
         max: 10,
@@ -115,10 +146,10 @@ async function getNews() {
     });
 
     const articles = Array.isArray(response.data?.articles)
-      ? response.data.articles.map(normalizeArticle)
+      ? response.data.articles.map((article) => normalizeArticle(article, filters))
       : [];
     const normalized = createSuccessResponse(articles);
-    cache.set('financial_news_response', normalized);
+    cache.set(cacheKey, normalized);
     return normalized;
   } catch (error) {
     return createErrorResponse(error);

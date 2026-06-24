@@ -12,26 +12,12 @@ const normalizeApiBaseUrl = (value) => {
 export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL)
 export const AUTH_SESSION_EXPIRED_EVENT = 'alpha-vision:auth-session-expired'
 
-export const getToken = () => localStorage.getItem('token')
-
-export const setToken = (token) => {
-  if (token) localStorage.setItem('token', token)
-}
-
-export const removeToken = () => {
-  localStorage.removeItem('token')
-}
-
-export const getCurrentUserFromStorage = () => {
-  const rawUser = localStorage.getItem('user')
-  if (!rawUser) return null
-
-  try {
-    return JSON.parse(rawUser)
-  } catch {
-    return null
-  }
-}
+// Token now lives in an httpOnly cookie set by the backend.
+// These stubs keep backward-compatible imports working without breaking anything.
+export const getToken = () => null
+export const setToken = () => {}
+export const removeToken = () => {}
+export const getCurrentUserFromStorage = () => null
 
 export class ApiError extends Error {
   constructor(message, { status, data } = {}) {
@@ -53,22 +39,14 @@ export const extractApiError = (error) => ({
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-api.interceptors.request.use((config) => {
-  const token = getToken()
-
-  if (token && config.skipAuth !== true) {
-    config.headers.Authorization = `Bearer ${token}`
-  } else if (config.headers.Authorization) {
-    delete config.headers.Authorization
-  }
-
-  return config
-})
+// No Authorization header injection — authentication is via httpOnly cookie
+api.interceptors.request.use((config) => config)
 
 api.interceptors.response.use(
   (response) => response,
@@ -85,7 +63,6 @@ api.interceptors.response.use(
 
     if (
       status === 401 &&
-      getToken() &&
       typeof window !== 'undefined' &&
       !publicAuthEndpoints.some((endpoint) => requestUrl.includes(endpoint))
     ) {

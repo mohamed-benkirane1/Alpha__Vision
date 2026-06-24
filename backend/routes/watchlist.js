@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const Watchlist = require('../models/watchlist');
-const { getPrice, normalizeSymbol } = require('../services/marketService');
+const { getPrice, getPricesBatch, normalizeSymbol } = require('../services/marketService');
 
 function nowIso() {
   return new Date().toISOString();
@@ -66,22 +66,38 @@ function createDataQuality(items) {
   };
 }
 
-async function enrichWatchlistItem(item) {
-  try {
-    const quote = await getPrice(item.symbol);
-    return serializeWatchlistItem(item, quote);
-  } catch (error) {
-    return serializeWatchlistItem(item, {
-      symbol: item.symbol,
-      priceAvailable: false,
-      error: error.message || `Price unavailable for ${item.symbol}`,
-    });
-  }
+function enrichWatchlistItemWithQuote(item, quote) {
+  return serializeWatchlistItem(item, quote || {
+    symbol: item.symbol,
+    priceAvailable: false,
+    error: `Price unavailable for ${item.symbol}`,
+  });
 }
 
 async function buildWatchlistResponse(userId) {
   const items = await Watchlist.find({ userId }).sort({ createdAt: 1 });
-  const data = await Promise.all(items.map(enrichWatchlistItem));
+
+  // Batch-fetch all watchlist prices with a single Binance call for crypto
+  const symbols = items.map((item) => item.symbol).filter(Boolean);
+  let quoteMap = new Map();
+  if (symbols.length > 0) {
+    try {
+      const quotes = await getPricesBatch(symbols);
+      symbols.forEach((sym, i) => quoteMap.set(sym, quotes[i]));
+    } catch {
+      // Fall back to individual calls on batch failure
+      await Promise.all(symbols.map(async (sym, i) => {
+        try {
+          const q = await getPrice(sym);
+          quoteMap.set(sym, q);
+        } catch (err) {
+          quoteMap.set(sym, { symbol: sym, priceAvailable: false, error: err.message });
+        }
+      }));
+    }
+  }
+
+  const data = items.map((item) => enrichWatchlistItemWithQuote(item, quoteMap.get(item.symbol)));
 
   return {
     success: true,

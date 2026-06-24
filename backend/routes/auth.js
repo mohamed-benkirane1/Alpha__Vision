@@ -11,6 +11,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESET_TOKEN_BYTES = 32;
 const DEFAULT_RESET_PASSWORD_EXPIRES_MINUTES = 15;
 const PASSWORD_RESET_PUBLIC_MESSAGE = 'If an account exists for this email, a password reset link has been sent.';
+const VALID_COOKIE_SAME_SITE_VALUES = new Set(['strict', 'lax', 'none']);
 
 function nowIso() {
   return new Date().toISOString();
@@ -27,6 +28,34 @@ function getResetPasswordExpiresMinutes() {
     : DEFAULT_RESET_PASSWORD_EXPIRES_MINUTES;
 }
 
+function parseBoolean(value) {
+  return String(value || '').trim().toLowerCase() === 'true';
+}
+
+function isProduction() {
+  return String(process.env.NODE_ENV || 'development').trim().toLowerCase() === 'production';
+}
+
+function getAuthCookieSameSite() {
+  const configured = String(process.env.AUTH_COOKIE_SAME_SITE || '').trim().toLowerCase();
+  if (VALID_COOKIE_SAME_SITE_VALUES.has(configured)) return configured;
+  return isProduction() ? 'strict' : 'lax';
+}
+
+function getAuthCookieOptions() {
+  const sameSite = getAuthCookieSameSite();
+
+  return {
+    httpOnly: true,
+    secure: isProduction() || sameSite === 'none',
+    sameSite,
+  };
+}
+
+function canExposeDevResetToken() {
+  return !isProduction() && parseBoolean(process.env.ENABLE_DEV_RESET_TOKEN_RESPONSE);
+}
+
 function isEmail(value) {
   return EMAIL_PATTERN.test(value);
 }
@@ -37,6 +66,13 @@ function normalizeEmail(value) {
 
 function signAuthToken(user) {
   return jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+}
+
+function setAuthCookie(res, token) {
+  res.cookie('token', token, {
+    ...getAuthCookieOptions(),
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 }
 
 function isDuplicateEmailError(error) {
@@ -127,10 +163,10 @@ function authActionError(error, extras = {}) {
   };
 }
 
-function authSessionResponse(user, token, extras = {}) {
+function authSessionResponse(user, _token, extras = {}) {
+  // Token is no longer returned in the body — it lives in the httpOnly cookie set by setAuthCookie()
   return {
     success: true,
-    token,
     user: serializeUser(user),
     ...extras,
   };
@@ -200,6 +236,7 @@ router.post('/signup', async (req, res) => {
 
     const user = await User.create({ name, email, password });
     const token = signAuthToken(user);
+    setAuthCookie(res, token);
 
     return res.status(201).json(authSessionResponse(user, token));
   } catch (err) {
@@ -230,10 +267,18 @@ router.post('/login', async (req, res) => {
     if (!valid) return res.status(401).json(authSessionError('Invalid credentials.'));
 
     const token = signAuthToken(user);
+    setAuthCookie(res, token);
     return res.json(authSessionResponse(user, token));
   } catch (err) {
     return res.status(500).json(authSessionError('Unable to sign in.'));
   }
+});
+
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', {
+    ...getAuthCookieOptions(),
+  });
+  return res.json({ success: true, message: 'Logged out successfully.' });
 });
 
 router.post('/forgot-password', async (req, res) => {
@@ -244,17 +289,20 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     const providerConfigured = isSmtpConfigured();
+    const exposeDevResetToken = canExposeDevResetToken();
     const expiresMinutes = getResetPasswordExpiresMinutes();
     const user = await findUserByEmail(email);
+    let devResetToken = null;
+    let devResetUrl = null;
 
-    if (user && !providerConfigured) {
+    if (user && !providerConfigured && !exposeDevResetToken) {
       user.resetPasswordTokenHash = null;
       user.resetPasswordExpires = null;
       user.updatedAt = new Date();
       await user.save();
     }
 
-    if (user && providerConfigured) {
+    if (user && (providerConfigured || exposeDevResetToken)) {
       const resetToken = crypto.randomBytes(RESET_TOKEN_BYTES).toString('hex');
       user.resetPasswordTokenHash = hashResetToken(resetToken);
       user.resetPasswordExpires = new Date(Date.now() + expiresMinutes * 60 * 1000);
@@ -263,23 +311,44 @@ router.post('/forgot-password', async (req, res) => {
 
       const resetUrl = buildResetUrl(resetToken);
 
-      try {
-        await sendPasswordResetEmail({
-          to: email,
-          resetUrl,
-          expiresMinutes,
-        });
-      } catch {
-        user.resetPasswordTokenHash = null;
-        user.resetPasswordExpires = null;
-        user.updatedAt = new Date();
-        await user.save();
+      if (providerConfigured) {
+        try {
+          await sendPasswordResetEmail({
+            to: email,
+            resetUrl,
+            expiresMinutes,
+          });
+        } catch {
+          if (!exposeDevResetToken) {
+            user.resetPasswordTokenHash = null;
+            user.resetPasswordExpires = null;
+            user.updatedAt = new Date();
+            await user.save();
+          }
+        }
       }
+
+      if (exposeDevResetToken) {
+        devResetToken = resetToken;
+        devResetUrl = resetUrl;
+      }
+    } else if (exposeDevResetToken) {
+      devResetToken = crypto.randomBytes(RESET_TOKEN_BYTES).toString('hex');
+      devResetUrl = buildResetUrl(devResetToken);
     }
 
     return res.json(authActionResponse({
       message: PASSWORD_RESET_PUBLIC_MESSAGE,
       expiresMinutes,
+      ...(exposeDevResetToken ? {
+        devReset: {
+          enabled: true,
+          token: devResetToken,
+          resetUrl: devResetUrl,
+          note: 'Development only. Disable ENABLE_DEV_RESET_TOKEN_RESPONSE outside local testing.',
+        },
+        warnings: ['Development reset token response is enabled.'],
+      } : {}),
     }));
   } catch (err) {
     return res.status(500).json(authActionError('Unable to create password reset request.'));
@@ -387,7 +456,9 @@ router.get('/google/callback',
   }),
   (req, res) => {
     const token = signAuthToken(req.user);
-    res.redirect(`${getFrontendUrl()}/auth/callback?token=${encodeURIComponent(token)}`);
+    setAuthCookie(res, token);
+    // Ne pas passer le token en query string — le cookie httpOnly suffit
+    res.redirect(`${getFrontendUrl()}/auth/callback`);
   },
 );
 

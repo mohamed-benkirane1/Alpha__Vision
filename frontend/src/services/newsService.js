@@ -36,9 +36,15 @@ export const normalizeNewsResponse = (payload = {}) => {
   }
 }
 
-export const getMarketNews = async () => {
+export const getMarketNews = async ({ symbol, category } = {}) => {
   try {
-    const response = await api.get('/news')
+    const params = {
+      ...(symbol ? { symbol } : {}),
+      ...(category ? { category } : {}),
+    }
+    const response = await api.get('/news', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    })
     return normalizeNewsResponse(response.data)
   } catch (error) {
     const apiError = extractApiError(error)
@@ -61,5 +67,5 @@ export const getMarketNews = async () => {
 }
 
 export const getNews = getMarketNews
-export const getNewsBySymbol = getMarketNews
-export const getNewsByCategory = getMarketNews
+export const getNewsBySymbol = (symbol) => getMarketNews({ symbol })
+export const getNewsByCategory = (category) => getMarketNews({ category })

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import {
   addDemoFunds,
+  cancelSubscription,
   checkCheckoutSession,
   createDepositCheckoutSession,
   createCheckoutSession,
@@ -94,6 +95,7 @@ export default function Payments() {
   const [refreshing, setRefreshing] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(null)
   const [demoLoading, setDemoLoading] = useState(false)
+  const [cancelLoading, setCancelLoading] = useState(false)
   const [depositLoading, setDepositLoading] = useState(false)
   const [depositAmount, setDepositAmount] = useState('10')
   const [error, setError] = useState(null)
@@ -193,6 +195,25 @@ export default function Payments() {
     setDepositLoading(false)
   }
 
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Cancel your subscription at end of billing period?')) return
+    setCancelLoading(true)
+    setError(null)
+    setMessage(null)
+
+    const response = await cancelSubscription()
+
+    if (response.success) {
+      setMessage(`Subscription scheduled for cancellation on ${response.cancelAt ? new Date(response.cancelAt).toLocaleDateString() : 'end of period'}.`)
+      await loadPayments({ refresh: true })
+      await refreshUser()
+    } else {
+      setError(response.error || 'Unable to cancel subscription.')
+    }
+
+    setCancelLoading(false)
+  }
+
   const handleDemoFunds = async () => {
     setDemoLoading(true)
     setError(null)
@@ -273,6 +294,21 @@ export default function Payments() {
                 </span>
               </div>
 
+              {currentPlan !== 'free' && status?.subscription?.status === 'active' && (
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={handleCancelSubscription}
+                    disabled={cancelLoading}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/20 bg-rose-500/8 px-3 py-2 text-xs font-bold text-rose-300 transition hover:bg-rose-500/14 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {cancelLoading ? 'Cancelling...' : 'Cancel subscription'}
+                  </button>
+                  <p className="mt-1.5 text-[10px] text-slate-600 font-medium">
+                    Access continues until end of billing period.
+                  </p>
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                 {[
                   { label: 'Current plan', value: status?.subscription?.plan || '--' },

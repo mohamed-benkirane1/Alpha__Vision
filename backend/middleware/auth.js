@@ -1,12 +1,29 @@
 const jwt = require('jsonwebtoken');
 
-module.exports = (req, res, next) => {
+function extractToken(req) {
+  // Primary: httpOnly cookie
+  const cookieToken = req.cookies?.token;
+  if (typeof cookieToken === 'string' && cookieToken.trim()) {
+    return cookieToken.trim();
+  }
+
+  // Fallback: Authorization: Bearer <token> header (for API clients)
   const authorization = typeof req.headers.authorization === 'string'
     ? req.headers.authorization.trim()
     : '';
-  const [scheme, token, ...extraParts] = authorization.split(/\s+/);
+  const [scheme, headerToken, ...extraParts] = authorization.split(/\s+/);
 
-  if (scheme?.toLowerCase() !== 'bearer' || !token || extraParts.length > 0) {
+  if (scheme?.toLowerCase() === 'bearer' && headerToken && extraParts.length === 0) {
+    return headerToken;
+  }
+
+  return null;
+}
+
+module.exports = (req, res, next) => {
+  const token = extractToken(req);
+
+  if (!token) {
     return res.status(401).json({
       success: false,
       message: 'Authentication token is required.',

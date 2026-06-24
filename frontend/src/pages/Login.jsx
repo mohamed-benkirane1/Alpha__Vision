@@ -75,11 +75,11 @@ export default function Login() {
         password: form.password,
       })
 
-      if (data?.success !== true || !data?.token || !data?.user) {
+      if (data?.success !== true || !data?.user) {
         throw new Error(data?.message || 'Invalid authentication response.')
       }
 
-      authLogin(data?.user, data?.token)
+      authLogin(data?.user)
 
       const redirectTo = location.state?.from?.pathname || '/dashboard'
       setSuccess('Signed in successfully. Redirecting...')

@@ -2,7 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const Portfolio = require('../models/portfolio');
 const User = require('../models/user');
-const { getPrice } = require('../services/marketService');
+const { getPrice, getPricesBatch } = require('../services/marketService');
 const {
   MIN_REQUIRED_HISTORY_POINTS,
   createPortfolioSnapshot,
@@ -100,7 +100,7 @@ function createDataQuality(holdings) {
   };
 }
 
-async function enrichHolding(holding) {
+async function enrichHolding(holding, quoteMap = null) {
   const baseHolding = holding.toObject();
   const symbol = typeof baseHolding.symbol === 'string' ? baseHolding.symbol.trim().toUpperCase() : '';
   const quantity = Number(baseHolding.quantity);
@@ -142,7 +142,7 @@ async function enrichHolding(holding) {
   }
 
   try {
-    const quote = await getPrice(symbol);
+    const quote = quoteMap?.has(symbol) ? quoteMap.get(symbol) : await getPrice(symbol);
     const price = Number(quote?.price);
 
     if (quote?.priceAvailable === false || quote?.price === null || !Number.isFinite(price) || price <= 0) {
@@ -265,7 +265,15 @@ router.get('/', auth, async (req, res) => {
 
     const holdings = await Portfolio.find({ userId: req.user.id });
 
-    const enriched = await Promise.all(holdings.map(enrichHolding));
+    // Batch-fetch all prices in a single Binance call for crypto symbols
+    const symbols = holdings.map((h) => {
+      const s = typeof h.symbol === 'string' ? h.symbol.trim().toUpperCase() : '';
+      return s;
+    }).filter(Boolean);
+    const quotesArray = symbols.length > 0 ? await getPricesBatch(symbols) : [];
+    const quoteMap = new Map(symbols.map((sym, i) => [sym, quotesArray[i]]));
+
+    const enriched = await Promise.all(holdings.map((h) => enrichHolding(h, quoteMap)));
     const warnings = enriched.flatMap((holding) => Array.isArray(holding.warnings) ? holding.warnings : []);
 
     const holdingsValue = enriched.reduce((sum, holding) => {

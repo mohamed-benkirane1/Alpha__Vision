@@ -4,7 +4,10 @@ const { getNews } = require('../services/newsService');
 
 router.get('/', auth, async (req, res) => {
   try {
-    const news = await getNews();
+    const news = await getNews({
+      symbol: req.query.symbol,
+      category: req.query.category,
+    });
     if (news.success === false) {
       return res.status(503).json(news);
     }

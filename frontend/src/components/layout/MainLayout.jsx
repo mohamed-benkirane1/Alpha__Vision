@@ -171,8 +171,8 @@ export default function MainLayout() {
   const navigate = useNavigate()
   const { logout, user } = useAuth()
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     setMobileOpen(false)
     navigate('/login', { replace: true })
   }
