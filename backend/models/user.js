@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true, select: false },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   googleId: { type: String, sparse: true },
+  avatar: { type: String, default: null },
   balance: { type: Number, default: 0 },
   plan: { type: String, enum: ['free', 'pro', 'elite'], default: 'free' },
   planExpiresAt: { type: Date, default: null },

@@ -182,4 +182,44 @@ router.get('/multi', async (req, res) => {
   }
 });
 
+// Binance OHLCV candles — direct endpoint for TradingChart
+router.get('/candles/:symbol', async (req, res) => {
+  try {
+    const symbol = String(req.params.symbol || '').trim().toUpperCase();
+    const interval = String(req.query.interval || '1h').trim();
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 500, 1), 1000);
+
+    const validIntervals = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'];
+    if (!validIntervals.includes(interval)) {
+      return res.status(400).json({ success: false, error: `Invalid interval. Valid: ${validIntervals.join(', ')}` });
+    }
+    if (!symbol) {
+      return res.status(400).json({ success: false, error: 'Symbol is required.' });
+    }
+
+    const axios = require('axios');
+    const response = await axios.get('https://api.binance.com/api/v3/klines', {
+      params: { symbol: symbol.endsWith('USDT') ? symbol : `${symbol}USDT`, interval, limit },
+      timeout: 10000,
+    });
+
+    if (!Array.isArray(response.data)) {
+      return res.status(400).json({ success: false, error: 'Invalid symbol or Binance error.' });
+    }
+
+    const candles = response.data.map((k) => ({
+      time:   Math.floor(Number(k[0]) / 1000),
+      open:   parseFloat(k[1]),
+      high:   parseFloat(k[2]),
+      low:    parseFloat(k[3]),
+      close:  parseFloat(k[4]),
+      volume: parseFloat(k[5]),
+    }));
+
+    return res.json({ success: true, symbol, interval, candles, count: candles.length });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

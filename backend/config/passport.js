@@ -17,6 +17,8 @@ if (googleOAuthConfigured) {
       const email = profile.emails?.[0]?.value?.trim().toLowerCase();
       if (!email) return done(new Error('Google account email is required.'), null);
 
+      const avatar = profile.photos?.[0]?.value || null;
+
       let user = await User.findOne({ email });
 
       if (!user) {
@@ -25,11 +27,15 @@ if (googleOAuthConfigured) {
           name: profile.displayName || email,
           email,
           googleId: profile.id,
+          avatar,
           password: generatedPassword,
         });
-      } else if (!user.googleId) {
-        user.googleId = profile.id;
-        await user.save();
+      } else {
+        // Mettre à jour les infos Google sur un compte existant
+        let changed = false;
+        if (!user.googleId) { user.googleId = profile.id; changed = true; }
+        if (!user.avatar && avatar) { user.avatar = avatar; changed = true; }
+        if (changed) await user.save();
       }
 
       return done(null, user);

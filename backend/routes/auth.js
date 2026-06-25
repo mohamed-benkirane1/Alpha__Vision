@@ -455,10 +455,14 @@ router.get('/google/callback',
     failureRedirect: `${getFrontendUrl()}/login?oauth=failed`,
   }),
   (req, res) => {
-    const token = signAuthToken(req.user);
-    setAuthCookie(res, token);
-    // Ne pas passer le token en query string — le cookie httpOnly suffit
-    res.redirect(`${getFrontendUrl()}/auth/callback`);
+    try {
+      const token = signAuthToken(req.user);
+      setAuthCookie(res, token);
+      // Cookie httpOnly posé — redirection directe vers /dashboard sans token dans l'URL
+      res.redirect(`${getFrontendUrl()}/dashboard`);
+    } catch (err) {
+      res.redirect(`${getFrontendUrl()}/login?error=oauth_failed`);
+    }
   },
 );
 
