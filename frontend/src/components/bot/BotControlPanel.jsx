@@ -1,13 +1,30 @@
 import { useState } from 'react'
 import { Play, Square, Settings2, ChevronDown, AlertTriangle, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { TRADING_ASSETS, ASSET_GROUPS, getAssetProvider } from '../../constants/tradingAssets'
 
-const SYMBOLS = ['BTC', 'ETH', 'AAPL', 'GOLD', 'SP500']
 const STRATEGIES = [
-  { value: 'ma_cross', label: 'MA20 / MA50 Cross' },
+  { value: 'ma_cross',   label: 'MA Cross (MA20/MA50) — Trend Following' },
+  { value: 'ema_cross',  label: 'EMA Cross (EMA9/EMA21) — Fast Trend' },
+  { value: 'rsi',        label: 'RSI — Mean Reversion' },
+  { value: 'macd',       label: 'MACD Crossover — Momentum' },
+  { value: 'bollinger',  label: 'Bollinger Bands — Volatility' },
+  { value: 'stochastic', label: 'Stochastic — Overbought/Oversold' },
 ]
 
+const PROVIDER_LABELS = { binance: 'via Binance', yahoo: 'via Yahoo Finance', default: '' }
+
 const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 disabled:opacity-40 appearance-none'
+const paramCls = 'bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-rose-500/50 transition-all duration-200 w-full disabled:opacity-40'
+
+function ParamRow({ label, children }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-[10px] font-bold text-slate-600 w-28 shrink-0 uppercase tracking-wide">{label}</span>
+      {children}
+    </div>
+  )
+}
 
 export default function BotControlPanel({ onStart, onStop, onTick, running, loading, tickLoading, error }) {
   const [symbol, setSymbol] = useState('BTC')
@@ -16,28 +33,66 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
   const [executeTrades, setExecuteTrades] = useState(false)
   const [localError, setLocalError] = useState(null)
 
+  // Strategy params
+  const [rsiPeriod, setRsiPeriod] = useState('14')
+  const [rsiOversold, setRsiOversold] = useState('30')
+  const [rsiOverbought, setRsiOverbought] = useState('70')
+  const [bbPeriod, setBbPeriod] = useState('20')
+  const [bbStdDev, setBbStdDev] = useState('2')
+  const [emaFast, setEmaFast] = useState('9')
+  const [emaSlow, setEmaSlow] = useState('21')
+  const [stochK, setStochK] = useState('14')
+  const [stochD, setStochD] = useState('3')
+  const [stochOversold, setStochOversold] = useState('20')
+  const [stochOverbought, setStochOverbought] = useState('80')
+
+  const provider = getAssetProvider(symbol)
+  const providerLabel = PROVIDER_LABELS[provider] || ''
+
   const start = () => {
-    if (!symbol) {
-      setLocalError('Symbol is required.')
-      return
-    }
-    if (!strategy) {
-      setLocalError('Strategy is required.')
-      return
-    }
+    if (!symbol) { setLocalError('Symbol is required.'); return }
+    if (!strategy) { setLocalError('Strategy is required.'); return }
     const normalizedPositionSize = Number(positionSize)
     if (!Number.isFinite(normalizedPositionSize) || normalizedPositionSize <= 0) {
       setLocalError('Paper position size must be positive.')
       return
     }
     setLocalError(null)
-    onStart({
+
+    const config = {
       symbol,
       strategy,
       positionSize: normalizedPositionSize,
       executeTrades,
       mode: 'paper',
-    })
+    }
+
+    if (strategy === 'rsi') {
+      Object.assign(config, {
+        rsiPeriod: Number(rsiPeriod) || 14,
+        rsiOversold: Number(rsiOversold) || 30,
+        rsiOverbought: Number(rsiOverbought) || 70,
+      })
+    } else if (strategy === 'bollinger') {
+      Object.assign(config, {
+        bbPeriod: Number(bbPeriod) || 20,
+        bbStdDev: Number(bbStdDev) || 2,
+      })
+    } else if (strategy === 'ema_cross') {
+      Object.assign(config, {
+        emaFast: Number(emaFast) || 9,
+        emaSlow: Number(emaSlow) || 21,
+      })
+    } else if (strategy === 'stochastic') {
+      Object.assign(config, {
+        stochK: Number(stochK) || 14,
+        stochD: Number(stochD) || 3,
+        stochOversold: Number(stochOversold) || 20,
+        stochOverbought: Number(stochOverbought) || 80,
+      })
+    }
+
+    onStart(config)
   }
 
   return (
@@ -54,8 +109,17 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
       </p>
 
       <div className="space-y-4">
+
+        {/* ── Trading Pair ───────────────────────────────── */}
         <div>
-          <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Trading Pair</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[10px] font-black text-slate-600 tracking-[0.1em] uppercase">Trading Pair</label>
+            {providerLabel && (
+              <span className="text-[9px] font-bold text-slate-600 bg-white/[0.04] border border-white/[0.07] rounded-full px-2 py-0.5">
+                {providerLabel}
+              </span>
+            )}
+          </div>
           <div className="relative">
             <select
               value={symbol}
@@ -64,12 +128,25 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
               className={`${fieldCls} pr-9 cursor-pointer`}
               style={{ backgroundImage: 'none' }}
             >
-              {SYMBOLS.map((s) => <option key={s} value={s} className="bg-[#0a1628]">{s}</option>)}
+              {ASSET_GROUPS.map((group) => {
+                const assets = TRADING_ASSETS.filter((a) => a.type === group.type)
+                if (assets.length === 0) return null
+                return (
+                  <optgroup key={group.type} label={group.label}>
+                    {assets.map((asset) => (
+                      <option key={asset.value} value={asset.value} className="bg-[#0a1628]">
+                        {asset.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                )
+              })}
             </select>
             <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
         </div>
 
+        {/* ── Strategy ──────────────────────────────────── */}
         <div>
           <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Strategy</label>
           <div className="relative">
@@ -80,25 +157,85 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
               className={`${fieldCls} pr-9 cursor-pointer`}
               style={{ backgroundImage: 'none' }}
             >
-              {STRATEGIES.map((s) => <option key={s.value} value={s.value} className="bg-[#0a1628]">{s.label}</option>)}
+              {STRATEGIES.map((s) => (
+                <option key={s.value} value={s.value} className="bg-[#0a1628]">{s.label}</option>
+              ))}
             </select>
             <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
         </div>
 
+        {/* ── Strategy params ────────────────────────────── */}
+        {strategy === 'rsi' && !running && (
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 space-y-2.5">
+            <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">RSI Parameters</p>
+            <ParamRow label="Period">
+              <input type="number" min="2" max="50" value={rsiPeriod} onChange={(e) => setRsiPeriod(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+            <ParamRow label="Oversold">
+              <input type="number" min="10" max="45" value={rsiOversold} onChange={(e) => setRsiOversold(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+            <ParamRow label="Overbought">
+              <input type="number" min="55" max="90" value={rsiOverbought} onChange={(e) => setRsiOverbought(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+          </div>
+        )}
+
+        {strategy === 'bollinger' && !running && (
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 space-y-2.5">
+            <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">Bollinger Bands Parameters</p>
+            <ParamRow label="Period">
+              <input type="number" min="5" max="50" value={bbPeriod} onChange={(e) => setBbPeriod(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+            <ParamRow label="Std Dev">
+              <input type="number" min="1" max="3" step="0.1" value={bbStdDev} onChange={(e) => setBbStdDev(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+          </div>
+        )}
+
+        {strategy === 'ema_cross' && !running && (
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 space-y-2.5">
+            <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">EMA Cross Parameters</p>
+            <ParamRow label="Fast EMA">
+              <input type="number" min="3" max="50" value={emaFast} onChange={(e) => setEmaFast(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+            <ParamRow label="Slow EMA">
+              <input type="number" min="5" max="200" value={emaSlow} onChange={(e) => setEmaSlow(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+          </div>
+        )}
+
+        {strategy === 'stochastic' && !running && (
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 space-y-2.5">
+            <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">Stochastic Parameters</p>
+            <ParamRow label="K Period">
+              <input type="number" min="5" max="30" value={stochK} onChange={(e) => setStochK(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+            <ParamRow label="D Period">
+              <input type="number" min="2" max="10" value={stochD} onChange={(e) => setStochD(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+            <ParamRow label="Oversold">
+              <input type="number" min="5" max="40" value={stochOversold} onChange={(e) => setStochOversold(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+            <ParamRow label="Overbought">
+              <input type="number" min="60" max="95" value={stochOverbought} onChange={(e) => setStochOverbought(e.target.value)} disabled={running || loading} className={paramCls} />
+            </ParamRow>
+          </div>
+        )}
+
+        {/* ── Position size ──────────────────────────────── */}
         <div>
           <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Max Paper Position USD</label>
           <input
             value={positionSize}
             onChange={(e) => setPositionSize(e.target.value)}
             disabled={running || loading}
-            type="number"
-            min="1"
-            step="1"
+            type="number" min="1" step="1"
             className={fieldCls}
           />
         </div>
 
+        {/* ── Execute trades checkbox ────────────────────── */}
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3">
           <input
             type="checkbox"
@@ -122,6 +259,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
           </div>
         )}
 
+        {/* ── Start / Stop / Tick buttons ────────────────── */}
         <div className="pt-1">
           {!running ? (
             <motion.button

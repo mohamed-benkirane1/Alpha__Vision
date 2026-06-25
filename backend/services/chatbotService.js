@@ -3,17 +3,10 @@ const Portfolio = require('../models/portfolio');
 const Trade = require('../models/trade');
 const User = require('../models/user');
 const Watchlist = require('../models/watchlist');
-const {
-  generateGeminiText,
-  getGeminiErrorMessage,
-  getGeminiModel,
-  getGeminiProviderStatus,
-  hasGeminiKey,
-} = require('./geminiService');
+const groqService = require('./groqService');
 
-const PROVIDER = 'gemini';
+const PROVIDER = 'groq';
 const RULES_PROVIDER = 'rules-based';
-const DEFAULT_PROVIDER = String(process.env.AI_PROVIDER || 'gemini').trim().toLowerCase();
 const DISCLAIMER = 'Educational information only, not financial advice.';
 const MAX_CONTEXT_MESSAGES = 16;
 
@@ -23,6 +16,7 @@ const SYSTEM_PROMPT = [
   'Use only the provided user context. Do not invent private account data.',
   'Never promise profits, never give certainty, and never present analysis as personalized financial advice.',
   'If provider data is missing, say so clearly.',
+  'Be concise and educational.',
 ].join(' ');
 
 function nowIso() {
@@ -38,18 +32,12 @@ function toFiniteNumber(value, fallback = null) {
   return Number.isFinite(number) ? number : fallback;
 }
 
-function getProviderStatus(error = null) {
-  if (DEFAULT_PROVIDER !== 'gemini') return 'fallback';
-  return getGeminiProviderStatus(error);
-}
-
 function createResponse({
   success = true,
   mode = 'fallback',
   provider = RULES_PROVIDER,
-  providerStatus = getProviderStatus(),
+  providerStatus = 'fallback',
   answer = '',
-  usage = null,
   contextUsed = null,
   warnings = [],
   error = null,
@@ -67,8 +55,7 @@ function createResponse({
     data: {
       answer,
       message: answer,
-      model: mode === 'ai' ? getGeminiModel() : null,
-      usage,
+      model: mode === 'ai' ? groqService.MODEL : null,
       contextUsed,
       notFinancialAdvice: true,
       disclaimer: DISCLAIMER,
@@ -84,7 +71,7 @@ function createErrorResponse(error) {
     success: false,
     mode: 'fallback',
     provider: RULES_PROVIDER,
-    providerStatus: getProviderStatus(error),
+    providerStatus: groqService.getProviderStatus(),
     answer: '',
     warnings: [],
     error: error || 'Unable to process chatbot message.',
@@ -93,7 +80,6 @@ function createErrorResponse(error) {
 
 function normalizeHistory(history = []) {
   if (!Array.isArray(history)) return [];
-
   return history
     .slice(-MAX_CONTEXT_MESSAGES)
     .map((item) => {
@@ -120,18 +106,18 @@ async function buildUserContext(userId) {
       virtualBalance: toFiniteNumber(user.balance, 0),
       plan: user.plan || 'free',
     } : null,
-    holdings: holdings.map((holding) => ({
-      symbol: holding.symbol,
-      quantity: toFiniteNumber(holding.quantity, 0),
-      avgPrice: toFiniteNumber(holding.avgPrice),
+    holdings: holdings.map((h) => ({
+      symbol: h.symbol,
+      quantity: toFiniteNumber(h.quantity, 0),
+      avgPrice: toFiniteNumber(h.avgPrice),
     })),
-    recentTrades: trades.map((trade) => ({
-      symbol: trade.symbol,
-      side: trade.type,
-      quantity: toFiniteNumber(trade.quantity),
-      executedPrice: toFiniteNumber(trade.executedPrice ?? trade.price),
-      mode: trade.mode || 'paper',
-      createdAt: trade.createdAt,
+    recentTrades: trades.map((t) => ({
+      symbol: t.symbol,
+      side: t.type,
+      quantity: toFiniteNumber(t.quantity),
+      executedPrice: toFiniteNumber(t.executedPrice ?? t.price),
+      mode: t.mode || 'paper',
+      createdAt: t.createdAt,
     })),
     watchlist: watchlist.map((item) => item.symbol),
     bot: bot ? {
@@ -147,16 +133,7 @@ async function buildUserContext(userId) {
 }
 
 function summarizeContext(context) {
-  if (!context) {
-    return {
-      hasContext: false,
-      holdingsCount: 0,
-      recentTradesCount: 0,
-      watchlistCount: 0,
-      botStatus: null,
-    };
-  }
-
+  if (!context) return { hasContext: false, holdingsCount: 0, recentTradesCount: 0, watchlistCount: 0, botStatus: null };
   return {
     hasContext: true,
     holdingsCount: context.holdings.length,
@@ -166,27 +143,26 @@ function summarizeContext(context) {
   };
 }
 
-function buildGeminiContents({ message, history, context }) {
+function buildGroqPrompt({ message, history, context }) {
   const contextPayload = {
     disclaimer: DISCLAIMER,
     userContext: context,
-    instruction: 'Answer concisely. Clearly label uncertainty and avoid financial-advice certainty.',
+    instruction: 'Answer concisely in plain text. Clearly label uncertainty. No financial advice.',
   };
 
-  return [
-    {
-      role: 'user',
-      parts: [{ text: `User context JSON: ${JSON.stringify(contextPayload)}` }],
-    },
-    ...normalizeHistory(history).map((item) => ({
-      role: item.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: item.content }],
-    })),
-    {
-      role: 'user',
-      parts: [{ text: message }],
-    },
-  ];
+  const historyMessages = normalizeHistory(history).map((item) => ({
+    role: item.role,
+    content: item.content,
+  }));
+
+  return {
+    systemPrompt: SYSTEM_PROMPT,
+    messages: [
+      { role: 'user', content: `User context: ${JSON.stringify(contextPayload)}` },
+      ...historyMessages,
+      { role: 'user', content: message },
+    ],
+  };
 }
 
 function createRulesBasedAnswer(message, context) {
@@ -219,26 +195,25 @@ function createFallbackResponse(message, context, reason) {
     success: true,
     mode: 'fallback',
     provider: RULES_PROVIDER,
-    providerStatus: getProviderStatus(),
+    providerStatus: groqService.getProviderStatus(),
     answer: createRulesBasedAnswer(message, context),
     contextUsed: summarizeContext(context),
-    warnings: [reason || 'Gemini unavailable. Rules-based fallback response was used.'],
+    warnings: [reason || 'Groq unavailable. Rules-based fallback response was used.'],
     error: null,
   });
 }
 
-async function callGemini({ message, history, context }) {
-  const response = await generateGeminiText({
-    systemInstruction: SYSTEM_PROMPT,
-    contents: buildGeminiContents({ message, history, context }),
-    generationConfig: {
-      temperature: 0.2,
-      maxOutputTokens: 700,
-    },
-  });
+async function callGroq({ message, history, context }) {
+  const { systemPrompt, messages } = buildGroqPrompt({ message, history, context });
 
-  const answer = cleanMessage(response.text, 4000);
-  if (!answer) throw new Error('AI provider returned an empty response.');
+  // Build a multi-turn conversation string for Groq
+  const fullPrompt = messages.map((m) => m.content).join('\n\n---\n\n');
+  const answer = cleanMessage(
+    await groqService.generateContent(fullPrompt, systemPrompt),
+    4000,
+  );
+
+  if (!answer) throw new Error('Groq returned an empty response.');
 
   return createResponse({
     success: true,
@@ -246,7 +221,6 @@ async function callGemini({ message, history, context }) {
     provider: PROVIDER,
     providerStatus: 'available',
     answer,
-    usage: response.usage || null,
     contextUsed: summarizeContext(context),
     warnings: [],
     error: null,
@@ -255,39 +229,29 @@ async function callGemini({ message, history, context }) {
 
 async function chat({ userId, message, history = [] }) {
   const userMessage = cleanMessage(message);
-  if (!userMessage) {
-    return createErrorResponse('Message required.');
-  }
+  if (!userMessage) return createErrorResponse('Message required.');
 
   const context = await buildUserContext(userId);
 
-  if (DEFAULT_PROVIDER !== 'gemini') {
+  if (!groqService.isAvailable()) {
     return createFallbackResponse(
       userMessage,
       context,
-      `AI_PROVIDER=${DEFAULT_PROVIDER} is not configured for this backend. The assistant used rules-based fallback.`,
-    );
-  }
-
-  if (!hasGeminiKey()) {
-    return createFallbackResponse(
-      userMessage,
-      context,
-      'Gemini API key is missing. The assistant used rules-based fallback.',
+      'Groq API key is missing. The assistant used rules-based fallback.',
     );
   }
 
   try {
-    return await callGemini({ message: userMessage, history, context });
+    return await callGroq({ message: userMessage, history, context });
   } catch (error) {
     return createResponse({
       success: true,
       mode: 'fallback',
       provider: RULES_PROVIDER,
-      providerStatus: getProviderStatus(error),
+      providerStatus: groqService.getProviderStatus(error),
       answer: createRulesBasedAnswer(userMessage, context),
       contextUsed: summarizeContext(context),
-      warnings: [`Gemini provider error. Rules-based fallback was used: ${getGeminiErrorMessage(error)}`],
+      warnings: [`Groq provider error. Rules-based fallback was used: ${groqService.getErrorMessage(error)}`],
       error: null,
     });
   }

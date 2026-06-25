@@ -55,19 +55,21 @@ function SignalBadge({ children, className = '' }) {
 export default function AISignalCard({ aiSignal, loading = false, unavailable = false }) {
   const signal = aiSignal?.signal || null
   const dataQuality = aiSignal?.dataQuality || {}
-  const warnings = [
+  const warnings = [...new Set([
     ...(Array.isArray(dataQuality.warnings) ? dataQuality.warnings : []),
     ...(Array.isArray(aiSignal?.warnings) ? aiSignal.warnings : []),
-  ].filter(Boolean)
+  ].filter(Boolean))]
   const mode = aiSignal?.mode || null
   const providerStatus = aiSignal?.providerStatus || null
-  const providerLabel = aiSignal?.provider === 'gemini'
-    ? 'Gemini'
-    : aiSignal?.provider === 'deepseek'
-      ? 'DeepSeek'
-      : aiSignal?.provider || 'AI provider'
+  const providerLabel = aiSignal?.provider === 'groq'
+    ? 'Groq / Llama 3.3'
+    : aiSignal?.provider === 'gemini'
+      ? 'Gemini'
+      : aiSignal?.provider === 'deepseek'
+        ? 'DeepSeek'
+        : aiSignal?.provider || 'AI provider'
   const isAiProviderAvailable = dataQuality.usesLLM === true
-    && ['gemini', 'deepseek'].includes(aiSignal?.provider)
+    && ['groq', 'gemini', 'deepseek'].includes(aiSignal?.provider)
     && providerStatus === 'available'
   const isRulesBased = aiSignal?.provider === 'rules-based' || aiSignal?.fallback === true || mode === 'rules' || mode === 'fallback'
   const hasSignal = aiSignal?.success === true && signal
@@ -98,7 +100,7 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
           <h2 className="text-sm font-bold text-white">AI Signal</h2>
         </div>
         {isAiProviderAvailable && hasSignal && (
-          <SignalBadge className="text-rose-300 bg-rose-500/10 border-rose-500/25">AI / {providerLabel}</SignalBadge>
+          <SignalBadge className="text-rose-300 bg-rose-500/10 border-rose-500/25 whitespace-nowrap">AI / {providerLabel}</SignalBadge>
         )}
         {isRulesBased && hasSignal && (
           <SignalBadge className="text-amber-300 bg-amber-500/10 border-amber-500/25">Rules fallback</SignalBadge>
@@ -173,12 +175,15 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
             <div className="rounded-xl bg-white/[0.02] border border-white/[0.055] px-3 py-2.5">
               <p className="text-[10px] text-slate-700 uppercase font-black mb-1.5">Reasons</p>
               <ul className="space-y-1 text-[11px] text-slate-400 leading-relaxed">
-                {signal.reasons.slice(0, 3).map((reason) => (
-                  <li key={reason} className="flex gap-1.5">
-                    <span className="text-slate-700">-</span>
-                    <span>{reason}</span>
-                  </li>
-                ))}
+                {signal.reasons.slice(0, 3).map((reason) => {
+                  const clean = String(reason).replace(/^[\s\-–—•]+/, '').trim()
+                  return (
+                    <li key={reason} className="flex gap-1.5">
+                      <span className="text-slate-700 shrink-0">·</span>
+                      <span>{clean}</span>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )}
@@ -227,7 +232,9 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
           </div>
           <span className="text-[10px] text-slate-500 font-black">{statusText}</span>
         </div>
-        <p className="text-xs text-slate-500 leading-relaxed">{signal?.disclaimer || DISCLAIMER}</p>
+        <p className="text-xs text-slate-500 leading-relaxed break-words">
+          Educational analysis — not financial advice.
+        </p>
       </div>
     </motion.div>
   )

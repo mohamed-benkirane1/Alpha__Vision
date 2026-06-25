@@ -41,16 +41,11 @@ export default function Backtesting() {
     }
   }, [])
 
-  async function handleRun({ symbol, strategy, capital }) {
+  async function handleRun(payload) {
     setLoading(true)
     setError(null)
 
-    const result = await runBacktest({
-      symbol,
-      strategy,
-      initialCapital: capital,
-      positionSize: 0.2,
-    })
+    const result = await runBacktest(payload)
 
     setResponse(result)
     setError(result.success ? null : result.error || 'Unable to run backtest.')
@@ -94,6 +89,14 @@ export default function Backtesting() {
           <span>Source: <span className="text-slate-300">{response.source || '--'}</span></span>
           <span>Updated: <span className="text-slate-300">{formatDateTime(response.timestamp)}</span></span>
           <span>Real historical data: <span className={response.dataQuality?.usesRealHistoricalData ? 'text-emerald-400' : 'text-amber-300'}>{response.dataQuality?.usesRealHistoricalData ? 'Yes' : 'No'}</span></span>
+          {response.params && (
+            <span>
+              Strategy: <span className="text-slate-300 uppercase">{response.params.strategy || '--'}</span>
+              {' | '}Params: <span className="text-slate-300">capital={response.params.initialCapital} pos={response.params.positionSize}</span>
+              {response.params.startDate && <span> | from={response.params.startDate}</span>}
+              {response.params.endDate && <span> | to={response.params.endDate}</span>}
+            </span>
+          )}
         </div>
       )}
 
@@ -121,9 +124,6 @@ export default function Backtesting() {
             onRun={handleRun}
             loading={loading}
             error={error}
-            supportedSymbols={capabilities?.supportedSymbols || []}
-            supportedStrategies={capabilities?.strategies || []}
-            historicalProvider={capabilities?.historicalProvider}
           />
         </motion.div>
 

@@ -27,6 +27,25 @@ const botStartValidator = [
     .toLowerCase()
     .isIn(VALID_STRATEGIES).withMessage(`strategy must be one of: ${VALID_STRATEGIES.join(', ')}.`),
 
+  // RSI params
+  body('rsiPeriod').optional().isInt({ min: 2, max: 50 }).toInt(),
+  body('rsiOversold').optional().isInt({ min: 10, max: 45 }).toInt(),
+  body('rsiOverbought').optional().isInt({ min: 55, max: 90 }).toInt(),
+
+  // Bollinger params
+  body('bbPeriod').optional().isInt({ min: 5, max: 50 }).toInt(),
+  body('bbStdDev').optional().isFloat({ min: 1, max: 3 }).toFloat(),
+
+  // EMA Cross params
+  body('emaFast').optional().isInt({ min: 3, max: 50 }).toInt(),
+  body('emaSlow').optional().isInt({ min: 5, max: 200 }).toInt(),
+
+  // Stochastic params
+  body('stochK').optional().isInt({ min: 5, max: 30 }).toInt(),
+  body('stochD').optional().isInt({ min: 2, max: 10 }).toInt(),
+  body('stochOversold').optional().isInt({ min: 5, max: 40 }).toInt(),
+  body('stochOverbought').optional().isInt({ min: 60, max: 95 }).toInt(),
+
   // positionSize  (USD amount: how much capital to risk per trade)
   body('positionSize')
     .exists({ checkNull: true }).withMessage('positionSize is required.')

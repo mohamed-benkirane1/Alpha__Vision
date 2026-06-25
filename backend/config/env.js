@@ -94,12 +94,18 @@ function buildFeatureWarnings(env = process.env) {
     warnings.push('Email reset delivery disabled: SMTP settings are not fully configured.');
   }
 
-  const aiProvider = String(env.AI_PROVIDER || 'gemini').trim().toLowerCase();
+  // Groq is now the primary AI provider
+  if (!hasValue(env.GROQ_API_KEY)) {
+    warnings.push('AI fallback mode: GROQ_API_KEY is not configured. Rules-based signals will be used.');
+  }
+
+  // Legacy provider warnings (kept for backward compat if someone switches back)
+  const aiProvider = String(env.AI_PROVIDER || 'groq').trim().toLowerCase();
   const aiSignalProvider = String(env.AI_SIGNAL_PROVIDER || aiProvider).trim().toLowerCase();
 
   if ((aiProvider === 'gemini' || aiSignalProvider === 'gemini')
     && (!hasValue(env.GEMINI_API_KEY) || isPlaceholderApiKey(env.GEMINI_API_KEY))) {
-    warnings.push('AI fallback mode: GEMINI_API_KEY is not configured.');
+    warnings.push('Legacy: GEMINI_API_KEY is not configured (Groq is now the primary provider).');
   }
 
   if ((aiProvider === 'deepseek' || aiSignalProvider === 'deepseek')

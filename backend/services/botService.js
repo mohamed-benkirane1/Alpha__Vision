@@ -3,11 +3,18 @@ const BotInstance = require('../models/BotInstance');
 const Portfolio = require('../models/portfolio');
 const { getMarketHistory, getPrice } = require('./marketService');
 const { executePaperTrade } = require('./paperTradingService');
+const { calculateRSI } = require('../utils/rsi');
+const {
+  calculateMACDResult,
+  calculateBollingerBands,
+  calculateEMACross,
+  calculateStochastic,
+} = require('../utils/indicators');
 
 const PROVIDER = 'internal-paper-bot';
 const SOURCE = 'backend';
 const PAPER_MODE = 'paper';
-const VALID_STRATEGIES = ['ma_cross'];
+const VALID_STRATEGIES = ['ma_cross', 'ema_cross', 'rsi', 'macd', 'bollinger', 'stochastic'];
 const VALID_RISK_LEVELS = ['low', 'medium', 'high'];
 const DEFAULT_INTERVAL_SECONDS = Number.parseInt(process.env.BOT_DEFAULT_INTERVAL_SECONDS, 10) || 60;
 const MAX_POSITION_SIZE = Number.parseFloat(process.env.BOT_MAX_POSITION_SIZE) || 1000;
@@ -251,7 +258,9 @@ async function validateStartConfig(config = {}) {
 
   if (!symbol) return { error: 'symbol is required' };
   if (!strategy) return { error: 'strategy is required' };
-  if (!VALID_STRATEGIES.includes(strategy)) return { error: `Unsupported bot strategy: ${strategy}` };
+  if (!VALID_STRATEGIES.includes(strategy)) {
+    return { error: `Unsupported bot strategy: ${strategy}. Supported: ${VALID_STRATEGIES.join(', ')}` };
+  }
   if (mode !== PAPER_MODE) return { error: 'Only paper mode is supported.' };
   if (quantity !== null && quantity <= 0) return { error: 'quantity must be a positive number when provided.' };
   if (positionSize === null || positionSize <= 0) return { error: 'positionSize must be a positive number.' };
@@ -285,6 +294,21 @@ async function validateStartConfig(config = {}) {
     intervalSeconds,
     riskLevel,
     executeTrades,
+    // Indicator params — use provided value or model default
+    rsiPeriod: toFiniteNumber(config.rsiPeriod) || 14,
+    rsiOversold: toFiniteNumber(config.rsiOversold) || 30,
+    rsiOverbought: toFiniteNumber(config.rsiOverbought) || 70,
+    macdFast: toFiniteNumber(config.macdFast) || 12,
+    macdSlow: toFiniteNumber(config.macdSlow) || 26,
+    macdSignal: toFiniteNumber(config.macdSignal) || 9,
+    bbPeriod: toFiniteNumber(config.bbPeriod) || 20,
+    bbStdDev: toFiniteNumber(config.bbStdDev) || 2,
+    emaFast: toFiniteNumber(config.emaFast) || 9,
+    emaSlow: toFiniteNumber(config.emaSlow) || 21,
+    stochK: toFiniteNumber(config.stochK) || 14,
+    stochD: toFiniteNumber(config.stochD) || 3,
+    stochOverbought: toFiniteNumber(config.stochOverbought) || 80,
+    stochOversold: toFiniteNumber(config.stochOversold) || 20,
   };
 }
 
@@ -370,6 +394,21 @@ async function startBot(userId, config = {}) {
     riskLevel: input.riskLevel,
     intervalSeconds: input.intervalSeconds,
     executeTrades: input.executeTrades,
+    // Indicator params
+    rsiPeriod: input.rsiPeriod,
+    rsiOversold: input.rsiOversold,
+    rsiOverbought: input.rsiOverbought,
+    macdFast: input.macdFast,
+    macdSlow: input.macdSlow,
+    macdSignal: input.macdSignal,
+    bbPeriod: input.bbPeriod,
+    bbStdDev: input.bbStdDev,
+    emaFast: input.emaFast,
+    emaSlow: input.emaSlow,
+    stochK: input.stochK,
+    stochD: input.stochD,
+    stochOverbought: input.stochOverbought,
+    stochOversold: input.stochOversold,
     startedAt: new Date(),
     stoppedAt: null,
     lastError: null,
@@ -406,17 +445,8 @@ function getDecisionQuantity(bot, price, holdingQuantity = 0) {
 }
 
 function evaluateMaCrossStrategy({ bot, candles, holding }) {
-  if (bot.strategy !== 'ma_cross') {
-    throw createServiceError(`Unsupported bot strategy: ${bot.strategy}`);
-  }
-
   if (!Array.isArray(candles) || candles.length < MIN_CANDLES_FOR_MA) {
-    return {
-      action: 'HOLD',
-      quantity: null,
-      confidence: 40,
-      reason: `MA strategy needs at least ${MIN_CANDLES_FOR_MA} candles.`,
-    };
+    return { action: 'HOLD', quantity: null, confidence: 40, reason: `MA strategy needs at least ${MIN_CANDLES_FOR_MA} candles.` };
   }
 
   const ma20 = movingAverage(candles, 20);
@@ -427,43 +457,117 @@ function evaluateMaCrossStrategy({ bot, candles, holding }) {
   const quantity = getDecisionQuantity(bot, lastClose, holdingQuantity);
 
   if (ma20 === null || ma50 === null || lastClose === null || quantity === null) {
-    return {
-      action: 'HOLD',
-      quantity: null,
-      confidence: 40,
-      reason: 'MA strategy could not calculate a valid signal.',
-    };
+    return { action: 'HOLD', quantity: null, confidence: 40, reason: 'MA strategy could not calculate a valid signal.' };
   }
 
   const spreadPercent = ma50 > 0 ? ((ma20 - ma50) / ma50) * 100 : 0;
   const confidence = Math.min(88, Math.max(52, 55 + Math.abs(spreadPercent) * 8));
 
   if (ma20 > ma50 && !hasPosition) {
-    return {
-      action: 'BUY',
-      quantity,
-      confidence: Number(confidence.toFixed(1)),
-      reason: `MA20 (${ma20.toFixed(2)}) is above MA50 (${ma50.toFixed(2)}) and no ${bot.symbol} position exists.`,
-    };
+    return { action: 'BUY', quantity, confidence: Number(confidence.toFixed(1)), reason: `MA20 (${ma20.toFixed(2)}) is above MA50 (${ma50.toFixed(2)}) and no ${bot.symbol} position exists.` };
   }
-
   if (ma20 < ma50 && hasPosition) {
-    return {
-      action: 'SELL',
-      quantity,
-      confidence: Number(confidence.toFixed(1)),
-      reason: `MA20 (${ma20.toFixed(2)}) is below MA50 (${ma50.toFixed(2)}) and a ${bot.symbol} position exists.`,
-    };
+    return { action: 'SELL', quantity, confidence: Number(confidence.toFixed(1)), reason: `MA20 (${ma20.toFixed(2)}) is below MA50 (${ma50.toFixed(2)}) and a ${bot.symbol} position exists.` };
   }
-
   return {
-    action: 'HOLD',
-    quantity: null,
-    confidence: Number(confidence.toFixed(1)),
+    action: 'HOLD', quantity: null, confidence: Number(confidence.toFixed(1)),
     reason: hasPosition
       ? `MA20 (${ma20.toFixed(2)}) remains above MA50 (${ma50.toFixed(2)}); existing paper position is held.`
       : `MA20 (${ma20.toFixed(2)}) is not above MA50 (${ma50.toFixed(2)}); no paper position is opened.`,
   };
+}
+
+function evaluateStrategy({ bot, candles, holding }) {
+  const closes = candles.map((c) => toFiniteNumber(c.close, 0));
+  const highs = candles.map((c) => toFiniteNumber(c.high, toFiniteNumber(c.close, 0)));
+  const lows = candles.map((c) => toFiniteNumber(c.low, toFiniteNumber(c.close, 0)));
+  const lastClose = closes[closes.length - 1] ?? 0;
+  const holdingQuantity = toFiniteNumber(holding?.quantity, 0);
+  const hasPosition = holdingQuantity > 0;
+  const quantity = getDecisionQuantity(bot, lastClose, holdingQuantity);
+
+  switch (bot.strategy) {
+    case 'ma_cross':
+      return evaluateMaCrossStrategy({ bot, candles, holding });
+
+    case 'rsi': {
+      const period = bot.rsiPeriod || 14;
+      if (closes.length < period + 1) {
+        return { action: 'HOLD', quantity: null, confidence: 40, reason: `RSI needs at least ${period + 1} candles.` };
+      }
+      const rsi = calculateRSI(closes, period);
+      const oversold = bot.rsiOversold || 30;
+      const overbought = bot.rsiOverbought || 70;
+      if (rsi < oversold && !hasPosition) {
+        return { action: 'BUY', quantity, confidence: 72, reason: `RSI(${rsi.toFixed(2)}) below oversold(${oversold}) — potential reversal up.` };
+      }
+      if (rsi > overbought && hasPosition) {
+        return { action: 'SELL', quantity, confidence: 72, reason: `RSI(${rsi.toFixed(2)}) above overbought(${overbought}) — potential reversal down.` };
+      }
+      return { action: 'HOLD', quantity: null, confidence: 55, reason: `RSI(${rsi.toFixed(2)}) in neutral zone [${oversold}-${overbought}].` };
+    }
+
+    case 'macd': {
+      const m = calculateMACDResult(closes, bot.macdFast || 12, bot.macdSlow || 26, bot.macdSignal || 9);
+      if (!m) {
+        return { action: 'HOLD', quantity: null, confidence: 40, reason: 'Insufficient data for MACD calculation.' };
+      }
+      if (m.histogram > 0 && !hasPosition) {
+        return { action: 'BUY', quantity, confidence: 68, reason: `MACD(${m.macd.toFixed(4)}) > Signal(${m.signal.toFixed(4)}) — bullish momentum.` };
+      }
+      if (m.histogram < 0 && hasPosition) {
+        return { action: 'SELL', quantity, confidence: 68, reason: `MACD(${m.macd.toFixed(4)}) < Signal(${m.signal.toFixed(4)}) — bearish momentum.` };
+      }
+      return { action: 'HOLD', quantity: null, confidence: 50, reason: `MACD histogram(${m.histogram.toFixed(4)}) neutral — no signal.` };
+    }
+
+    case 'bollinger': {
+      const bb = calculateBollingerBands(closes, bot.bbPeriod || 20, bot.bbStdDev || 2);
+      if (!bb) {
+        return { action: 'HOLD', quantity: null, confidence: 40, reason: 'Insufficient data for Bollinger Bands.' };
+      }
+      if (lastClose <= bb.lower && !hasPosition) {
+        return { action: 'BUY', quantity, confidence: 70, reason: `Price(${lastClose.toFixed(2)}) at/below lower band(${bb.lower.toFixed(2)}) — mean-reversion opportunity.` };
+      }
+      if (lastClose >= bb.upper && hasPosition) {
+        return { action: 'SELL', quantity, confidence: 70, reason: `Price(${lastClose.toFixed(2)}) at/above upper band(${bb.upper.toFixed(2)}) — mean-reversion sell.` };
+      }
+      return { action: 'HOLD', quantity: null, confidence: 50, reason: `Price inside bands [${bb.lower.toFixed(2)}–${bb.upper.toFixed(2)}].` };
+    }
+
+    case 'ema_cross': {
+      const e = calculateEMACross(closes, bot.emaFast || 9, bot.emaSlow || 21);
+      if (!e) {
+        return { action: 'HOLD', quantity: null, confidence: 40, reason: `EMA Cross needs at least ${(bot.emaSlow || 21) + 1} candles.` };
+      }
+      if (e.crossUp && !hasPosition) {
+        return { action: 'BUY', quantity, confidence: 75, reason: `EMA${bot.emaFast || 9}(${e.fastEMA.toFixed(2)}) crossed above EMA${bot.emaSlow || 21}(${e.slowEMA.toFixed(2)}) — bullish crossover.` };
+      }
+      if (e.crossDown && hasPosition) {
+        return { action: 'SELL', quantity, confidence: 75, reason: `EMA${bot.emaFast || 9}(${e.fastEMA.toFixed(2)}) crossed below EMA${bot.emaSlow || 21}(${e.slowEMA.toFixed(2)}) — bearish crossover.` };
+      }
+      return { action: 'HOLD', quantity: null, confidence: 52, reason: `No EMA crossover — ${e.trend} trend. Fast:${e.fastEMA.toFixed(2)} Slow:${e.slowEMA.toFixed(2)}.` };
+    }
+
+    case 'stochastic': {
+      const s = calculateStochastic(highs, lows, closes, bot.stochK || 14, bot.stochD || 3);
+      if (!s) {
+        return { action: 'HOLD', quantity: null, confidence: 40, reason: 'Insufficient data for Stochastic calculation.' };
+      }
+      const oversold = bot.stochOversold || 20;
+      const overbought = bot.stochOverbought || 80;
+      if (s.k < oversold && s.k > s.d && !hasPosition) {
+        return { action: 'BUY', quantity, confidence: 70, reason: `Stoch K(${s.k.toFixed(2)}) oversold & crossing D(${s.d.toFixed(2)}) — bullish reversal.` };
+      }
+      if (s.k > overbought && s.k < s.d && hasPosition) {
+        return { action: 'SELL', quantity, confidence: 70, reason: `Stoch K(${s.k.toFixed(2)}) overbought & crossing D(${s.d.toFixed(2)}) — bearish reversal.` };
+      }
+      return { action: 'HOLD', quantity: null, confidence: 50, reason: `Stoch K:${s.k.toFixed(2)} D:${s.d.toFixed(2)} — no clear reversal signal.` };
+    }
+
+    default:
+      return { action: 'HOLD', quantity: null, confidence: 40, reason: `Unknown strategy: ${bot.strategy}` };
+  }
 }
 
 async function recordBotAction(bot, action) {
@@ -559,7 +663,7 @@ async function runBotTick(userId) {
       error: message,
     };
   } else {
-    decision = evaluateMaCrossStrategy({ bot, candles, holding });
+    decision = evaluateStrategy({ bot, candles, holding });
   }
 
   const executionResult = await runPaperExecution(bot, decision);

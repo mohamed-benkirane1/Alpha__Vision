@@ -1,11 +1,17 @@
 const axios = require('axios');
 const { calculateRSI } = require('../utils/rsi');
-const { calculateEMA, calculateBollinger } = require('../utils/indicators');
+const {
+  calculateEMA,
+  calculateBollinger,
+  calculateBollingerBands,
+  calculateEMACross,
+  calculateStochastic,
+} = require('../utils/indicators');
 
 const PROVIDER = 'internal-backtest-engine';
 const REAL_SOURCE = 'binance-historical-klines';
 const DEMO_SOURCE = 'demo';
-const VALID_STRATEGIES = ['rsi', 'macd', 'bollinger', 'multi'];
+const VALID_STRATEGIES = ['rsi', 'macd', 'bollinger', 'ema_cross', 'stochastic', 'multi'];
 const SUPPORTED_SYMBOLS = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE'];
 
 function nowIso() {
@@ -67,20 +73,23 @@ function createErrorBacktest(error, params = null) {
   };
 }
 
-function calculateSignal(strategy, prices) {
-  const current = prices[prices.length - 1];
+function calculateSignal(strategy, closes, highs = [], lows = [], params = {}) {
+  const current = closes[closes.length - 1];
 
   if (strategy === 'rsi') {
-    const rsi = calculateRSI(prices);
-    if (rsi < 30) return 'BUY';
-    if (rsi > 70) return 'SELL';
+    const period = params.rsiPeriod || 14;
+    const oversold = params.rsiOversold || 30;
+    const overbought = params.rsiOverbought || 70;
+    const rsi = calculateRSI(closes, period);
+    if (rsi < oversold) return 'BUY';
+    if (rsi > overbought) return 'SELL';
     return 'HOLD';
   }
 
   if (strategy === 'macd') {
-    if (prices.length < 35) return 'HOLD';
-    const ema12 = calculateEMA(prices, 12);
-    const ema26 = calculateEMA(prices, 26);
+    if (closes.length < 35) return 'HOLD';
+    const ema12 = calculateEMA(closes, 12);
+    const ema26 = calculateEMA(closes, 26);
     const macd = ema12.map((value, index) => value - ema26[index]);
     const signal = calculateEMA(macd.slice(26), 9);
     const currentMacd = macd[macd.length - 1];
@@ -93,16 +102,41 @@ function calculateSignal(strategy, prices) {
   }
 
   if (strategy === 'bollinger') {
-    if (prices.length < 20) return 'HOLD';
-    const { upper, lower } = calculateBollinger(prices, 20, 2);
+    const period = params.bbPeriod || 20;
+    const stdDev = params.bbStdDev || 2;
+    if (closes.length < period) return 'HOLD';
+    const { upper, lower } = calculateBollinger(closes, period, stdDev);
     if (current < lower) return 'BUY';
     if (current > upper) return 'SELL';
     return 'HOLD';
   }
 
+  if (strategy === 'ema_cross') {
+    const fast = params.emaFast || 9;
+    const slow = params.emaSlow || 21;
+    const e = calculateEMACross(closes, fast, slow);
+    if (!e) return 'HOLD';
+    if (e.crossUp) return 'BUY';
+    if (e.crossDown) return 'SELL';
+    return 'HOLD';
+  }
+
+  if (strategy === 'stochastic') {
+    const kPeriod = params.stochK || 14;
+    const dPeriod = params.stochD || 3;
+    const oversold = params.stochOversold || 20;
+    const overbought = params.stochOverbought || 80;
+    if (!highs.length || !lows.length) return 'HOLD';
+    const s = calculateStochastic(highs, lows, closes, kPeriod, dPeriod);
+    if (!s) return 'HOLD';
+    if (s.k < oversold) return 'BUY';
+    if (s.k > overbought) return 'SELL';
+    return 'HOLD';
+  }
+
   if (strategy === 'multi') {
-    const rsi = calculateSignal('rsi', prices);
-    const bollinger = calculateSignal('bollinger', prices);
+    const rsi = calculateSignal('rsi', closes, highs, lows, params);
+    const bollinger = calculateSignal('bollinger', closes, highs, lows, params);
     if (rsi === 'BUY' && bollinger === 'BUY') return 'BUY';
     if (rsi === 'SELL' || bollinger === 'SELL') return 'SELL';
     return 'HOLD';
@@ -149,7 +183,7 @@ async function getHistoricalPrices(symbol, startDate = null, endDate = null) {
     .filter((point) => point.close && point.close > 0);
 }
 
-function runStrategy({ prices, strategy, initialCapital, positionSize, stopLoss, takeProfit }) {
+function runStrategy({ prices, strategy, initialCapital, positionSize, stopLoss, takeProfit, params = {} }) {
   let cash = initialCapital;
   let quantity = 0;
   let entryPrice = 0;
@@ -232,7 +266,10 @@ function runStrategy({ prices, strategy, initialCapital, positionSize, stopLoss,
     }
 
     // ── 2. Strategy signal ────────────────────────────────────────────
-    const signal = calculateSignal(strategy, history);
+    const closesSlice = history; // already sliced closes
+    const highsSlice = prices.slice(0, i + 1).map((p) => toNumber(p.high, p.close));
+    const lowsSlice = prices.slice(0, i + 1).map((p) => toNumber(p.low, p.close));
+    const signal = calculateSignal(strategy, closesSlice, highsSlice, lowsSlice, params);
     const equity = cash + quantity * price;
 
     if (signal === 'BUY' && quantity === 0 && cash > 0 && !slTpExited) {
@@ -323,6 +360,18 @@ async function runBacktest(params) {
     positionSize,
     stopLoss,
     takeProfit,
+    // Indicator params
+    rsiPeriod: toNumber(params.rsiPeriod, 14),
+    rsiOversold: toNumber(params.rsiOversold, 30),
+    rsiOverbought: toNumber(params.rsiOverbought, 70),
+    bbPeriod: toNumber(params.bbPeriod, 20),
+    bbStdDev: toNumber(params.bbStdDev, 2),
+    emaFast: toNumber(params.emaFast, 9),
+    emaSlow: toNumber(params.emaSlow, 21),
+    stochK: toNumber(params.stochK, 14),
+    stochD: toNumber(params.stochD, 3),
+    stochOversold: toNumber(params.stochOversold, 20),
+    stochOverbought: toNumber(params.stochOverbought, 80),
   };
 
   if (!symbol) return createErrorBacktest('symbol required', normalizedParams);
@@ -338,7 +387,20 @@ async function runBacktest(params) {
 
   try {
     const prices = await getHistoricalPrices(symbol, normalizedParams.startDate, normalizedParams.endDate);
-    const { results, trades, equityCurve } = runStrategy({ prices, strategy, initialCapital, positionSize, stopLoss, takeProfit });
+    const indicatorParams = {
+      rsiPeriod: normalizedParams.rsiPeriod,
+      rsiOversold: normalizedParams.rsiOversold,
+      rsiOverbought: normalizedParams.rsiOverbought,
+      bbPeriod: normalizedParams.bbPeriod,
+      bbStdDev: normalizedParams.bbStdDev,
+      emaFast: normalizedParams.emaFast,
+      emaSlow: normalizedParams.emaSlow,
+      stochK: normalizedParams.stochK,
+      stochD: normalizedParams.stochD,
+      stochOversold: normalizedParams.stochOversold,
+      stochOverbought: normalizedParams.stochOverbought,
+    };
+    const { results, trades, equityCurve } = runStrategy({ prices, strategy, initialCapital, positionSize, stopLoss, takeProfit, params: indicatorParams });
 
     return {
       success: true,

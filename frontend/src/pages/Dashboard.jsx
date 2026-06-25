@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Wallet, TrendingUp, Database, Cpu, Zap, RefreshCw, AlertTriangle } from 'lucide-react'
 
@@ -88,14 +89,27 @@ function buildStats({ portfolio, trades, bot, loading }) {
       : activeBot
         ? 'RUNNING'
         : 'STOPPED'
+
   const botDetails = !bot
     ? `Bot status unavailable / ${tradeCount} backend trades loaded`
-    : [
-        `Mode ${botStatus.mode || '--'}`,
-        botStatus.strategy ? `${botStatus.strategy.toUpperCase()} strategy` : 'No active strategy',
-        botStatus.symbol || 'No active symbol',
-        bot?.fallback || bot?.dataQuality?.isIndicative ? 'Indicative' : null,
-      ].filter(Boolean).join(' / ')
+    : activeBot
+      ? [
+          `Mode ${botStatus.mode || 'paper'}`,
+          botStatus.strategy ? `${botStatus.strategy.toUpperCase()} strategy` : null,
+          botStatus.symbol || null,
+        ].filter(Boolean).join(' / ')
+      : null
+
+  const botSubNode = botDetails
+    ? botDetails
+    : (
+        <span>
+          No active bot —{' '}
+          <Link to="/bot" className="text-amber-400 underline underline-offset-2 hover:text-amber-300 transition-colors">
+            Create a bot →
+          </Link>
+        </span>
+      )
 
   return [
     {
@@ -126,7 +140,7 @@ function buildStats({ portfolio, trades, bot, loading }) {
       icon: Cpu,
       label: 'Bot Status',
       value: loading && !bot ? 'Loading...' : botValue,
-      sub: botDetails,
+      sub: botSubNode,
       subUp: activeBot,
       accentColor: 'amber',
     },
