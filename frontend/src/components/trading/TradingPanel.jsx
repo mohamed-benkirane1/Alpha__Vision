@@ -36,8 +36,8 @@ export default function TradingPanel({ symbol, price, type, quote }) {
     >
       <div className="flex items-center gap-2 mb-4">
         <Shield size={13} className="text-indigo-400" />
-        <h3 className="text-sm font-bold text-white">Paper Risk Preview</h3>
-        <span className={`ml-auto text-[10px] px-2.5 py-0.5 rounded-lg font-black ${
+        <h3 className="text-body font-bold text-white">Paper Risk Preview</h3>
+        <span className={`ml-auto text-caption px-2.5 py-0.5 rounded-lg font-black ${
           isLong
             ? 'bg-emerald-500/12 text-emerald-400 border border-emerald-500/22'
             : 'bg-rose-500/12 text-rose-400 border border-rose-500/22'
@@ -53,7 +53,7 @@ export default function TradingPanel({ symbol, price, type, quote }) {
             initial={{ opacity: 0, x: -6 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.06 }}
-            className="flex items-center justify-between text-xs"
+            className="flex items-center justify-between text-body-sm"
           >
             <div className="flex items-center gap-1.5 text-slate-600 font-medium">
               {r.icon && <r.icon size={10} />}
@@ -65,13 +65,13 @@ export default function TradingPanel({ symbol, price, type, quote }) {
       </div>
 
       <div className="mt-4 pt-4 border-t border-white/[0.05]">
-        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+        <p className="text-label text-slate-600 leading-relaxed font-medium">
           Paper Trading only. The backend calculates and saves the simulated execution price.
         </p>
-        <p className="text-[10px] text-slate-700 mt-2 font-medium">
+        <p className="text-caption text-slate-700 mt-2 font-medium">
           Price status: <span className="text-slate-500">{quoteStatus}</span>
         </p>
-        <p className="text-[10px] text-slate-700 mt-2 font-medium">
+        <p className="text-caption text-slate-700 mt-2 font-medium">
           Quote {quote?.source || '--'} - {quote?.provider || '--'} - {formatDateTime(quote?.fetchedAt || quote?.timestamp)}
         </p>
       </div>

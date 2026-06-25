@@ -160,16 +160,16 @@ export default function Chatbot() {
         <div>
           <div className="flex items-center gap-2.5 mb-0.5">
             <Bot size={16} className="text-rose-400" />
-            <h1 className="text-2xl font-black text-white">AI Trading Assistant</h1>
+            <h1 className="text-display-sm font-black text-white">AI Trading Assistant</h1>
           </div>
-          <p className="text-xs text-slate-500 font-medium">Backend-powered assistant for trading and market questions</p>
+          <p className="text-body-sm text-slate-500 font-medium">Backend-powered assistant for trading and market questions</p>
         </div>
         <div className="hidden sm:flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-black px-3 py-1.5 rounded-full shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.10)] tracking-wider">
+          <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-caption font-black px-3 py-1.5 rounded-full shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.10)] tracking-wider">
             <Server size={10} />
             BACKEND API
           </span>
-          <span className="inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 text-[10px] font-black px-3 py-1.5 rounded-full shrink-0 shadow-[0_0_12px_rgba(99,102,241,0.10)] tracking-wider">
+          <span className="inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 text-caption font-black px-3 py-1.5 rounded-full shrink-0 shadow-[0_0_12px_rgba(99,102,241,0.10)] tracking-wider">
             <Zap size={10} />
             PROVIDER-AWARE
           </span>
@@ -177,7 +177,7 @@ export default function Chatbot() {
       </motion.div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-xs font-semibold text-amber-300">
+        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -191,12 +191,12 @@ export default function Chatbot() {
           className="lg:col-span-2 flex flex-col bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl overflow-hidden backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] min-h-0"
         >
           <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
-            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+            <div className="flex items-center gap-2 text-label font-bold text-slate-500">
               <Shield size={12} className="text-emerald-400" />
               No frontend AI keys. Responses are served by backend only.
             </div>
             {(thinking || historyLoading) && (
-              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400">
+              <span className="text-caption font-black uppercase tracking-wider text-indigo-400">
                 {historyLoading ? 'Loading history...' : 'Thinking...'}
               </span>
             )}

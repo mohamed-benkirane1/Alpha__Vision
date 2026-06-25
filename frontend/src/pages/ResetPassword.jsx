@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { AlertCircle, BadgeCheck, KeyRound, Lock } from 'lucide-react'
 import { resetPassword } from '../services/authService'
 
-const fieldClass = 'w-full rounded-xl border border-white/[0.09] bg-[#06020c]/70 px-3.5 py-2.5 text-sm text-white placeholder-slate-700 outline-none transition focus:border-rose-500/50'
+const fieldClass = 'w-full rounded-xl border border-white/[0.09] bg-[#06020c]/70 px-3.5 py-2.5 text-body text-white placeholder-slate-700 outline-none transition focus:border-rose-500/50'
 
 function validatePassword(password) {
   if (password.length < 8) return 'Password must be at least 8 characters.'
@@ -62,18 +62,18 @@ export default function ResetPassword() {
         <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-500/25 bg-rose-500/10">
           <KeyRound size={20} className="text-rose-300" />
         </div>
-        <h1 className="text-xl font-black text-white">Set new password</h1>
-        <p className="mt-1 text-xs font-medium text-slate-500">Reset links are validated by the backend before password changes.</p>
+        <h1 className="text-heading font-black text-white">Set new password</h1>
+        <p className="mt-1 text-body-sm font-medium text-slate-500">Reset links are validated by the backend before password changes.</p>
 
         {(error || linkError) && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs font-semibold text-amber-300">
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-body-sm font-semibold text-amber-300">
             <AlertCircle size={13} className="mt-0.5 shrink-0" />
             <span>{error || linkError}</span>
           </div>
         )}
 
         {success && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-3 py-2 text-xs font-semibold text-emerald-300">
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-3 py-2 text-body-sm font-semibold text-emerald-300">
             <BadgeCheck size={13} className="mt-0.5 shrink-0" />
             <span>{success}</span>
           </div>
@@ -81,7 +81,7 @@ export default function ResetPassword() {
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-slate-500">New password</label>
+            <label className="mb-1.5 block text-label font-bold uppercase tracking-wide text-slate-500">New password</label>
             <div className="relative">
               <Lock size={13} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600" />
               <input
@@ -95,7 +95,7 @@ export default function ResetPassword() {
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-slate-500">Confirm password</label>
+            <label className="mb-1.5 block text-label font-bold uppercase tracking-wide text-slate-500">Confirm password</label>
             <input
               type="password"
               value={confirmPassword}
@@ -108,13 +108,13 @@ export default function ResetPassword() {
           <button
             type="submit"
             disabled={loading || Boolean(success) || Boolean(linkError)}
-            className="w-full rounded-xl bg-gradient-to-r from-rose-600 to-red-600 py-3 text-sm font-black text-white shadow-[0_0_22px_rgba(225,29,72,0.28)] transition hover:from-rose-500 hover:to-red-500 disabled:cursor-not-allowed disabled:opacity-55"
+            className="w-full rounded-xl bg-gradient-to-r from-rose-600 to-red-600 py-3 text-body font-black text-white shadow-[0_0_22px_rgba(225,29,72,0.28)] transition hover:from-rose-500 hover:to-red-500 disabled:cursor-not-allowed disabled:opacity-55"
           >
             {loading ? 'Resetting...' : 'Reset password'}
           </button>
         </form>
 
-        <p className="mt-5 text-center text-[11px] font-medium text-slate-600">
+        <p className="mt-5 text-center text-label font-medium text-slate-600">
           Back to{' '}
           <Link to="/login" className="font-black text-rose-400 hover:text-rose-300">
             sign in

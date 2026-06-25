@@ -10,7 +10,7 @@ function HistoryTooltip({ active, payload }) {
   if (!active || !point) return null
 
   return (
-    <div className="rounded-xl border border-rose-500/22 bg-[#0a1628] px-4 py-3 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.55)]">
+    <div className="rounded-xl border border-rose-500/22 bg-[#0a1628] px-4 py-3 text-body-sm shadow-[0_8px_32px_rgba(0,0,0,0.55)]">
       <p className="mb-1.5 font-medium text-slate-500">{formatDateTime(point.timestamp)}</p>
       <p className="font-black tabular-nums text-white">{formatCurrency(point.totalPortfolioValue)}</p>
       <p className="mt-1 font-semibold text-slate-600">Source {point.source || '--'}</p>
@@ -24,20 +24,20 @@ function EmptyHistory({ loading, unavailable, warnings }) {
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03]">
         {unavailable ? <AlertTriangle size={16} className="text-amber-400" /> : <Clock size={16} className="text-slate-600" />}
       </div>
-      <p className="text-sm font-bold text-slate-400">
+      <p className="text-body font-bold text-slate-400">
         {loading
           ? 'Loading real portfolio history...'
           : unavailable
             ? 'Unable to load real history'
             : 'Not enough real history yet'}
       </p>
-      <p className="mt-1 max-w-sm text-xs font-medium text-slate-700">
+      <p className="mt-1 max-w-sm text-body-sm font-medium text-slate-700">
         {unavailable
           ? 'The dashboard could not load portfolio snapshots from the backend.'
           : 'Portfolio refreshes and successful trades will build the snapshot series over time.'}
       </p>
       {warnings.length > 0 && (
-        <p className="mt-2 max-w-sm text-[11px] font-semibold text-amber-300">{warnings[0]}</p>
+        <p className="mt-2 max-w-sm text-label font-semibold text-amber-300">{warnings[0]}</p>
       )}
     </div>
   )
@@ -79,13 +79,13 @@ export default function PerformanceChart({ history = null, loading = false, unav
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <TrendingUp size={14} className="text-rose-400" />
-            <h2 className="text-sm font-bold text-white">Portfolio Performance</h2>
+            <h2 className="text-body font-bold text-white">Portfolio Performance</h2>
           </div>
-          <p className="text-[11px] text-slate-600">
+          <p className="text-label text-slate-600">
             {history ? `${history.range || '30d'} real snapshot history` : 'Backend portfolio snapshot history'}
           </p>
         </div>
-        <span className={`text-[10px] border px-2 py-0.5 rounded-full font-black ${badgeClass}`}>
+        <span className={`text-caption border px-2 py-0.5 rounded-full font-black ${badgeClass}`}>
           {badgeLabel}
         </span>
       </div>
@@ -135,7 +135,7 @@ export default function PerformanceChart({ history = null, loading = false, unav
               />
             </AreaChart>
           </ResponsiveContainer>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] font-semibold">
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-label font-semibold">
             <span className="text-slate-600">{history.count || data.length} snapshot{(history.count || data.length) === 1 ? '' : 's'}</span>
             {warnings.length > 0 && <span className="text-amber-300">{warnings[0]}</span>}
           </div>

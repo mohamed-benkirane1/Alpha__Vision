@@ -23,7 +23,7 @@ function StatusBadge({ item }) {
   }
 
   return (
-    <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase ${tones[status.tone]}`}>
+    <span className={`rounded-full border px-2 py-0.5 text-caption font-black uppercase ${tones[status.tone]}`}>
       {status.label}
     </span>
   )
@@ -59,10 +59,10 @@ export default function WatchlistPanel({
         <div>
           <div className="flex items-center gap-2">
             <Eye size={13} className="text-rose-400" />
-            <h2 className="text-sm font-bold text-white">Watchlist</h2>
-            <span className="text-[10px] text-slate-700 font-bold">{loading ? 'Loading' : `${items.length} symbols`}</span>
+            <h2 className="text-body font-bold text-white">Watchlist</h2>
+            <span className="text-caption text-slate-700 font-bold">{loading ? 'Loading' : `${items.length} symbols`}</span>
           </div>
-          <p className="mt-1 text-[11px] font-medium text-slate-600">
+          <p className="mt-1 text-label font-medium text-slate-600">
             Prices are loaded from the backend market service. Yahoo assets may be delayed.
           </p>
         </div>
@@ -73,12 +73,12 @@ export default function WatchlistPanel({
             onChange={(event) => setSymbol(event.target.value.toUpperCase())}
             placeholder="BTC, AAPL, GOLD"
             disabled={loading || mutating}
-            className="h-9 min-w-0 rounded-xl border border-white/[0.08] bg-[#060D1C]/80 px-3 text-xs font-bold text-white placeholder-slate-700 outline-none transition focus:border-rose-500/45 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-9 min-w-0 rounded-xl border border-white/[0.08] bg-[#060D1C]/80 px-3 text-body-sm font-bold text-white placeholder-slate-700 outline-none transition focus:border-rose-500/45 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={loading || mutating || !symbol.trim()}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-rose-500/22 bg-rose-500/10 px-3 text-[11px] font-black text-rose-300 transition hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-rose-500/22 bg-rose-500/10 px-3 text-label font-black text-rose-300 transition hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {mutating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
             Add
@@ -93,7 +93,7 @@ export default function WatchlistPanel({
             type="button"
             onClick={() => onAdd?.(suggestion)}
             disabled={loading || mutating || items.some((item) => item.symbol === suggestion)}
-            className="rounded-full border border-white/[0.06] bg-white/[0.025] px-2.5 py-1 text-[10px] font-black text-slate-600 transition hover:text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full border border-white/[0.06] bg-white/[0.025] px-2.5 py-1 text-caption font-black text-slate-600 transition hover:text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {suggestion}
           </button>
@@ -101,13 +101,13 @@ export default function WatchlistPanel({
       </div>
 
       {error && (
-        <div className="mb-3 flex items-start gap-2 rounded-xl border border-amber-500/18 bg-amber-500/[0.055] px-3 py-2 text-[11px] font-semibold text-amber-300/90">
+        <div className="mb-3 flex items-start gap-2 rounded-xl border border-amber-500/18 bg-amber-500/[0.055] px-3 py-2 text-label font-semibold text-amber-300/90">
           <AlertTriangle size={12} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
       )}
       {message && !error && (
-        <p className="mb-3 text-[11px] font-semibold text-emerald-400/85">{message}</p>
+        <p className="mb-3 text-label font-semibold text-emerald-400/85">{message}</p>
       )}
 
       <div className="space-y-1.5">
@@ -128,31 +128,31 @@ export default function WatchlistPanel({
               >
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-black text-white">{item.symbol}</p>
+                    <p className="text-body font-black text-white">{item.symbol}</p>
                     <StatusBadge item={item} />
                   </div>
-                  <p className="mt-0.5 text-[10px] font-medium text-slate-700">{item.name || item.type || 'Asset'}</p>
+                  <p className="mt-0.5 text-caption font-medium text-slate-700">{item.name || item.type || 'Asset'}</p>
                 </div>
 
                 <div className="text-right md:text-left">
-                  <p className={`text-xs font-black tabular-nums ${item.priceAvailable ? 'text-white' : 'text-amber-400/85'}`}>
+                  <p className={`text-body-sm font-black tabular-nums ${item.priceAvailable ? 'text-white' : 'text-amber-400/85'}`}>
                     {formatPrice(item.currentPrice)}
                   </p>
-                  <p className={`mt-0.5 inline-flex items-center gap-0.5 text-[10px] font-bold ${up ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <p className={`mt-0.5 inline-flex items-center gap-0.5 text-caption font-bold ${up ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                     {formatPercent(change)}
                   </p>
                 </div>
 
                 <div className="md:col-span-2">
-                  <p className="text-[10px] font-medium text-slate-700">
+                  <p className="text-caption font-medium text-slate-700">
                     Provider <span className="text-slate-500">{provider}</span>
                   </p>
-                  <p className="mt-0.5 text-[10px] font-medium text-slate-700">
+                  <p className="mt-0.5 text-caption font-medium text-slate-700">
                     Symbol <span className="text-slate-500">{providerSymbol}</span> - {formatDateTime(item.priceMeta?.fetchedAt)}
                   </p>
                   {item.warning && (
-                    <p className="mt-1 text-[10px] font-semibold text-amber-400/75">{item.warning}</p>
+                    <p className="mt-1 text-caption font-semibold text-amber-400/75">{item.warning}</p>
                   )}
                 </div>
 
@@ -176,10 +176,10 @@ export default function WatchlistPanel({
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03]">
               <Eye size={16} className="text-slate-700" />
             </div>
-            <p className="text-xs font-medium text-slate-600">
+            <p className="text-body-sm font-medium text-slate-600">
               {loading ? 'Loading watchlist...' : 'No watchlist symbols yet.'}
             </p>
-            <p className="mt-1 text-[11px] text-slate-700">
+            <p className="mt-1 text-label text-slate-700">
               {loading ? 'Watchlist data is being loaded from the backend.' : 'Add a symbol to track real market prices.'}
             </p>
           </div>
@@ -192,7 +192,7 @@ export default function WatchlistPanel({
             type="button"
             onClick={onRefresh}
             disabled={loading || mutating}
-            className="text-[10px] font-black text-slate-600 transition hover:text-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+            className="text-caption font-black text-slate-600 transition hover:text-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Refresh watchlist
           </button>

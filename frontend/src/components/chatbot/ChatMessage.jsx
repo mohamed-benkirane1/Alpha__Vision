@@ -54,7 +54,7 @@ export default function ChatMessage({ message }) {
         }
       </div>
 
-      <div className={`max-w-[78%] px-4 py-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+      <div className={`max-w-[78%] px-4 py-3.5 rounded-2xl text-body leading-relaxed whitespace-pre-wrap ${
         isUser
           ? 'bg-gradient-to-br from-rose-600 to-red-700 text-white rounded-br-sm shadow-[0_4px_20px_rgba(225,29,72,0.22)]'
           : 'bg-[#0a1628]/88 border border-white/[0.08] text-slate-200 rounded-bl-sm backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]'
@@ -63,7 +63,7 @@ export default function ChatMessage({ message }) {
         {warnings.length > 0 && (
           <div className="mt-3 space-y-1">
             {warnings.map((warning) => (
-              <div key={warning} className="flex items-start gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/8 px-2 py-1.5 text-[10px] font-semibold text-amber-300">
+              <div key={warning} className="flex items-start gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/8 px-2 py-1.5 text-caption font-semibold text-amber-300">
                 <AlertTriangle size={10} className="mt-0.5 shrink-0" />
                 <span>{warning}</span>
               </div>
@@ -73,32 +73,32 @@ export default function ChatMessage({ message }) {
         {hasMeta && (
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {message.fallback && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300">
+              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-caption font-black uppercase tracking-wider text-amber-300">
                 <AlertTriangle size={9} />
                 Fallback
               </span>
             )}
             {(message.mode || message.providerStatus) && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold text-slate-500">
+              <span className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-caption font-bold text-slate-500">
                 <Server size={9} />
                 {[message.mode, message.providerStatus].filter(Boolean).join(' / ')}
               </span>
             )}
             {(message.provider || message.source) && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold text-slate-500">
+              <span className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-caption font-bold text-slate-500">
                 <Server size={9} />
                 {[message.provider, message.source].filter(Boolean).join(' / ')}
               </span>
             )}
             {message.providerTimestamp && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold text-slate-500">
+              <span className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-caption font-bold text-slate-500">
                 <Clock size={9} />
                 {message.providerTimestamp}
               </span>
             )}
           </div>
         )}
-        <p className={`text-[10px] mt-2 select-none ${isUser ? 'text-rose-200/70 text-right' : 'text-slate-700'}`}>
+        <p className={`text-caption mt-2 select-none ${isUser ? 'text-rose-200/70 text-right' : 'text-slate-700'}`}>
           {message.timestamp}
         </p>
       </div>

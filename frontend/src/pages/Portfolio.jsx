@@ -319,17 +319,17 @@ export default function Portfolio() {
   )
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black text-white">Portfolio</h1>
-            <p className="text-xs text-slate-500 mt-0.5 font-medium">Track your assets, performance and allocation</p>
-            <p className="text-[11px] text-slate-600 mt-1 font-bold tabular-nums">
+            <h1 className="text-display-sm font-black text-white">Portfolio</h1>
+            <p className="text-body-sm text-slate-500 mt-0.5 font-medium">Track your assets, performance and allocation</p>
+            <p className="text-label text-slate-600 mt-1 font-bold tabular-nums font-mono">
               Cash balance <span className="text-slate-300">{balanceLabel}</span>
             </p>
-            <p className="text-[11px] text-slate-700 mt-1 font-medium">
+            <p className="text-label text-slate-700 mt-1 font-medium">
               Last updated <span className="text-slate-500">{lastUpdated}</span>
               {refetching && <span className="text-rose-400/80 font-bold"> · Refreshing...</span>}
             </p>
@@ -340,7 +340,7 @@ export default function Portfolio() {
                 type="button"
                 onClick={handleDemoDeposit}
                 disabled={loading || refetching || funding}
-                className="h-9 px-3 rounded-xl border border-white/[0.07] bg-[#0a1628]/88 text-[11px] text-slate-500 font-black hover:text-white hover:border-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="h-9 px-3 rounded-xl border border-white/[0.07] bg-[#0a1628]/88 text-label text-slate-500 font-black hover:text-white hover:border-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {funding ? 'Adding...' : 'Add demo funds'}
               </button>
@@ -358,13 +358,13 @@ export default function Portfolio() {
           </div>
         </div>
         {error && (
-          <p className="text-[11px] text-amber-400/80 mt-2 font-semibold">{error}</p>
+          <p className="text-label text-amber-400/80 mt-2 font-semibold">{error}</p>
         )}
         {fundingMessage && !error && (
-          <p className="text-[11px] text-emerald-400/80 mt-2 font-semibold">{fundingMessage}</p>
+          <p className="text-label text-emerald-400/80 mt-2 font-semibold">{fundingMessage}</p>
         )}
         {warnings.length > 0 && !error && (
-          <div className="mt-2 flex items-start gap-2 text-[11px] text-amber-400/80 font-semibold">
+          <div className="mt-2 flex items-start gap-2 text-label text-amber-400/80 font-semibold">
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
             <div>
               <p>
@@ -393,10 +393,10 @@ export default function Portfolio() {
               {valuationReliable ? <ShieldCheck size={15} /> : <AlertTriangle size={15} />}
             </div>
             <div>
-              <p className="text-sm text-white font-black">
+              <p className="text-body text-white font-black">
                 {valuationReliable ? 'Valuation reliable' : 'Valuation reliability warning'}
               </p>
-              <p className="text-xs text-slate-600 mt-0.5 font-medium">
+              <p className="text-body-sm text-slate-600 mt-0.5 font-medium">
                 {valuationReliable
                   ? 'All priced holdings are using available non-stale market data.'
                   : 'Certaines valorisations ne sont pas fiables à cause de prix indisponibles, fallback ou stale.'}
@@ -406,8 +406,8 @@ export default function Portfolio() {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {qualityItems.map(([label, value]) => (
               <div key={label} className="min-w-20 rounded-xl bg-white/[0.025] border border-white/[0.055] px-3 py-2">
-                <p className="text-[9px] text-slate-700 uppercase tracking-[0.1em] font-black">{label}</p>
-                <p className="text-xs text-slate-300 font-black mt-0.5 tabular-nums">{value}</p>
+                <p className="text-caption text-slate-700 uppercase tracking-wide font-black">{label}</p>
+                <p className="text-body-sm text-slate-300 font-black mt-0.5 tabular-nums font-mono">{value}</p>
               </div>
             ))}
           </div>
@@ -415,7 +415,7 @@ export default function Portfolio() {
       </motion.div>
 
       <motion.div initial="hidden" animate="visible" variants={stagger}
-        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {summaryCards.map((c) => (
           <motion.div key={c.label} variants={fadeUp}>
             <PortfolioCard {...c} />
@@ -424,7 +424,7 @@ export default function Portfolio() {
       </motion.div>
 
       <motion.div initial="hidden" animate="visible" variants={stagger}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <motion.div variants={fadeUp} className="lg:col-span-2">
           <HoldingsTable holdings={holdings} loading={loading} />
         </motion.div>
@@ -450,11 +450,11 @@ export default function Portfolio() {
       <motion.div initial="hidden" animate="visible" variants={stagger}>
         <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3.5">
           <Lightbulb size={13} className="text-rose-400" />
-          <h2 className="text-sm font-bold text-white">Portfolio Insights</h2>
+          <h2 className="text-body font-bold text-white">Portfolio Insights</h2>
         </motion.div>
 
         {insights.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {insights.map((ins) => (
               <motion.div
                 key={ins.title}
@@ -465,8 +465,8 @@ export default function Portfolio() {
                 <div className={`w-8 h-8 rounded-xl ${ins.accent.bg} border ${ins.accent.border} flex items-center justify-center mb-3.5`}>
                   <ins.icon size={14} className={ins.accent.icon} />
                 </div>
-                <p className="text-sm font-bold text-white mb-1.5">{ins.title}</p>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">{ins.body}</p>
+                <p className="text-body font-bold text-white mb-1.5">{ins.title}</p>
+                <p className="text-body-sm text-slate-500 leading-relaxed font-medium">{ins.body}</p>
               </motion.div>
             ))}
           </div>
@@ -475,8 +475,8 @@ export default function Portfolio() {
             variants={fadeUp}
             className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-6 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)]"
           >
-            <p className="text-sm text-slate-500 font-bold">No portfolio insights yet</p>
-            <p className="text-xs text-slate-700 mt-1 font-medium">Insights will appear after real trades create holdings. Risk score and performance history need backend endpoints.</p>
+            <p className="text-body text-slate-500 font-bold">No portfolio insights yet</p>
+            <p className="text-body-sm text-slate-700 mt-1 font-medium">Insights will appear after real trades create holdings. Risk score and performance history need backend endpoints.</p>
           </motion.div>
         )}
       </motion.div>

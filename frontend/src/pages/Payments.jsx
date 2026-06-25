@@ -38,7 +38,7 @@ function Notice({ tone = 'warning', children }) {
   const Icon = tone === 'success' ? BadgeCheck : AlertTriangle
 
   return (
-    <div className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-xs font-semibold ${styles}`}>
+    <div className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-body-sm font-semibold ${styles}`}>
       <Icon size={14} className="mt-0.5 shrink-0" />
       <span>{children}</span>
     </div>
@@ -201,9 +201,9 @@ export default function Payments() {
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <CreditCard size={16} className="text-rose-400" />
-              <h1 className="text-2xl font-black text-white">Payments</h1>
+              <h1 className="text-display-sm font-black text-white">Payments</h1>
             </div>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-body-sm text-slate-500 font-medium">
               Stripe checkout, subscription status, transactions, and separate demo funding.
             </p>
           </div>
@@ -211,7 +211,7 @@ export default function Payments() {
             type="button"
             onClick={() => loadPayments({ refresh: true })}
             disabled={loading || refreshing || Boolean(checkoutLoading) || demoLoading}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 transition hover:border-white/[0.16] hover:text-white disabled:opacity-45"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-caption font-black uppercase tracking-wider text-slate-400 transition hover:border-white/[0.16] hover:text-white disabled:opacity-45"
           >
             <RefreshCw size={10} className={refreshing ? 'animate-spin' : ''} />
             Refresh
@@ -229,7 +229,7 @@ export default function Payments() {
       {loading && !status ? (
         <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-white/[0.07] bg-[#0a1628]/88 p-10 text-center shadow-[0_4px_28px_rgba(0,0,0,0.28)]">
           <span className="w-6 h-6 border-2 border-white/20 border-t-rose-400 rounded-full animate-spin mb-4" />
-          <p className="text-sm font-bold text-slate-500">Loading payment status...</p>
+          <p className="text-body font-bold text-slate-500">Loading payment status...</p>
         </div>
       ) : (
         <>
@@ -237,17 +237,17 @@ export default function Payments() {
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/88 p-5 shadow-[0_4px_28px_rgba(0,0,0,0.28)] lg:col-span-2">
               <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-bold text-white">Subscription Status</h2>
-                  <p className="text-xs font-medium text-slate-600">Read from `/api/payment/status`.</p>
+                  <h2 className="text-body font-bold text-white">Subscription Status</h2>
+                  <p className="text-body-sm font-medium text-slate-600">Read from `/api/payment/status`.</p>
                 </div>
-                <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
+                <span className={`rounded-full border px-3 py-1 text-caption font-black uppercase tracking-wider ${
                   status?.stripeCheckoutConfigured
                     ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
                     : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
                 }`}>
                   Stripe {status?.stripeCheckoutConfigured ? status?.stripeMode || 'ready' : 'not ready'}
                 </span>
-                <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
+                <span className={`rounded-full border px-3 py-1 text-caption font-black uppercase tracking-wider ${
                   status?.stripeTestMode
                     ? 'border-sky-500/20 bg-sky-500/10 text-sky-300'
                     : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
@@ -262,11 +262,11 @@ export default function Payments() {
                     type="button"
                     onClick={handleCancelSubscription}
                     disabled={cancelLoading}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/20 bg-rose-500/8 px-3 py-2 text-xs font-bold text-rose-300 transition hover:bg-rose-500/14 disabled:cursor-not-allowed disabled:opacity-45"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/20 bg-rose-500/8 px-3 py-2 text-body-sm font-bold text-rose-300 transition hover:bg-rose-500/14 disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     {cancelLoading ? 'Cancelling...' : 'Cancel subscription'}
                   </button>
-                  <p className="mt-1.5 text-[10px] text-slate-600 font-medium">
+                  <p className="mt-1.5 text-caption text-slate-600 font-medium">
                     Access continues until end of billing period.
                   </p>
                 </div>
@@ -279,8 +279,8 @@ export default function Payments() {
                   { label: 'Virtual trading balance', value: formatCurrency(status?.balance) },
                 ].map((item) => (
                   <div key={item.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
-                    <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">{item.label}</p>
-                    <p className="break-words text-sm font-black capitalize text-white">{item.value}</p>
+                    <p className="mb-1 text-caption font-bold uppercase tracking-wider text-slate-600">{item.label}</p>
+                    <p className="break-words text-body font-black capitalize text-white">{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -289,20 +289,20 @@ export default function Payments() {
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="rounded-2xl border border-amber-500/18 bg-[#0a1628]/88 p-5 shadow-[0_4px_28px_rgba(0,0,0,0.28)]">
               <div className="mb-4 flex items-center gap-2">
                 <Wallet size={14} className="text-amber-300" />
-                <h2 className="text-sm font-bold text-white">Demo Funding</h2>
+                <h2 className="text-body font-bold text-white">Demo Funding</h2>
               </div>
-              <p className="mb-4 text-xs font-medium leading-relaxed text-slate-500">
+              <p className="mb-4 text-body-sm font-medium leading-relaxed text-slate-500">
                 Demo funds change the virtual balance without Stripe. They are not a real payment and are stored as demo transactions.
               </p>
               <button
                 type="button"
                 onClick={handleDemoFunds}
                 disabled={!status?.demoFundingEnabled || demoLoading}
-                className="w-full rounded-xl border border-amber-500/22 bg-amber-500/10 px-3 py-2.5 text-xs font-black text-amber-300 transition hover:bg-amber-500/16 disabled:cursor-not-allowed disabled:opacity-45"
+                className="w-full rounded-xl border border-amber-500/22 bg-amber-500/10 px-3 py-2.5 text-body-sm font-black text-amber-300 transition hover:bg-amber-500/16 disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {demoLoading ? 'Adding demo funds...' : `Add ${formatCurrency(DEMO_AMOUNT)} demo funds`}
               </button>
-              <p className="mt-3 text-[11px] font-semibold text-slate-600">
+              <p className="mt-3 text-label font-semibold text-slate-600">
                 Backend flag: {status?.demoFundingEnabled ? 'enabled' : 'disabled'}
               </p>
             </motion.div>
@@ -311,12 +311,12 @@ export default function Payments() {
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/88 p-5 shadow-[0_4px_28px_rgba(0,0,0,0.28)]">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-sm font-bold text-white">Stripe Balance Deposit</h2>
-                <p className="text-xs font-medium text-slate-600">
+                <h2 className="text-body font-bold text-white">Stripe Balance Deposit</h2>
+                <p className="text-body-sm font-medium text-slate-600">
                   Opens Stripe Checkout. In test mode use Stripe test cards. This is separate from demo funding.
                 </p>
               </div>
-              <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-sky-300">
+              <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-caption font-black uppercase tracking-wider text-sky-300">
                 {status?.stripeMode || 'stripe'} mode
               </span>
             </div>
@@ -327,13 +327,13 @@ export default function Payments() {
                 step="1"
                 value={depositAmount}
                 onChange={(event) => setDepositAmount(event.target.value)}
-                className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm font-bold text-white outline-none transition focus:border-rose-500/40"
+                className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-body font-bold text-white outline-none transition focus:border-rose-500/40"
               />
               <button
                 type="button"
                 onClick={handleStripeDeposit}
                 disabled={!status?.stripeCheckoutConfigured || depositLoading}
-                className="rounded-xl bg-gradient-to-r from-sky-600 to-indigo-700 px-3 py-2.5 text-xs font-black text-white transition hover:from-sky-500 hover:to-indigo-600 disabled:cursor-not-allowed disabled:opacity-45"
+                className="rounded-xl bg-gradient-to-r from-sky-600 to-indigo-700 px-3 py-2.5 text-body-sm font-black text-white transition hover:from-sky-500 hover:to-indigo-600 disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {depositLoading ? 'Opening Stripe...' : 'Open Stripe deposit checkout'}
               </button>
@@ -342,7 +342,7 @@ export default function Payments() {
 
           <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
             {plans.length === 0 ? (
-              <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/88 p-8 text-center text-sm font-bold text-slate-500 md:col-span-3">
+              <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/88 p-8 text-center text-body font-bold text-slate-500 md:col-span-3">
                 No backend plans available.
               </div>
             ) : plans.map((plan, index) => {
@@ -364,17 +364,17 @@ export default function Payments() {
                 >
                   <div className="mb-4 flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-lg font-black text-white">{plan.label || plan.id}</p>
-                      <p className="text-sm font-bold text-slate-400">
+                      <p className="text-heading-sm font-black text-white">{plan.label || plan.id}</p>
+                      <p className="text-body font-bold text-slate-400">
                         {isFree ? 'Free' : `${formatCurrencyFromCents(plan.price, plan.currency)} / 30 days`}
                       </p>
                     </div>
-                    {isCurrent && <span className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-rose-300">Current</span>}
+                    {isCurrent && <span className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-caption font-black uppercase tracking-wider text-rose-300">Current</span>}
                   </div>
 
                   <div className="mb-5 flex-1 space-y-2">
                     {(plan.features || []).map((feature) => (
-                      <div key={feature} className="flex items-start gap-2 text-xs font-medium text-slate-400">
+                      <div key={feature} className="flex items-start gap-2 text-body-sm font-medium text-slate-400">
                         <Shield size={11} className="mt-0.5 shrink-0 text-emerald-400" />
                         <span>{feature}</span>
                       </div>
@@ -385,7 +385,7 @@ export default function Payments() {
                     type="button"
                     onClick={() => handleCheckout(plan.id)}
                     disabled={!canCheckout || checkoutLoading === plan.id}
-                    className="rounded-xl bg-gradient-to-r from-rose-600 to-red-700 px-3 py-2.5 text-xs font-black text-white transition hover:from-rose-500 hover:to-red-600 disabled:cursor-not-allowed disabled:opacity-45"
+                    className="rounded-xl bg-gradient-to-r from-rose-600 to-red-700 px-3 py-2.5 text-body-sm font-black text-white transition hover:from-rose-500 hover:to-red-600 disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     {checkoutLoading === plan.id
                       ? 'Opening Stripe...'
@@ -404,8 +404,8 @@ export default function Payments() {
 
           <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/70 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-black text-white">Payment Transactions</p>
-              <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <p className="text-body font-black text-white">Payment Transactions</p>
+              <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-caption font-black uppercase tracking-wider text-slate-500">
                 GET /api/payment/transactions
               </span>
             </div>
@@ -414,22 +414,22 @@ export default function Payments() {
                 {transactions.slice(0, 5).map((transaction) => (
                   <div key={transaction._id || transaction.transactionId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
                     <div>
-                      <p className="text-xs font-black capitalize text-white">
+                      <p className="text-body-sm font-black capitalize text-white">
                         {transaction.type || 'transaction'} {transaction.plan ? `- ${transaction.plan}` : ''}
                       </p>
-                      <p className="text-[11px] font-medium text-slate-600">
+                      <p className="text-label font-medium text-slate-600">
                         {formatDateTime(transaction.createdAt)} / {transaction.provider || transaction.paymentMethod || 'payment'} / {transaction.mode || '--'}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-black text-slate-300">{formatTransactionAmount(transaction.amount, transaction.currency)}</p>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">{transaction.status || '--'}</p>
+                      <p className="text-body-sm font-black text-slate-300">{formatTransactionAmount(transaction.amount, transaction.currency)}</p>
+                      <p className="text-caption font-black uppercase tracking-wider text-slate-600">{transaction.status || '--'}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs font-medium text-slate-500">
+              <p className="text-body-sm font-medium text-slate-500">
                 No backend payment transactions yet. Self-service cancellation still needs a dedicated backend endpoint.
               </p>
             )}
@@ -437,8 +437,8 @@ export default function Payments() {
 
           <div className="rounded-2xl border border-white/[0.07] bg-[#0a1628]/70 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-black text-white">Stripe Webhook</p>
-              <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
+              <p className="text-body font-black text-white">Stripe Webhook</p>
+              <span className={`rounded-full border px-2.5 py-1 text-caption font-black uppercase tracking-wider ${
                 status?.webhookConfigured
                   ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
                   : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
@@ -446,7 +446,7 @@ export default function Payments() {
                 {status?.webhookConfigured ? 'configured' : 'not configured'}
               </span>
             </div>
-            <div className="space-y-1 text-xs font-medium text-slate-500">
+            <div className="space-y-1 text-body-sm font-medium text-slate-500">
               <p>Endpoint: <span className="font-black text-slate-300">{webhookInfo?.endpoint || '/api/payment/webhook'}</span></p>
               <p>Raw body required: <span className="font-black text-slate-300">{webhookInfo?.rawBodyRequired ? 'yes' : '--'}</span></p>
               <p>Local test: <span className="font-black text-slate-300">{webhookInfo?.localForwardCommand || 'stripe listen --forward-to localhost:5000/api/payment/webhook'}</span></p>

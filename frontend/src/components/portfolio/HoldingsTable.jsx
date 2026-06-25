@@ -59,7 +59,7 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
         <div className="overflow-x-auto">
           <div className="min-w-[640px]">
             {/* Column headers */}
-            <div className="hidden md:grid grid-cols-6 px-3 mb-2 text-caption text-white/25 uppercase tracking-[0.1em] font-black">
+            <div className="hidden md:grid grid-cols-6 px-3 mb-2 text-caption text-white/25 uppercase tracking-wide font-black">
               <span className="col-span-2">Actif</span>
               <span className="text-right">Prix moyen</span>
               <span className="text-right">Prix actuel</span>
@@ -95,7 +95,7 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                     {/* Actif */}
                     <div className="flex items-center gap-2.5 col-span-1 md:col-span-2">
                       <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0"
+                        className="w-8 h-8 rounded-xl flex items-center justify-center text-caption font-black shrink-0"
                         style={{ background: `${color}16`, border: `1px solid ${color}28`, color }}
                       >
                         {(h.symbol || '--').slice(0, 2)}
@@ -126,13 +126,13 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                     </div>
 
                     {/* Prix moyen */}
-                    <span className="hidden md:block text-body-sm text-white/40 text-right tabular-nums font-medium">
+                    <span className="hidden md:block text-body-sm text-white/40 text-right tabular-nums font-mono font-medium">
                       {fmt(h.averagePrice ?? h.avgPrice)}
                     </span>
 
                     {/* Prix actuel */}
                     <span
-                      className={`text-body-sm text-right font-bold col-span-1 tabular-nums ${
+                      className={`text-body-sm text-right font-bold col-span-1 tabular-nums font-mono ${
                         priceAvailable ? 'text-white/70' : 'text-amber-400/75'
                       }`}
                       title={warningText || undefined}
@@ -141,13 +141,13 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                     </span>
 
                     {/* Valeur */}
-                    <span className="hidden md:block text-body-sm text-white font-black text-right tabular-nums">
+                    <span className="hidden md:block text-body-sm text-white font-black text-right tabular-nums font-mono">
                       {priceAvailable ? fmt(h.currentValue) : '--'}
                     </span>
 
                     {/* P&L */}
                     <div className="flex flex-col items-end col-span-1">
-                      <span className={`text-body-sm font-black flex items-center gap-0.5 tabular-nums ${
+                      <span className={`text-body-sm font-black flex items-center gap-0.5 tabular-nums font-mono ${
                         hasProfit ? (up ? 'text-emerald-400' : 'text-rose-400') : 'text-white/25'
                       }`}>
                         {hasProfit && (up ? <TrendingUp size={10} /> : <TrendingDown size={10} />)}
@@ -173,7 +173,7 @@ export default function HoldingsTable({ holdings = [], loading = false }) {
                         Horodatage <span className="text-white/35">{formatDateTime(priceMeta.fetchedAt || h.priceFetchedAt)}</span>
                       </span>
                       <span className="text-white/20">
-                        Investi <span className="text-white/35 tabular-nums">{fmt(h.investedValue ?? h.costBasis)}</span>
+                        Investi <span className="text-white/35 tabular-nums font-mono">{fmt(h.investedValue ?? h.costBasis)}</span>
                       </span>
                       {warningText && (
                         <p className="md:col-span-4 text-amber-400/70 font-semibold">{warningText}</p>

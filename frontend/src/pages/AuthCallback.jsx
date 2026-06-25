@@ -40,16 +40,16 @@ export default function AuthCallback() {
             ? <AlertTriangle size={20} className="text-amber-300" />
             : <ShieldCheck size={20} className="text-emerald-400" />}
         </div>
-        <h1 className="text-lg font-black text-white">
+        <h1 className="text-heading-sm font-black text-white">
           {error ? 'OAuth login failed' : 'Completing Google login'}
         </h1>
-        <p className="mt-2 text-xs font-medium text-slate-500">
+        <p className="mt-2 text-body-sm font-medium text-slate-500">
           {error || 'Loading your authenticated session...'}
         </p>
         {error ? (
           <Link
             to="/login"
-            className="mt-5 inline-flex rounded-xl border border-white/[0.08] px-4 py-2 text-xs font-black text-rose-300 transition hover:border-rose-500/30 hover:text-white"
+            className="mt-5 inline-flex rounded-xl border border-white/[0.08] px-4 py-2 text-body-sm font-black text-rose-300 transition hover:border-rose-500/30 hover:text-white"
           >
             Back to login
           </Link>

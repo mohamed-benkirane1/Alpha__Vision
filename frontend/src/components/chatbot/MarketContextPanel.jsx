@@ -24,12 +24,12 @@ export default function MarketContextPanel() {
       >
         <div className="flex items-center gap-2 mb-4">
           <Bot size={13} className="text-rose-400" />
-          <h3 className="text-sm font-bold text-white">Assistant Scope</h3>
+          <h3 className="text-body font-bold text-white">Assistant Scope</h3>
         </div>
 
         <div className="space-y-2">
           {assistantScope.map((item) => (
-            <div key={item} className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-xs font-semibold text-slate-300">
+            <div key={item} className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-body-sm font-semibold text-slate-300">
               <Sparkles size={11} className="shrink-0 text-rose-400" />
               {item}
             </div>
@@ -43,12 +43,12 @@ export default function MarketContextPanel() {
       >
         <div className="flex items-center gap-2 mb-4">
           <Server size={13} className="text-indigo-400" />
-          <h3 className="text-sm font-bold text-white">Data Policy</h3>
+          <h3 className="text-body font-bold text-white">Data Policy</h3>
         </div>
 
         <div className="space-y-2.5">
           {dataRules.map((item) => (
-            <div key={item} className="flex items-start gap-2 text-xs text-slate-500 font-medium leading-relaxed">
+            <div key={item} className="flex items-start gap-2 text-body-sm text-slate-500 font-medium leading-relaxed">
               <Shield size={11} className="mt-0.5 shrink-0 text-emerald-400" />
               <span>{item}</span>
             </div>
@@ -56,7 +56,7 @@ export default function MarketContextPanel() {
         </div>
 
         <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-3">
-          <div className="flex items-start gap-2 text-xs text-amber-300 font-semibold leading-relaxed">
+          <div className="flex items-start gap-2 text-body-sm text-amber-300 font-semibold leading-relaxed">
             <Info size={12} className="mt-0.5 shrink-0" />
             <span>The assistant does not execute trades and does not replace financial advice.</span>
           </div>

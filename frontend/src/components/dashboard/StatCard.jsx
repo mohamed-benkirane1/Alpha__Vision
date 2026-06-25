@@ -68,12 +68,12 @@ export default function StatCard({
       </div>
 
       {/* Valeur principale */}
-      <p className="text-heading font-black text-white mb-0.5 tabular-nums leading-none">
+      <p className="text-heading font-black text-white mb-0.5 tabular-nums font-mono leading-none">
         {value || '--'}
       </p>
 
       {/* Label */}
-      <p className="text-label uppercase tracking-[0.08em] text-white/40 font-medium">
+      <p className="text-label uppercase tracking-wide text-white/40 font-medium">
         {label}
       </p>
 

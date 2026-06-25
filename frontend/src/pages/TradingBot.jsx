@@ -102,14 +102,14 @@ export default function TradingBot() {
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <Cpu size={16} className="text-rose-400" />
-              <h1 className="text-2xl font-black text-white">Paper Trading Bot</h1>
+              <h1 className="text-display-sm font-black text-white">Paper Trading Bot</h1>
             </div>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-body-sm text-slate-500 font-medium">
               Simulated bot decisions and optional paper execution. No real broker orders are sent.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-caption font-black uppercase tracking-wider text-emerald-400">
               <Server size={10} />
               Backend API
             </span>
@@ -117,7 +117,7 @@ export default function TradingBot() {
               type="button"
               onClick={() => loadStatus()}
               disabled={loading || actionLoading}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 transition hover:border-white/[0.16] hover:text-white disabled:opacity-45"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-caption font-black uppercase tracking-wider text-slate-400 transition hover:border-white/[0.16] hover:text-white disabled:opacity-45"
             >
               <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
               Refresh
@@ -127,7 +127,7 @@ export default function TradingBot() {
       </motion.div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-xs font-semibold text-amber-300">
+        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -136,7 +136,7 @@ export default function TradingBot() {
       {loading ? (
         <div className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-10 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)] flex flex-col items-center justify-center text-center min-h-[260px]">
           <span className="w-6 h-6 border-2 border-white/20 border-t-rose-400 rounded-full animate-spin mb-4" />
-          <p className="text-sm text-slate-500 font-bold">Loading bot status...</p>
+          <p className="text-body text-slate-500 font-bold">Loading bot status...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">

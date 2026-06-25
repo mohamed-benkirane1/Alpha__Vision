@@ -14,13 +14,13 @@ const STRATEGIES = [
 
 const PROVIDER_LABELS = { binance: 'via Binance', yahoo: 'via Yahoo Finance', default: '' }
 
-const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 disabled:opacity-40 appearance-none'
-const paramCls = 'bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-rose-500/50 transition-all duration-200 w-full disabled:opacity-40'
+const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-body rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 disabled:opacity-40 appearance-none'
+const paramCls = 'bg-[#060D1C]/80 border border-white/[0.09] text-white text-body rounded-xl px-3 py-2 focus:outline-none focus:border-rose-500/50 transition-all duration-200 w-full disabled:opacity-40'
 
 function ParamRow({ label, children }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="text-[10px] font-bold text-slate-600 w-28 shrink-0 uppercase tracking-wide">{label}</span>
+      <span className="text-caption font-bold text-slate-600 w-28 shrink-0 uppercase tracking-wide">{label}</span>
       {children}
     </div>
   )
@@ -102,9 +102,9 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
     >
       <div className="flex items-center gap-2 mb-5">
         <Settings2 size={13} className="text-rose-400" />
-        <h2 className="text-sm font-bold text-white">Paper Bot Configuration</h2>
+        <h2 className="text-body font-bold text-white">Paper Bot Configuration</h2>
       </div>
-      <p className="mb-4 text-[11px] font-medium leading-relaxed text-slate-600">
+      <p className="mb-4 text-label font-medium leading-relaxed text-slate-600">
         Simulated execution only. No broker order is sent. Manual ticks use backend candles and paper trading validation.
       </p>
 
@@ -113,9 +113,9 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
         {/* ── Trading Pair ───────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-[10px] font-black text-slate-600 tracking-[0.1em] uppercase">Trading Pair</label>
+            <label className="text-caption font-black text-slate-600 tracking-wide uppercase">Trading Pair</label>
             {providerLabel && (
-              <span className="text-[9px] font-bold text-slate-600 bg-white/[0.04] border border-white/[0.07] rounded-full px-2 py-0.5">
+              <span className="text-caption font-bold text-slate-600 bg-white/[0.04] border border-white/[0.07] rounded-full px-2 py-0.5">
                 {providerLabel}
               </span>
             )}
@@ -148,7 +148,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
 
         {/* ── Strategy ──────────────────────────────────── */}
         <div>
-          <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Strategy</label>
+          <label className="block text-caption font-black text-slate-600 mb-1.5 tracking-wide uppercase">Strategy</label>
           <div className="relative">
             <select
               value={strategy}
@@ -168,7 +168,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
         {/* ── Strategy params ────────────────────────────── */}
         {strategy === 'rsi' && !running && (
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 space-y-2.5">
-            <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">RSI Parameters</p>
+            <p className="text-caption font-black text-rose-400 uppercase tracking-wider mb-2">RSI Parameters</p>
             <ParamRow label="Period">
               <input type="number" min="2" max="50" value={rsiPeriod} onChange={(e) => setRsiPeriod(e.target.value)} disabled={running || loading} className={paramCls} />
             </ParamRow>
@@ -183,7 +183,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
 
         {strategy === 'bollinger' && !running && (
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 space-y-2.5">
-            <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">Bollinger Bands Parameters</p>
+            <p className="text-caption font-black text-rose-400 uppercase tracking-wider mb-2">Bollinger Bands Parameters</p>
             <ParamRow label="Period">
               <input type="number" min="5" max="50" value={bbPeriod} onChange={(e) => setBbPeriod(e.target.value)} disabled={running || loading} className={paramCls} />
             </ParamRow>
@@ -195,7 +195,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
 
         {strategy === 'ema_cross' && !running && (
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 space-y-2.5">
-            <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">EMA Cross Parameters</p>
+            <p className="text-caption font-black text-rose-400 uppercase tracking-wider mb-2">EMA Cross Parameters</p>
             <ParamRow label="Fast EMA">
               <input type="number" min="3" max="50" value={emaFast} onChange={(e) => setEmaFast(e.target.value)} disabled={running || loading} className={paramCls} />
             </ParamRow>
@@ -207,7 +207,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
 
         {strategy === 'stochastic' && !running && (
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 space-y-2.5">
-            <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">Stochastic Parameters</p>
+            <p className="text-caption font-black text-rose-400 uppercase tracking-wider mb-2">Stochastic Parameters</p>
             <ParamRow label="K Period">
               <input type="number" min="5" max="30" value={stochK} onChange={(e) => setStochK(e.target.value)} disabled={running || loading} className={paramCls} />
             </ParamRow>
@@ -225,7 +225,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
 
         {/* ── Position size ──────────────────────────────── */}
         <div>
-          <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Max Paper Position USD</label>
+          <label className="block text-caption font-black text-slate-600 mb-1.5 tracking-wide uppercase">Max Paper Position USD</label>
           <input
             value={positionSize}
             onChange={(e) => setPositionSize(e.target.value)}
@@ -245,15 +245,15 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
             className="mt-0.5 h-4 w-4 accent-rose-500 disabled:opacity-40"
           />
           <span>
-            <span className="block text-xs font-black text-white">Allow paper trade execution</span>
-            <span className="mt-0.5 block text-[10px] font-medium text-slate-600">
+            <span className="block text-body-sm font-black text-white">Allow paper trade execution</span>
+            <span className="mt-0.5 block text-caption font-medium text-slate-600">
               If disabled, ticks only record BUY/SELL/HOLD decisions. If enabled, BUY/SELL uses the backend paper trading engine.
             </span>
           </span>
         </label>
 
         {(localError || error) && (
-          <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs font-semibold text-amber-300">
+          <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-body-sm font-semibold text-amber-300">
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
             <span>{localError || error}</span>
           </div>
@@ -267,7 +267,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
               disabled={loading}
               whileHover={{ scale: loading ? 1 : 1.01 }}
               whileTap={{ scale: loading ? 1 : 0.97 }}
-              className="ripple-btn w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-55 disabled:cursor-not-allowed text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
+              className="ripple-btn w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-55 disabled:cursor-not-allowed text-white text-body font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
             >
               {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Play size={13} />}
               {loading ? 'Starting...' : 'Start Paper Bot'}
@@ -279,7 +279,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
                 disabled={loading || tickLoading}
                 whileHover={{ scale: loading || tickLoading ? 1 : 1.01 }}
                 whileTap={{ scale: loading || tickLoading ? 1 : 0.97 }}
-                className="ripple-btn w-full py-3 bg-white/[0.055] hover:bg-white/[0.09] border border-white/[0.08] disabled:opacity-55 disabled:cursor-not-allowed text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                className="ripple-btn w-full py-3 bg-white/[0.055] hover:bg-white/[0.09] border border-white/[0.08] disabled:opacity-55 disabled:cursor-not-allowed text-white text-body font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <RefreshCw size={13} className={tickLoading ? 'animate-spin' : ''} />
                 {tickLoading ? 'Running Tick...' : 'Run Paper Tick'}
@@ -289,7 +289,7 @@ export default function BotControlPanel({ onStart, onStop, onTick, running, load
                 disabled={loading || tickLoading}
                 whileHover={{ scale: loading || tickLoading ? 1 : 1.01 }}
                 whileTap={{ scale: loading || tickLoading ? 1 : 0.97 }}
-                className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 disabled:opacity-55 disabled:cursor-not-allowed text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(244,63,94,0.22)]"
+                className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 disabled:opacity-55 disabled:cursor-not-allowed text-white text-body font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(244,63,94,0.22)]"
               >
                 {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Square size={13} />}
                 {loading ? 'Stopping...' : 'Stop Bot'}

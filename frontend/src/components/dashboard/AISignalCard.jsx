@@ -20,7 +20,7 @@ const formatRisk = (riskLevel) => {
 
 function SignalBadge({ children, className = '' }) {
   return (
-    <span className={`text-[9px] border px-2 py-0.5 rounded-full font-black tracking-widest uppercase ${className}`}>
+    <span className={`text-caption border px-2 py-0.5 rounded-full font-black tracking-widest uppercase ${className}`}>
       {children}
     </span>
   )
@@ -71,7 +71,7 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
           <div className="w-7 h-7 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
             <Zap size={13} className="text-rose-400" />
           </div>
-          <h2 className="text-sm font-bold text-white">AI Signal</h2>
+          <h2 className="text-body font-bold text-white">AI Signal</h2>
         </div>
         {isAiProviderAvailable && hasSignal && (
           <SignalBadge className="text-rose-300 bg-rose-500/10 border-rose-500/25 whitespace-nowrap">AI / {providerLabel}</SignalBadge>
@@ -89,8 +89,8 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
           <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-4">
             <Clock size={18} className="text-slate-600" />
           </div>
-          <p className="text-base font-black text-white">Loading backend signal</p>
-          <p className="text-xs text-slate-600 mt-2 max-w-xs">
+          <p className="text-ui font-black text-white">Loading backend signal</p>
+          <p className="text-body-sm text-slate-600 mt-2 max-w-xs">
             Market reliability is checked before a signal is displayed.
           </p>
         </div>
@@ -101,8 +101,8 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
           <div className="w-12 h-12 rounded-2xl bg-amber-500/[0.07] border border-amber-500/[0.16] flex items-center justify-center mb-4">
             <AlertTriangle size={18} className="text-amber-300" />
           </div>
-          <p className="text-base font-black text-white">Signal unavailable</p>
-          <p className="text-xs text-slate-600 mt-2 max-w-xs">
+          <p className="text-ui font-black text-white">Signal unavailable</p>
+          <p className="text-body-sm text-slate-600 mt-2 max-w-xs">
             {aiSignal?.error || (unavailable
               ? 'The backend signal endpoint could not be refreshed.'
               : 'Reliable market data is required before a signal can be generated.')}
@@ -122,19 +122,19 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
                 )}
                 <SignalBadge className={getLabelTone(signal.label)}>{signal.label || 'No label'}</SignalBadge>
               </div>
-              <p className="text-[11px] text-slate-500 font-bold">
+              <p className="text-label text-slate-500 font-bold">
                 Confidence <span className="text-white">{Number.isFinite(Number(signal.confidence)) ? `${Number(signal.confidence)}%` : '--'}</span>
               </p>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed mt-3">{signal.summary || '--'}</p>
+            <p className="text-body-sm text-slate-300 leading-relaxed mt-3">{signal.summary || '--'}</p>
             {isRulesBased && (
-              <p className="text-[11px] text-amber-300/85 font-semibold mt-2">
+              <p className="text-label text-amber-300/85 font-semibold mt-2">
                 Rules-based fallback signal, not an AI provider response.
               </p>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-[11px]">
+          <div className="grid grid-cols-2 gap-2 text-label">
             <div className="rounded-xl bg-white/[0.02] border border-white/[0.055] px-3 py-2">
               <p className="text-slate-700 uppercase font-black">Risk</p>
               <p className="text-slate-300 font-bold">{formatRisk(signal.riskLevel)}</p>
@@ -147,8 +147,8 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
 
           {Array.isArray(signal.reasons) && signal.reasons.length > 0 && (
             <div className="rounded-xl bg-white/[0.02] border border-white/[0.055] px-3 py-2.5">
-              <p className="text-[10px] text-slate-700 uppercase font-black mb-1.5">Reasons</p>
-              <ul className="space-y-1 text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-caption text-slate-700 uppercase font-black mb-1.5">Reasons</p>
+              <ul className="space-y-1 text-label text-slate-400 leading-relaxed">
                 {signal.reasons.slice(0, 3).map((reason) => {
                   const clean = String(reason).replace(/^[\s\-–—•]+/, '').trim()
                   return (
@@ -162,10 +162,10 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
             </div>
           )}
 
-          <div className="rounded-xl bg-white/[0.02] border border-white/[0.055] px-3 py-2.5 text-[11px]">
+          <div className="rounded-xl bg-white/[0.02] border border-white/[0.055] px-3 py-2.5 text-label">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Activity size={11} className="text-rose-400" />
-              <p className="text-[10px] text-rose-400 uppercase font-black">Market Snapshot</p>
+              <p className="text-caption text-rose-400 uppercase font-black">Market Snapshot</p>
             </div>
             <p className="text-slate-400">
               {market.symbol || aiSignal.symbol || '--'} at <span className="text-slate-200 font-bold">{formatPrice(market.price)}</span>
@@ -186,8 +186,8 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
 
       {warnings.length > 0 && (
         <div className="bg-amber-500/[0.06] border border-amber-500/[0.16] rounded-xl p-3 mt-3">
-          <p className="text-[10px] font-black text-amber-300 uppercase tracking-wider mb-1">Warnings</p>
-          <ul className="space-y-1 text-[11px] text-amber-100/75 leading-relaxed">
+          <p className="text-caption font-black text-amber-300 uppercase tracking-wider mb-1">Warnings</p>
+          <ul className="space-y-1 text-label text-amber-100/75 leading-relaxed">
             {warnings.slice(0, 3).map((warning) => (
               <li key={warning} className="flex gap-1.5">
                 <span>-</span>
@@ -202,11 +202,11 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5">
             <Activity size={11} className="text-rose-400" />
-            <span className="text-[10px] font-black text-rose-400 uppercase tracking-wider">Status</span>
+            <span className="text-caption font-black text-rose-400 uppercase tracking-wider">Status</span>
           </div>
-          <span className="text-[10px] text-slate-500 font-black">{statusText}</span>
+          <span className="text-caption text-slate-500 font-black">{statusText}</span>
         </div>
-        <p className="text-xs text-slate-500 leading-relaxed break-words">
+        <p className="text-body-sm text-slate-500 leading-relaxed break-words">
           Educational analysis — not financial advice.
         </p>
       </div>

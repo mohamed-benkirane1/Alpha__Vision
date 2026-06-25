@@ -20,8 +20,8 @@ const VARIANTS = {
 }
 
 const SIZES = {
-  sm: 'text-[8px]  px-1.5 py-0.5 rounded-md  font-black uppercase tracking-[0.06em]',
-  md: 'text-label  px-2   py-0.5 rounded-lg   font-medium uppercase tracking-[0.08em]',
+  sm: 'text-caption  px-1.5 py-0.5 rounded-md  font-black uppercase tracking-wide',
+  md: 'text-label  px-2   py-0.5 rounded-lg   font-medium uppercase tracking-wide',
 }
 
 const DOT_COLORS = {

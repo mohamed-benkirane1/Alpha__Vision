@@ -3,7 +3,7 @@ import { ShoppingCart, ChevronDown, CheckCircle } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { getValidNumber, formatCurrency, formatDateTime } from '../../utils/formatters'
 
-const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 placeholder-slate-700 appearance-none'
+const fieldCls = 'w-full bg-[#060D1C]/80 border border-white/[0.09] text-white text-body rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] transition-all duration-200 placeholder-slate-700 appearance-none'
 
 export default function OrderForm({
   prices,
@@ -98,8 +98,8 @@ export default function OrderForm({
       className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
     >
       <div className="flex items-center justify-between gap-3 mb-5">
-        <h2 className="text-sm font-bold text-white">Paper Order</h2>
-        <span className="text-[9px] font-black uppercase tracking-[0.08em] rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-amber-400">
+        <h2 className="text-body font-bold text-white">Paper Order</h2>
+        <span className="text-caption font-black uppercase tracking-wide rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-amber-400">
           Virtual
         </span>
       </div>
@@ -108,7 +108,7 @@ export default function OrderForm({
 
         {/* Symbol */}
         <div>
-          <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Symbol</label>
+          <label className="block text-caption font-black text-slate-600 mb-1.5 tracking-wide uppercase">Symbol</label>
           <div className="relative">
             <select
               value={symbol}
@@ -125,7 +125,7 @@ export default function OrderForm({
 
         {/* Buy / Sell toggle */}
         <div>
-          <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Paper Side</label>
+          <label className="block text-caption font-black text-slate-600 mb-1.5 tracking-wide uppercase">Paper Side</label>
           <div className="grid grid-cols-2 gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1">
             {['BUY', 'SELL'].map((t) => (
               <button
@@ -133,7 +133,7 @@ export default function OrderForm({
                 type="button"
                 onClick={() => handleTypeChange(t)}
                 disabled={loading}
-                className={`py-2 rounded-lg text-sm font-black border transition-all duration-200 ${
+                className={`py-2 rounded-lg text-body font-black border transition-all duration-200 ${
                   type === t
                     ? t === 'BUY'
                       ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-400 shadow-[0_0_14px_rgba(16,185,129,0.2)]'
@@ -149,7 +149,7 @@ export default function OrderForm({
 
         {/* Quantity */}
         <div>
-          <label className="block text-[10px] font-black text-slate-600 mb-1.5 tracking-[0.1em] uppercase">Quantity</label>
+          <label className="block text-caption font-black text-slate-600 mb-1.5 tracking-wide uppercase">Quantity</label>
           <input
             type="number"
             min="0"
@@ -164,12 +164,12 @@ export default function OrderForm({
             className={fieldCls}
           />
           {quantityError && (
-            <p className="text-[11px] text-amber-400/85 font-semibold mt-1.5">{quantityError}</p>
+            <p className="text-label text-amber-400/85 font-semibold mt-1.5">{quantityError}</p>
           )}
         </div>
 
         {/* Summary */}
-        <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl px-4 py-3 space-y-2 text-xs">
+        <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl px-4 py-3 space-y-2 text-body-sm">
           <div className="flex justify-between">
             <span className="text-slate-600 font-medium">Current Price</span>
             <span className={`font-black tabular-nums ${hasPrice ? 'text-white' : 'text-amber-400/80'}`}>{hasPrice ? formatCurrency(price) : 'Unavailable'}</span>
@@ -180,31 +180,31 @@ export default function OrderForm({
               {formatCurrency(estimated)}
             </span>
           </div>
-          <p className="text-[10px] text-slate-700 font-medium">
+          <p className="text-caption text-slate-700 font-medium">
             Backend re-checks the market price before saving the simulated execution.
           </p>
-          <p className="text-[10px] text-slate-700 font-medium">
+          <p className="text-caption text-slate-700 font-medium">
             Paper Trading only. No broker order is sent.
           </p>
-          <div className="text-[10px] text-slate-700 font-medium">
+          <div className="text-caption text-slate-700 font-medium">
             Source <span className="text-slate-500">{quote?.source || '--'}</span> - Provider <span className="text-slate-500">{quote?.provider || '--'}</span>
           </div>
-          <div className="text-[10px] text-slate-700 font-medium">
+          <div className="text-caption text-slate-700 font-medium">
             Status <span className="text-slate-500">{quoteStatus}</span>
           </div>
           {quoteDelayed && hasPrice && !quoteBlocked && (
-            <p className="text-[10px] text-slate-700 font-medium">
+            <p className="text-caption text-slate-700 font-medium">
               Provider data may be delayed. Backend re-checks the market price before saving.
             </p>
           )}
         </div>
 
         {quoteBlockMessage && (
-          <p className="text-[11px] text-amber-400/85 font-semibold">{quoteBlockMessage}</p>
+          <p className="text-label text-amber-400/85 font-semibold">{quoteBlockMessage}</p>
         )}
 
         {lastExecution && (
-          <div className="bg-emerald-500/[0.06] border border-emerald-500/18 rounded-xl px-4 py-3 text-[11px] text-emerald-400/90 font-semibold space-y-1">
+          <div className="bg-emerald-500/[0.06] border border-emerald-500/18 rounded-xl px-4 py-3 text-label text-emerald-400/90 font-semibold space-y-1">
             <p className="font-black">Paper executed {lastExecution.action} {lastExecution.quantity} {lastExecution.symbol}</p>
             <p>Price {formatCurrency(lastExecution.executedPrice)} - Total {formatCurrency(lastExecution.total)}</p>
             {lastExecution.realizedPnl !== null && lastExecution.realizedPnl !== undefined && (
@@ -215,7 +215,7 @@ export default function OrderForm({
         )}
 
         {lastPriceStatus && (
-          <div className="bg-amber-500/[0.06] border border-amber-500/18 rounded-xl px-4 py-3 text-[11px] text-amber-400/90 font-semibold space-y-1">
+          <div className="bg-amber-500/[0.06] border border-amber-500/18 rounded-xl px-4 py-3 text-label text-amber-400/90 font-semibold space-y-1">
             <p className="font-black">Backend price check rejected {lastPriceStatus.symbol}</p>
             <p>{lastPriceStatus.provider || lastPriceStatus.source || '--'} - {formatDateTime(lastPriceStatus.fetchedAt || lastPriceStatus.timestamp)} - fallback {lastPriceStatus.fallback ? 'yes' : 'no'} - stale {lastPriceStatus.stale || lastPriceStatus.isStale ? 'yes' : 'no'}</p>
             {lastPriceStatus.error && <p className="text-slate-500">{lastPriceStatus.error}</p>}
@@ -223,7 +223,7 @@ export default function OrderForm({
         )}
 
         {(successMessage || errorMessage) && (
-          <p className={`text-[11px] font-semibold ${errorMessage ? 'text-amber-400/85' : 'text-emerald-400/85'}`}>
+          <p className={`text-label font-semibold ${errorMessage ? 'text-amber-400/85' : 'text-emerald-400/85'}`}>
             {errorMessage || successMessage}
           </p>
         )}
@@ -233,7 +233,7 @@ export default function OrderForm({
           disabled={loading || symbols.length === 0 || quoteBlocked}
           whileHover={submitted || loading ? {} : { scale: 1.01 }}
           whileTap={submitted || loading ? {} : { scale: 0.98 }}
-          className={`ripple-btn w-full py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all duration-300 ${
+          className={`ripple-btn w-full py-3 rounded-xl text-body font-black flex items-center justify-center gap-2 transition-all duration-300 ${
             type === 'BUY'
               ? `bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white ${submitted ? 'shadow-[0_0_32px_rgba(16,185,129,0.55)]' : 'shadow-[0_0_18px_rgba(16,185,129,0.22)]'}`
               : `bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white ${submitted ? 'shadow-[0_0_32px_rgba(225,29,72,0.55)]' : 'shadow-[0_0_18px_rgba(244,63,94,0.22)]'}`

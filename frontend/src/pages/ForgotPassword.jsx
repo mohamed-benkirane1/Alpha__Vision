@@ -54,7 +54,7 @@ export default function ForgotPassword() {
         : isValid
           ? 'border-emerald-500/40 focus:border-emerald-500/60 focus:shadow-[0_0_12px_rgba(16,185,129,0.12)]'
           : 'border-white/[0.09] focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.10)]'
-    } text-white text-sm rounded-xl py-2.5 pl-10 pr-10 placeholder-slate-700 focus:outline-none transition-all duration-200`
+    } text-white text-body rounded-xl py-2.5 pl-10 pr-10 placeholder-slate-700 focus:outline-none transition-all duration-200`
 
   return (
     <div className="min-h-screen bg-[#06020c] flex flex-col items-center justify-center px-6 relative overflow-hidden">
@@ -66,7 +66,7 @@ export default function ForgotPassword() {
       </div>
 
       <div className="w-full max-w-sm mb-6 relative z-10">
-        <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-400 transition-colors font-bold group">
+        <Link to="/login" className="inline-flex items-center gap-1.5 text-body-sm text-slate-500 hover:text-rose-400 transition-colors font-bold group">
           <ArrowLeft size={13} className="transition-transform duration-200 group-hover:-translate-x-0.5" /> Back to sign in
         </Link>
       </div>
@@ -93,15 +93,15 @@ export default function ForgotPassword() {
             <motion.div variants={fadeUp} className="text-center mb-7">
               <div className="inline-flex items-center gap-1.5 bg-rose-500/8 border border-rose-500/20 rounded-full px-3 py-1 mb-4">
                 <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-                <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase">Account Recovery</span>
+                <span className="text-caption font-bold text-rose-300 tracking-wider uppercase">Account Recovery</span>
               </div>
-              <h1 className="text-[1.4rem] font-black text-white mb-1.5 tracking-tight">Reset Password</h1>
-              <p className="text-xs text-slate-500 font-medium">Request a backend password reset email.</p>
+              <h1 className="text-heading font-black text-white mb-1.5 tracking-tight">Reset Password</h1>
+              <p className="text-body-sm text-slate-500 font-medium">Request a backend password reset email.</p>
             </motion.div>
 
             <motion.form variants={fadeUp} onSubmit={handleSubmit} noValidate className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Email Address</label>
+                <label className="block text-label font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Email Address</label>
                 <div className="relative">
                   <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
                   <input
@@ -115,7 +115,7 @@ export default function ForgotPassword() {
                   {isValid && <CheckCircle size={13} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none" />}
                 </div>
                 {error && (
-                  <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                  <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
                     <AlertCircle size={10} />{error}
                   </motion.p>
                 )}
@@ -126,7 +126,7 @@ export default function ForgotPassword() {
                 disabled={loading}
                 whileHover={{ scale: loading ? 1 : 1.01, boxShadow: '0 0 28px rgba(225,29,72,0.40)' }}
                 whileTap={{ scale: loading ? 1 : 0.98 }}
-                className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 disabled:opacity-55 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_22px_rgba(225,29,72,0.28)]"
+                className="ripple-btn w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 disabled:opacity-55 text-white text-body font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_22px_rgba(225,29,72,0.28)]"
               >
                 {loading ? (
                   <>
@@ -148,18 +148,18 @@ export default function ForgotPassword() {
                 <CheckCircle size={28} className="text-emerald-400" />
               </div>
             </motion.div>
-            <motion.h2 variants={fadeUp} className="text-xl font-black text-white mb-2">
+            <motion.h2 variants={fadeUp} className="text-heading font-black text-white mb-2">
               Check your inbox
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-xs text-slate-500 leading-relaxed mb-4">
+            <motion.p variants={fadeUp} className="text-body-sm text-slate-500 leading-relaxed mb-4">
               {result.message}
             </motion.p>
             {result.devReset?.resetUrl && (
               <motion.div variants={fadeUp} className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/8 p-3 text-left">
-                <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-amber-300">Development reset link</p>
+                <p className="mb-2 text-caption font-black uppercase tracking-wider text-amber-300">Development reset link</p>
                 <a
                   href={result.devReset.resetUrl}
-                  className="break-all text-[11px] font-bold text-rose-300 transition-colors hover:text-rose-200"
+                  className="break-all text-label font-bold text-rose-300 transition-colors hover:text-rose-200"
                 >
                   {result.devReset.resetUrl}
                 </a>
@@ -169,14 +169,14 @@ export default function ForgotPassword() {
               variants={fadeUp}
               type="button"
               onClick={() => setResult(null)}
-              className="text-rose-400 hover:text-rose-300 text-[11px] font-black transition-colors"
+              className="text-rose-400 hover:text-rose-300 text-label font-black transition-colors"
             >
               Request another reset
             </motion.button>
           </motion.div>
         )}
 
-        <motion.p variants={fadeUp} className="text-[11px] text-slate-600 text-center mt-6 font-medium">
+        <motion.p variants={fadeUp} className="text-label text-slate-600 text-center mt-6 font-medium">
           Remember your password?{' '}
           <Link to="/login" className="text-rose-400 hover:text-rose-300 font-black transition-colors">
             Sign in

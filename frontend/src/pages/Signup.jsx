@@ -41,7 +41,7 @@ function PasswordStrength({ value }) {
           />
         ))}
       </div>
-      <p className={`text-[10px] font-bold ${STRENGTH_TEXT[strength]}`}>
+      <p className={`text-caption font-bold ${STRENGTH_TEXT[strength]}`}>
         {STRENGTH_LABELS[strength]}
       </p>
     </div>
@@ -59,8 +59,8 @@ function PlanBadge({ label, highlight }) {
       {highlight && (
         <div className="absolute inset-0 bg-gradient-to-b from-rose-500/6 to-transparent pointer-events-none" />
       )}
-      <p className={`text-[11px] font-black relative z-10 ${highlight ? 'text-rose-300' : 'text-slate-500'}`}>{label}</p>
-      {highlight && <p className="text-[9px] text-rose-400/60 font-bold mt-0.5 relative z-10 tracking-widest">POPULAR</p>}
+      <p className={`text-label font-black relative z-10 ${highlight ? 'text-rose-300' : 'text-slate-500'}`}>{label}</p>
+      {highlight && <p className="text-caption text-rose-400/60 font-bold mt-0.5 relative z-10 tracking-widest">POPULAR</p>}
     </div>
   )
 }
@@ -148,7 +148,7 @@ export default function Signup() {
         : isValid(field)
         ? 'border-emerald-500/40 focus:border-emerald-500/60 focus:shadow-[0_0_12px_rgba(16,185,129,0.12)]'
         : 'border-white/[0.09] focus:border-rose-500/50 focus:shadow-[0_0_18px_rgba(225,29,72,0.16)]'
-    } text-white text-sm rounded-xl py-2.5 placeholder-slate-700 focus:outline-none transition-all duration-200 ${extra}`
+    } text-white text-body rounded-xl py-2.5 placeholder-slate-700 focus:outline-none transition-all duration-200 ${extra}`
 
   return (
     <div className="min-h-screen bg-[#06020c] flex overflow-hidden">
@@ -174,28 +174,28 @@ export default function Signup() {
             </div>
           </div>
           <div className="leading-none">
-            <span className="block text-[13px] font-black tracking-[0.18em] text-white">ALPHA</span>
-            <span className="block text-[10px] font-bold tracking-[0.24em] text-rose-400 mt-[2px]">VISION</span>
+            <span className="block text-body-sm font-black tracking-widest text-white">ALPHA</span>
+            <span className="block text-caption font-bold tracking-widest text-rose-400 mt-[2px]">VISION</span>
           </div>
         </div>
 
         {/* Hero text */}
         <div className="relative z-10 space-y-6">
           <div>
-            <h2 className="text-3xl xl:text-4xl font-black text-white leading-[1.15] tracking-tight">
+            <h2 className="text-display xl:text-display-lg font-black text-white leading-[1.15] tracking-tight">
               Your edge starts<br />
               <span className="bg-gradient-to-r from-rose-400 to-red-500 bg-clip-text text-transparent">
                 here
               </span>
             </h2>
-            <p className="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">
+            <p className="mt-3 text-body text-slate-500 leading-relaxed max-w-xs">
               Create an account to use backend-backed market data, trading, and portfolio flows.
             </p>
           </div>
 
           {/* Plan comparison */}
           <div className="space-y-2">
-            <p className="text-[10px] text-slate-600 uppercase tracking-[0.14em] font-black">Start free / upgrade through backend plans</p>
+            <p className="text-caption text-slate-600 uppercase tracking-wider font-black">Start free / upgrade through backend plans</p>
             <div className="flex gap-2">
               <PlanBadge label="Free" />
               <PlanBadge label="Pro" highlight />
@@ -213,7 +213,7 @@ export default function Signup() {
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-2">
                 <Icon size={11} className="text-rose-400 shrink-0" />
-                <span className="text-[11px] text-slate-500">{text}</span>
+                <span className="text-label text-slate-500">{text}</span>
               </div>
             ))}
           </div>
@@ -223,8 +223,8 @@ export default function Signup() {
         <div className="relative z-10 flex items-center gap-5">
           {[['Live', 'Market quotes'], ['Real', 'Trade writes'], ['Safe', 'Portfolio reads']].map(([val, lbl]) => (
             <div key={lbl}>
-              <p className="text-lg font-black text-white">{val}</p>
-              <p className="text-[10px] text-slate-600 font-medium">{lbl}</p>
+              <p className="text-heading-sm font-black text-white">{val}</p>
+              <p className="text-caption text-slate-600 font-medium">{lbl}</p>
             </div>
           ))}
         </div>
@@ -255,8 +255,8 @@ export default function Signup() {
               <LogoMark size={20} />
             </div>
             <div className="leading-none">
-              <span className="block text-[12px] font-black tracking-[0.18em] text-white">ALPHA</span>
-              <span className="block text-[9px] font-bold tracking-[0.24em] text-rose-400 mt-[2px]">VISION</span>
+              <span className="block text-label font-black tracking-widest text-white">ALPHA</span>
+              <span className="block text-caption font-bold tracking-widest text-rose-400 mt-[2px]">VISION</span>
             </div>
           </motion.div>
 
@@ -264,10 +264,10 @@ export default function Signup() {
           <motion.div variants={fadeUp} className="mb-7">
             <div className="inline-flex items-center gap-1.5 bg-rose-500/8 border border-rose-500/20 rounded-full px-3 py-1 mb-4">
               <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase">Free account</span>
+              <span className="text-caption font-bold text-rose-300 tracking-wider uppercase">Free account</span>
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Create your account</h1>
-            <p className="text-xs text-slate-500 font-medium mt-1">Create your account / no card required</p>
+            <h1 className="text-display-sm font-black text-white tracking-tight">Create your account</h1>
+            <p className="text-body-sm text-slate-500 font-medium mt-1">Create your account / no card required</p>
           </motion.div>
 
           {/* Form */}
@@ -275,7 +275,7 @@ export default function Signup() {
 
             {/* Name */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Full Name</label>
+              <label className="block text-label font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Full Name</label>
               <div className="relative">
                 <User size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
                 <input
@@ -289,7 +289,7 @@ export default function Signup() {
                 {isValid('name') && <CheckCircle size={13} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none" />}
               </div>
               {errors.name && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
                   <AlertCircle size={10} />{errors.name}
                 </motion.p>
               )}
@@ -297,7 +297,7 @@ export default function Signup() {
 
             {/* Email */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Email Address</label>
+              <label className="block text-label font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Email Address</label>
               <div className="relative">
                 <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
                 <input
@@ -311,7 +311,7 @@ export default function Signup() {
                 {isValid('email') && <CheckCircle size={13} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none" />}
               </div>
               {errors.email && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
                   <AlertCircle size={10} />{errors.email}
                 </motion.p>
               )}
@@ -319,7 +319,7 @@ export default function Signup() {
 
             {/* Password */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Password</label>
+              <label className="block text-label font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Password</label>
               <div className="relative">
                 <Lock size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
                 <input
@@ -336,7 +336,7 @@ export default function Signup() {
               </div>
               <PasswordStrength value={form.password} />
               {errors.password && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
                   <AlertCircle size={10} />{errors.password}
                 </motion.p>
               )}
@@ -344,7 +344,7 @@ export default function Signup() {
 
             {/* Confirm */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Confirm Password</label>
+              <label className="block text-label font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Confirm Password</label>
               <div className="relative">
                 <Lock size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
                 <input
@@ -360,7 +360,7 @@ export default function Signup() {
                 </button>
               </div>
               {errors.confirm && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
                   <AlertCircle size={10} />{errors.confirm}
                 </motion.p>
               )}
@@ -369,7 +369,7 @@ export default function Signup() {
             {/* Terms */}
             <label className="flex items-start gap-2.5 cursor-pointer select-none pt-0.5">
               <input type="checkbox" className="mt-0.5 w-3.5 h-3.5 rounded accent-rose-600 shrink-0" />
-              <span className="text-[11px] text-slate-500 leading-relaxed font-medium">
+              <span className="text-label text-slate-500 leading-relaxed font-medium">
                 I agree to the{' '}
                 <button type="button" className="text-rose-400 hover:text-rose-300 transition-colors font-black">Terms of Service</button>
                 {' '}and{' '}
@@ -381,7 +381,7 @@ export default function Signup() {
               <motion.p
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`text-[11px] mt-1.5 flex items-center gap-1 font-medium ${
+                className={`text-label mt-1.5 flex items-center gap-1 font-medium ${
                   success ? 'text-emerald-400' : 'text-rose-400'
                 }`}
               >
@@ -405,7 +405,7 @@ export default function Signup() {
           {/* Divider */}
           <motion.div variants={fadeUp} className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-white/[0.06]" />
-            <span className="text-[10px] text-slate-600 font-bold tracking-wider uppercase">or continue with</span>
+            <span className="text-caption text-slate-600 font-bold tracking-wider uppercase">or continue with</span>
             <div className="flex-1 h-px bg-white/[0.06]" />
           </motion.div>
 
@@ -416,7 +416,7 @@ export default function Signup() {
               onClick={startGoogleOAuth}
               whileHover={{ y: -1, backgroundColor: 'rgba(255,255,255,0.06)' }}
               whileTap={{ scale: 0.97 }}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 w-full bg-white/[0.03] border border-white/[0.07] rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-all duration-200"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 w-full bg-white/[0.03] border border-white/[0.07] rounded-xl text-body-sm font-bold text-slate-300 hover:text-white transition-all duration-200"
             >
               <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -429,7 +429,7 @@ export default function Signup() {
           </motion.div>
 
           {/* Footer link */}
-          <motion.p variants={fadeUp} className="text-[11px] text-slate-600 text-center mt-6 font-medium">
+          <motion.p variants={fadeUp} className="text-label text-slate-600 text-center mt-6 font-medium">
             Already have an account?{' '}
             <Link to="/login" className="text-rose-400 hover:text-rose-300 font-black transition-colors">
               Sign in

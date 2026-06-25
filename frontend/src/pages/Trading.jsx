@@ -302,22 +302,22 @@ export default function Trading() {
   const zeroBalance = !balanceLoading && getValidNumber(balance) === 0
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp}
         className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <LineChart size={16} className="text-rose-400" />
-            <h1 className="text-2xl font-black text-white">Paper Trading</h1>
+            <h1 className="text-display-sm font-black text-white">Paper Trading</h1>
           </div>
-          <p className="text-xs text-slate-500 font-medium">Place simulated market orders backed by your virtual balance. No broker order is sent.</p>
-          <p className="text-[11px] text-slate-600 mt-1 font-bold tabular-nums">
+          <p className="text-body-sm text-slate-500 font-medium">Place simulated market orders backed by your virtual balance. No broker order is sent.</p>
+          <p className="text-label text-slate-600 mt-1 font-bold tabular-nums">
             Virtual cash balance <span className="text-slate-300">{balanceLabel}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/22 text-emerald-400 text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.10)] tracking-wider">
+          <span className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/22 text-emerald-400 text-caption font-black px-3 py-1.5 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.10)] tracking-wider">
             <Zap size={10} />
             PAPER MODE
           </span>
@@ -344,11 +344,11 @@ export default function Trading() {
           <div className="flex items-start gap-2">
             <Wallet size={15} className="mt-0.5 shrink-0 text-amber-300" />
             <div>
-              <p className="text-xs font-black text-amber-300">Your paper trading balance is 0.</p>
-              <p className="text-[11px] font-medium text-slate-500">
+              <p className="text-body-sm font-black text-amber-300">Your paper trading balance is 0.</p>
+              <p className="text-label font-medium text-slate-500">
                 Demo funding updates your virtual backend balance only. It is not a real payment.
               </p>
-              {fundingMessage && <p className="mt-1 text-[11px] font-semibold text-emerald-300">{fundingMessage}</p>}
+              {fundingMessage && <p className="mt-1 text-label font-semibold text-emerald-300">{fundingMessage}</p>}
             </div>
           </div>
           {demoFundingEnabled ? (
@@ -356,12 +356,12 @@ export default function Trading() {
               type="button"
               onClick={handleDemoFunding}
               disabled={fundingLoading || busy || submitting}
-              className="shrink-0 rounded-xl border border-amber-500/24 bg-amber-500/12 px-3 py-2 text-[11px] font-black text-amber-300 transition hover:bg-amber-500/18 disabled:cursor-not-allowed disabled:opacity-50"
+              className="shrink-0 rounded-xl border border-amber-500/24 bg-amber-500/12 px-3 py-2 text-label font-black text-amber-300 transition hover:bg-amber-500/18 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {fundingLoading ? 'Adding demo funds...' : `Add ${formatCurrency(PAPER_DEMO_FUNDING_AMOUNT)} virtual funds`}
             </button>
           ) : (
-            <p className="text-[11px] font-semibold text-slate-600">
+            <p className="text-label font-semibold text-slate-600">
               Demo funding is disabled by the backend.
             </p>
           )}
@@ -381,13 +381,13 @@ export default function Trading() {
           </motion.div>
         ))}
         {!pricesLoading && assets.length === 0 && (
-          <motion.div variants={fadeUp} className="col-span-full bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 text-xs text-slate-600 font-semibold flex items-center justify-between gap-3">
+          <motion.div variants={fadeUp} className="col-span-full bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 text-body-sm text-slate-600 font-semibold flex items-center justify-between gap-3">
             <span>{marketError || 'Market prices are unavailable right now.'}</span>
             {marketError && (
               <button
                 type="button"
                 onClick={loadPrices}
-                className="shrink-0 text-[10px] text-rose-400 font-black hover:text-rose-300"
+                className="shrink-0 text-caption text-rose-400 font-black hover:text-rose-300"
               >
                 Retry
               </button>
@@ -395,16 +395,16 @@ export default function Trading() {
           </motion.div>
         )}
         {marketError && assets.length > 0 && (
-          <motion.div variants={fadeUp} className="col-span-full text-[11px] text-amber-400/80 font-semibold flex items-center justify-between gap-3">
+          <motion.div variants={fadeUp} className="col-span-full text-label text-amber-400/80 font-semibold flex items-center justify-between gap-3">
             <span>{marketError}</span>
-            <button type="button" onClick={loadPrices} className="text-[10px] text-rose-400 font-black hover:text-rose-300">Retry</button>
+            <button type="button" onClick={loadPrices} className="text-caption text-rose-400 font-black hover:text-rose-300">Retry</button>
           </motion.div>
         )}
       </motion.div>
 
       {/* Main grid */}
       <motion.div initial="hidden" animate="visible" variants={stagger}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <motion.div variants={fadeUp} className="lg:col-span-2 space-y-3.5">
           <TradingChart
             symbol={currentAsset.symbol}

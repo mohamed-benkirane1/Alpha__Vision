@@ -165,7 +165,7 @@ export default function Dashboard() {
   const hasDataError    = Boolean(error)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <motion.div
@@ -173,7 +173,7 @@ export default function Dashboard() {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
       >
         <div>
-          <p className="text-label uppercase tracking-[0.1em] text-white/35 mb-1">
+          <p className="text-label uppercase tracking-wide text-white/35 mb-1">
             {getGreeting()}, {getFirstName(user?.name)}
           </p>
           <h1 className="text-heading font-black text-white leading-tight">Dashboard</h1>
@@ -226,14 +226,14 @@ export default function Dashboard() {
 
           <div className="relative flex items-start justify-between gap-4">
             <div>
-              <p className="text-label uppercase tracking-[0.1em] text-white/40 mb-2">
+              <p className="text-label uppercase tracking-wide text-white/40 mb-2">
                 Valeur du Portfolio
               </p>
 
               {loading && !portfolio ? (
                 <div className="w-48 h-10 rounded-xl bg-white/[0.06] animate-pulse mb-3" />
               ) : (
-                <p className="text-display font-black text-white tabular-nums leading-none mb-3">
+                <p className="text-display font-black text-white tabular-nums font-mono leading-none mb-3">
                   {portfolioValue !== null ? formatCurrency(portfolioValue) : '--'}
                 </p>
               )}
@@ -252,8 +252,8 @@ export default function Dashboard() {
             </div>
 
             <div className="text-right shrink-0">
-              <p className="text-label uppercase tracking-[0.1em] text-white/35 mb-1">Actifs</p>
-              <p className="text-heading font-black text-white tabular-nums">
+              <p className="text-label uppercase tracking-wide text-white/35 mb-1">Actifs</p>
+              <p className="text-heading font-black text-white tabular-nums font-mono">
                 {Array.isArray(portfolio?.holdings) ? portfolio.holdings.length : '--'}
               </p>
               <p className="text-body-sm text-white/35 mt-0.5">positions</p>
@@ -265,7 +265,7 @@ export default function Dashboard() {
       {/* ── StatCards secondaires ──────────────────────────────────────── */}
       <motion.div
         initial="hidden" animate="visible" variants={stagger}
-        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5"
+        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
       >
         {stats.map((s) => (
           <motion.div key={s.label} variants={fadeUp}>
@@ -277,7 +277,7 @@ export default function Dashboard() {
       {/* ── Chart + AI Signal ─────────────────────────────────────────── */}
       <motion.div
         initial="hidden" animate="visible" variants={stagger}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-3.5"
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
       >
         <motion.div variants={fadeUp} className="lg:col-span-2">
           <PerformanceChart
@@ -298,7 +298,7 @@ export default function Dashboard() {
       {/* ── Market + Portfolio ────────────────────────────────────────── */}
       <motion.div
         initial="hidden" animate="visible" variants={stagger}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-3.5"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
       >
         <motion.div variants={fadeUp}>
           <MarketOverview markets={markets} dataQuality={marketDataQuality} loading={loading && markets.length === 0} />

@@ -101,10 +101,10 @@ export default function News() {
           <div>
             <div className="flex items-center gap-2.5 mb-1">
               <Newspaper size={16} className="text-rose-400" />
-              <h1 className="text-2xl font-black text-white">Market News</h1>
+              <h1 className="text-display-sm font-black text-white">Market News</h1>
             </div>
-            <p className="text-xs text-slate-500 font-medium">Financial news from backend provider</p>
-            <p className="text-[11px] text-slate-700 mt-1 font-medium">
+            <p className="text-body-sm text-slate-500 font-medium">Financial news from backend provider</p>
+            <p className="text-label text-slate-700 mt-1 font-medium">
               Provider <span className="text-slate-500">{news?.provider || '--'}</span>
               {' '}· Source <span className="text-slate-500">{news?.source || '--'}</span>
               {' '}· Updated <span className="text-slate-500">{formatDateTime(news?.timestamp)}</span>
@@ -112,7 +112,7 @@ export default function News() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-[10px] font-black px-3 py-1.5 rounded-full border ${news?.fallback ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'}`}>
+            <span className={`text-caption font-black px-3 py-1.5 rounded-full border ${news?.fallback ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'}`}>
               {loading ? 'SYNCING' : news?.fallback ? 'FALLBACK' : 'BACKEND NEWS'}
             </span>
             <button
@@ -129,7 +129,7 @@ export default function News() {
         </div>
 
         {(error || warnings.length > 0 || news?.fallback) && (
-          <div className="mt-3 flex items-start gap-2 text-[11px] text-amber-400/85 font-semibold">
+          <div className="mt-3 flex items-start gap-2 text-label text-amber-400/85 font-semibold">
             <AlertTriangle size={12} className="mt-0.5 shrink-0" />
             <div>
               {error && <p>{error}</p>}
@@ -153,9 +153,9 @@ export default function News() {
                 <div className={`w-7 h-7 rounded-xl ${s.accent.bg} border ${s.accent.border} flex items-center justify-center`}>
                   <s.icon size={12} className={s.accent.text} />
                 </div>
-                <span className={`text-xs font-black ${s.accent.text}`}>{s.label}</span>
+                <span className={`text-body-sm font-black ${s.accent.text}`}>{s.label}</span>
               </div>
-              <span className="text-xl font-black text-white">{s.count}</span>
+              <span className="text-heading font-black text-white">{s.count}</span>
             </div>
             <div className="h-1.5 bg-slate-800/80 rounded-full overflow-hidden">
               <motion.div
@@ -165,14 +165,14 @@ export default function News() {
                 className={`h-full rounded-full ${s.accent.bar}`}
               />
             </div>
-            <p className="text-[10px] text-slate-600 mt-1.5 font-medium">{s.pct}% of loaded backend news</p>
+            <p className="text-caption text-slate-600 mt-1.5 font-medium">{s.pct}% of loaded backend news</p>
           </motion.div>
         ))}
       </motion.div>
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex items-center justify-between gap-4 flex-wrap">
         <NewsFilters active={activeFilter} onChange={setActiveFilter} counts={counts} />
-        <span className="text-[11px] text-slate-600 font-bold">
+        <span className="text-label text-slate-600 font-bold">
           {loading ? 'Loading...' : `${filtered.length} article${filtered.length !== 1 ? 's' : ''}`}
         </span>
       </motion.div>
@@ -188,10 +188,10 @@ export default function News() {
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 text-center bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl">
           <Newspaper size={18} className="text-slate-700 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm font-bold">
+          <p className="text-slate-500 text-body font-bold">
             {loading ? 'Loading market news...' : news?.fallback ? 'News provider unavailable' : 'No articles found'}
           </p>
-          <p className="text-slate-700 text-xs mt-1 font-medium">
+          <p className="text-slate-700 text-body-sm mt-1 font-medium">
             {loading
               ? 'News are being requested from the backend.'
               : news?.fallback

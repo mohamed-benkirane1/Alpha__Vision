@@ -20,15 +20,15 @@ export default function BacktestResults({ response }) {
       >
         <div className="flex items-center gap-2 mb-3">
           <AlertTriangle size={14} className="text-amber-400" />
-          <h2 className="text-sm font-bold text-white">No Real Backtest Result</h2>
+          <h2 className="text-body font-bold text-white">No Real Backtest Result</h2>
         </div>
-        <p className="text-xs text-slate-500 font-medium">
+        <p className="text-body-sm text-slate-500 font-medium">
           Historical data was not available, so no simulated performance is displayed as real.
         </p>
         {warnings.length > 0 && (
           <div className="mt-4 space-y-2">
             {warnings.map((warning) => (
-              <div key={warning} className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs font-semibold text-amber-300">
+              <div key={warning} className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-body-sm font-semibold text-amber-300">
                 {warning}
               </div>
             ))}
@@ -56,16 +56,16 @@ export default function BacktestResults({ response }) {
     >
       <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
         <div>
-          <h2 className="text-sm font-bold text-white">Backtest Results</h2>
-          <p className="text-[11px] text-slate-600 font-medium">
+          <h2 className="text-body font-bold text-white">Backtest Results</h2>
+          <p className="text-label text-slate-600 font-medium">
             {response?.provider || 'backend'} · {response?.source || 'source unavailable'}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-slate-600 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg font-bold">{params.symbol || '--'}</span>
-          <span className="text-[10px] text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg capitalize font-black">{params.strategy || '--'}</span>
+          <span className="text-caption text-slate-600 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg font-bold">{params.symbol || '--'}</span>
+          <span className="text-caption text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg capitalize font-black">{params.strategy || '--'}</span>
           {response?.fallback && (
-            <span className="text-[10px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg font-black">Indicative</span>
+            <span className="text-caption text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg font-black">Indicative</span>
           )}
         </div>
       </div>
@@ -73,7 +73,7 @@ export default function BacktestResults({ response }) {
       {warnings.length > 0 && (
         <div className="mb-4 space-y-2">
           {warnings.map((warning) => (
-            <div key={warning} className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs font-semibold text-amber-300">
+            <div key={warning} className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-body-sm font-semibold text-amber-300">
               {warning}
             </div>
           ))}
@@ -92,9 +92,9 @@ export default function BacktestResults({ response }) {
           >
             <div className="flex items-center gap-1.5 mb-2">
               <s.icon size={10} className="text-slate-600" />
-              <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">{s.label}</p>
+              <p className="text-caption text-slate-600 font-bold uppercase tracking-wider">{s.label}</p>
             </div>
-            <p className={`text-base font-black tabular-nums ${s.color}`}>{s.value}</p>
+            <p className={`text-ui font-black tabular-nums font-mono ${s.color}`}>{s.value}</p>
           </motion.div>
         ))}
       </div>

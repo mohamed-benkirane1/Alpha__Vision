@@ -41,10 +41,10 @@ export default function PortfolioSummary({ portfolio = null, loading = false }) 
       <div className="flex items-center justify-between gap-2 mb-5">
         <div className="flex items-center gap-2">
           <PieChart size={13} className="text-rose-400" />
-          <h2 className="text-sm font-bold text-white">Portfolio Allocation</h2>
+          <h2 className="text-body font-bold text-white">Portfolio Allocation</h2>
         </div>
         {portfolio && (
-          <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold border ${reliable ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'}`}>
+          <span className={`inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full font-bold border ${reliable ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'}`}>
             {reliable ? <ShieldCheck size={10} /> : <AlertTriangle size={10} />}
             {reliable ? 'Reliable' : 'Partial'}
           </span>
@@ -75,25 +75,25 @@ export default function PortfolioSummary({ portfolio = null, loading = false }) 
           >
             <div className="flex items-center gap-2.5">
               <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: a.color, boxShadow: `0 0 6px ${a.glow}` }} />
-              <span className="text-sm text-slate-300 font-medium">{a.label}</span>
+              <span className="text-body text-slate-300 font-medium">{a.label}</span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-slate-600 w-7 text-right font-black">{a.pct}%</span>
-              <span className="text-sm text-white font-bold w-16 text-right tabular-nums">{a.value}</span>
+              <span className="text-body-sm text-slate-600 w-7 text-right font-black">{a.pct}%</span>
+              <span className="text-body text-white font-bold w-16 text-right tabular-nums">{a.value}</span>
             </div>
           </motion.div>
         )) : (
-          <p className="text-sm text-slate-600 font-medium">{loading ? 'Loading allocation...' : 'No priced holdings yet'}</p>
+          <p className="text-body text-slate-600 font-medium">{loading ? 'Loading allocation...' : 'No priced holdings yet'}</p>
         )}
       </div>
 
       {portfolio?.warnings?.length > 0 && (
-        <p className="mt-4 text-[11px] text-amber-400/80 font-semibold">{portfolio.warnings.length} portfolio warning{portfolio.warnings.length > 1 ? 's' : ''}</p>
+        <p className="mt-4 text-label text-amber-400/80 font-semibold">{portfolio.warnings.length} portfolio warning{portfolio.warnings.length > 1 ? 's' : ''}</p>
       )}
 
       <div className="mt-5 pt-4 border-t border-white/[0.05] flex justify-between items-center">
-        <span className="text-xs text-slate-700 font-medium">Total portfolio value</span>
-        <span className="text-base font-black text-white tabular-nums">{formatCurrency(totalValue)}</span>
+        <span className="text-body-sm text-slate-700 font-medium">Total portfolio value</span>
+        <span className="text-ui font-black text-white tabular-nums">{formatCurrency(totalValue)}</span>
       </div>
     </motion.div>
   )

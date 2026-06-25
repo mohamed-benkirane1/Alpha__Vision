@@ -41,7 +41,7 @@ export default function RecentTrades({ trades = [], loading = false }) {
 
       {/* En-têtes colonnes */}
       {entries.length > 0 && (
-        <div className="hidden sm:grid grid-cols-5 px-3 mb-2 text-caption text-white/25 uppercase tracking-[0.1em] font-black">
+        <div className="hidden sm:grid grid-cols-5 px-3 mb-2 text-caption text-white/25 uppercase tracking-wide font-black">
           <span>Actif</span>
           <span>Type</span>
           <span>Quantité</span>
@@ -87,7 +87,7 @@ export default function RecentTrades({ trades = [], loading = false }) {
           >
             {/* Actif */}
             <div className="flex items-center gap-2.5">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-caption font-black shrink-0 ${
                 t.type === 'BUY'
                   ? 'bg-emerald-500/8 border border-emerald-500/16 text-emerald-400'
                   : 'bg-rose-500/8 border border-rose-500/16 text-rose-400'
@@ -107,21 +107,21 @@ export default function RecentTrades({ trades = [], loading = false }) {
             </span>
 
             {/* Quantité */}
-            <span className="hidden sm:block text-white/40 font-medium tabular-nums">
+            <span className="hidden sm:block text-white/40 font-medium tabular-nums font-mono">
               {formatQuantity(t.quantity)} {t.symbol}
             </span>
 
             {/* Prix */}
-            <span className="text-white/60 text-right sm:text-left font-medium tabular-nums">
+            <span className="text-white/60 text-right sm:text-left font-medium tabular-nums font-mono">
               {formatCurrency(t.price)}
             </span>
 
             {/* Total + heure */}
             <div className="flex flex-col items-end">
-              <span className="text-white font-black tabular-nums">{formatCurrency(t.total)}</span>
+              <span className="text-white font-black tabular-nums font-mono">{formatCurrency(t.total)}</span>
               <span className="text-caption text-white/30 font-medium">{formatDateTime(t.createdAt)}</span>
               {(t.priceProvider || t.priceSource) && (
-                <span className="text-[9px] text-white/20 font-medium">
+                <span className="text-caption text-white/20 font-medium">
                   {t.priceProvider || t.priceSource}
                 </span>
               )}

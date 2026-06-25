@@ -18,8 +18,8 @@ function Feature({ icon: Icon, title, desc }) {
         <Icon size={14} className="text-rose-400" />
       </div>
       <div>
-        <p className="text-sm font-bold text-white/90">{title}</p>
-        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
+        <p className="text-body font-bold text-white/90">{title}</p>
+        <p className="text-label text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
       </div>
     </div>
   )
@@ -98,7 +98,7 @@ export default function Login() {
         : isValid(field)
         ? 'border-emerald-500/40 focus:border-emerald-500/60 focus:shadow-[0_0_12px_rgba(16,185,129,0.12)]'
         : 'border-white/[0.09] focus:border-rose-500/50 focus:shadow-[0_0_18px_rgba(225,29,72,0.16)]'
-    } text-white text-sm rounded-xl py-2.5 placeholder-slate-700 focus:outline-none transition-all duration-200 ${extra}`
+    } text-white text-body rounded-xl py-2.5 placeholder-slate-700 focus:outline-none transition-all duration-200 ${extra}`
 
   return (
     <div className="min-h-screen bg-[#06020c] flex overflow-hidden">
@@ -126,21 +126,21 @@ export default function Login() {
             </div>
           </div>
           <div className="leading-none">
-            <span className="block text-[13px] font-black tracking-[0.18em] text-white">ALPHA</span>
-            <span className="block text-[10px] font-bold tracking-[0.24em] text-rose-400 mt-[2px]">VISION</span>
+            <span className="block text-body-sm font-black tracking-widest text-white">ALPHA</span>
+            <span className="block text-caption font-bold tracking-widest text-rose-400 mt-[2px]">VISION</span>
           </div>
         </div>
 
         {/* Hero text */}
         <div className="relative z-10 space-y-6">
           <div>
-            <h2 className="text-3xl xl:text-4xl font-black text-white leading-[1.15] tracking-tight">
+            <h2 className="text-display xl:text-display-lg font-black text-white leading-[1.15] tracking-tight">
               Verify your trades<br />
               <span className="bg-gradient-to-r from-rose-400 to-red-500 bg-clip-text text-transparent">
                 with backend data
               </span>
             </h2>
-            <p className="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">
+            <p className="mt-3 text-body text-slate-500 leading-relaxed max-w-xs">
               Backend quotes, execution metadata, portfolio warnings, and provider status in one workspace.
             </p>
           </div>
@@ -155,14 +155,14 @@ export default function Login() {
         {/* Integration status */}
         <div className="relative z-10">
           <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm">
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-body-sm text-slate-400 leading-relaxed">
               AI signals still need a real backend signal provider. Live market, trading, portfolio, news, and payment flows stay explicit about provider status.
             </p>
             <div className="flex items-center gap-2 mt-3">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-[10px] font-black text-white">API</div>
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-caption font-black text-white">API</div>
               <div>
-                <p className="text-[11px] font-bold text-white/80">Integration status</p>
-                <p className="text-[10px] text-slate-600">Provider-backed data only</p>
+                <p className="text-label font-bold text-white/80">Integration status</p>
+                <p className="text-caption text-slate-600">Provider-backed data only</p>
               </div>
             </div>
           </div>
@@ -194,8 +194,8 @@ export default function Login() {
               <LogoMark size={20} />
             </div>
             <div className="leading-none">
-              <span className="block text-[12px] font-black tracking-[0.18em] text-white">ALPHA</span>
-              <span className="block text-[9px] font-bold tracking-[0.24em] text-rose-400 mt-[2px]">VISION</span>
+              <span className="block text-label font-black tracking-widest text-white">ALPHA</span>
+              <span className="block text-caption font-bold tracking-widest text-rose-400 mt-[2px]">VISION</span>
             </div>
           </motion.div>
 
@@ -203,10 +203,10 @@ export default function Login() {
           <motion.div variants={fadeUp} className="mb-7">
             <div className="inline-flex items-center gap-1.5 bg-rose-500/8 border border-rose-500/20 rounded-full px-3 py-1 mb-4">
               <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-rose-300 tracking-wider uppercase">Secure Login</span>
+              <span className="text-caption font-bold text-rose-300 tracking-wider uppercase">Secure Login</span>
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Welcome back</h1>
-            <p className="text-xs text-slate-500 font-medium mt-1">Sign in to your Alpha Vision account</p>
+            <h1 className="text-display-sm font-black text-white tracking-tight">Welcome back</h1>
+            <p className="text-body-sm text-slate-500 font-medium mt-1">Sign in to your Alpha Vision account</p>
           </motion.div>
 
           {/* Form */}
@@ -214,7 +214,7 @@ export default function Login() {
 
             {/* Email */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Email Address</label>
+              <label className="block text-label font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Email Address</label>
               <div className="relative">
                 <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
                 <input
@@ -228,7 +228,7 @@ export default function Login() {
                 {isValid('email') && <CheckCircle size={13} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none" />}
               </div>
               {errors.email && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
                   <AlertCircle size={10} />{errors.email}
                 </motion.p>
               )}
@@ -236,7 +236,7 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Password</label>
+              <label className="block text-label font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Password</label>
               <div className="relative">
                 <Lock size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
                 <input
@@ -255,19 +255,19 @@ export default function Login() {
                 </button>
               </div>
               {errors.password && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
                   <AlertCircle size={10} />{errors.password}
                 </motion.p>
               )}
             </div>
 
             {/* Remember + Forgot */}
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-body-sm">
               <label className="flex items-center gap-2 text-slate-500 cursor-pointer select-none font-medium">
                 <input type="checkbox" className="w-3.5 h-3.5 rounded accent-rose-600" />
                 Remember me
               </label>
-              <Link to="/forgot-password" className="text-rose-400 hover:text-rose-300 transition-colors font-bold text-[11px]">
+              <Link to="/forgot-password" className="text-rose-400 hover:text-rose-300 transition-colors font-bold text-label">
                 Forgot password?
               </Link>
             </div>
@@ -276,7 +276,7 @@ export default function Login() {
               <motion.p
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`text-[11px] mt-1.5 flex items-center gap-1 font-medium ${
+                className={`text-label mt-1.5 flex items-center gap-1 font-medium ${
                   success ? 'text-emerald-400' : 'text-rose-400'
                 }`}
               >
@@ -300,7 +300,7 @@ export default function Login() {
           {/* Divider */}
           <motion.div variants={fadeUp} className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-white/[0.06]" />
-            <span className="text-[10px] text-slate-600 font-bold tracking-wider uppercase">or continue with</span>
+            <span className="text-caption text-slate-600 font-bold tracking-wider uppercase">or continue with</span>
             <div className="flex-1 h-px bg-white/[0.06]" />
           </motion.div>
 
@@ -311,7 +311,7 @@ export default function Login() {
               onClick={startGoogleOAuth}
               whileHover={{ y: -1, backgroundColor: 'rgba(255,255,255,0.06)' }}
               whileTap={{ scale: 0.97 }}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 w-full bg-white/[0.03] border border-white/[0.07] rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-all duration-200"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 w-full bg-white/[0.03] border border-white/[0.07] rounded-xl text-body-sm font-bold text-slate-300 hover:text-white transition-all duration-200"
             >
               <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -324,7 +324,7 @@ export default function Login() {
           </motion.div>
 
           {/* Footer link */}
-          <motion.p variants={fadeUp} className="text-[11px] text-slate-600 text-center mt-6 font-medium">
+          <motion.p variants={fadeUp} className="text-label text-slate-600 text-center mt-6 font-medium">
             Don&apos;t have an account?{' '}
             <Link to="/signup" className="text-rose-400 hover:text-rose-300 font-black transition-colors">
               Sign up free

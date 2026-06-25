@@ -23,7 +23,7 @@ export default function NewsCard({ article, index }) {
       )}
 
       <div className="flex items-start justify-between gap-3 mb-2.5">
-        <h3 className="text-sm font-bold text-white leading-snug group-hover:text-rose-300 transition-colors line-clamp-2">
+        <h3 className="text-body font-bold text-white leading-snug group-hover:text-rose-300 transition-colors line-clamp-2">
           {article.title || 'Untitled market news'}
         </h3>
         {article.url ? (
@@ -33,25 +33,25 @@ export default function NewsCard({ article, index }) {
         )}
       </div>
 
-      <p className="text-xs text-slate-500 leading-relaxed mb-4 line-clamp-2 font-medium">
+      <p className="text-body-sm text-slate-500 leading-relaxed mb-4 line-clamp-2 font-medium">
         {article.description || 'No description provided by the news provider.'}
       </p>
 
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] text-slate-600 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg font-bold">
+          <span className="text-caption text-slate-600 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg font-bold">
             {article.source || 'Unknown source'}
           </span>
-          <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${s.text} ${s.bg} ${s.border}`}>
+          <span className={`text-caption font-black px-2 py-0.5 rounded-lg border ${s.text} ${s.bg} ${s.border}`}>
             {s.label}
           </span>
           {article.fallback && (
-            <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg font-black">
+            <span className="text-caption text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg font-black">
               Fallback
             </span>
           )}
         </div>
-        <span className="flex items-center gap-1 text-[10px] text-slate-700 font-medium">
+        <span className="flex items-center gap-1 text-caption text-slate-700 font-medium">
           <Clock size={9} />
           {publishedAt}
         </span>

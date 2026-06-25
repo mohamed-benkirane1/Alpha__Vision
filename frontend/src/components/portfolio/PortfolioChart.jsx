@@ -39,7 +39,7 @@ function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div className="bg-[#0a1628] border border-rose-500/28 rounded-xl px-3.5 py-3 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.55)]">
+    <div className="bg-[#0a1628] border border-rose-500/28 rounded-xl px-3.5 py-3 text-body-sm shadow-[0_8px_32px_rgba(0,0,0,0.55)]">
       <p className="text-white font-black mb-1">{d.name}</p>
       <p className="text-slate-400 tabular-nums">{formatCurrency(d.value)}</p>
       <p className="text-rose-400 font-black mt-0.5">{d.pct}%</p>
@@ -59,7 +59,7 @@ export default function PortfolioChart({ holdings = [], totalValue = 0, loading 
     >
       <div className="flex items-center gap-2 mb-5">
         <PieIcon size={13} className="text-rose-400" />
-        <h2 className="text-sm font-bold text-white">Allocation</h2>
+        <h2 className="text-body font-bold text-white">Allocation</h2>
       </div>
 
       {allocation.length > 0 ? (
@@ -96,7 +96,7 @@ export default function PortfolioChart({ holdings = [], totalValue = 0, loading 
                 initial={{ opacity: 0, x: 8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.15 + i * 0.08 }}
-                className="flex items-center justify-between text-xs"
+                className="flex items-center justify-between text-body-sm"
               >
                 <div className="flex items-center gap-2">
                   <div
@@ -120,10 +120,10 @@ export default function PortfolioChart({ holdings = [], totalValue = 0, loading 
           <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-3">
             <PieIcon size={16} className="text-slate-700" />
           </div>
-          <p className="text-xs text-slate-600 font-medium">
+          <p className="text-body-sm text-slate-600 font-medium">
             {loading ? 'Loading allocation...' : (hasUnavailablePrices ? 'No priced allocation' : 'No allocation yet')}
           </p>
-          <p className="text-[11px] text-slate-700 mt-1 max-w-[220px]">
+          <p className="text-label text-slate-700 mt-1 max-w-[220px]">
             {loading
               ? 'Portfolio allocation is being loaded.'
               : (hasUnavailablePrices

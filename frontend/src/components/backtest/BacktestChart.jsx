@@ -8,7 +8,7 @@ const isFiniteNumber = (value) => getValidNumber(value) !== null
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-[#0a1628] border border-rose-500/22 rounded-xl px-4 py-3 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.55)]">
+    <div className="bg-[#0a1628] border border-rose-500/22 rounded-xl px-4 py-3 text-body-sm shadow-[0_8px_32px_rgba(0,0,0,0.55)]">
       <p className="text-slate-500 mb-1.5 font-medium">{label}</p>
       <p className="text-white font-black tabular-nums">{formatCurrency(payload[0].value)}</p>
     </div>
@@ -32,9 +32,9 @@ export default function BacktestChart({ data, initialCapital, fallback }) {
       >
         <div className="flex items-center gap-2 mb-3">
           <AlertTriangle size={14} className="text-amber-400" />
-          <h2 className="text-sm font-bold text-white">Equity Curve Unavailable</h2>
+          <h2 className="text-body font-bold text-white">Equity Curve Unavailable</h2>
         </div>
-        <p className="text-xs text-slate-500 font-medium">
+        <p className="text-body-sm text-slate-500 font-medium">
           A chart is shown only when the backend returns a real equity curve from historical data.
         </p>
       </motion.div>
@@ -53,9 +53,9 @@ export default function BacktestChart({ data, initialCapital, fallback }) {
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <TrendingUp size={13} className="text-rose-400" />
-            <h2 className="text-sm font-bold text-white">Equity Curve</h2>
+            <h2 className="text-body font-bold text-white">Equity Curve</h2>
           </div>
-          <p className="text-[11px] text-slate-600 font-medium">Backend historical equity curve</p>
+          <p className="text-label text-slate-600 font-medium">Backend historical equity curve</p>
         </div>
       </div>
 

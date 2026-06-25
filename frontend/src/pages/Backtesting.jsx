@@ -64,17 +64,17 @@ export default function Backtesting() {
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <FlaskConical size={16} className="text-rose-400" />
-              <h1 className="text-2xl font-black text-white">Backtesting</h1>
+              <h1 className="text-display-sm font-black text-white">Backtesting</h1>
             </div>
-            <p className="text-xs text-slate-500 font-medium">Run backend backtests only when real historical data is available</p>
+            <p className="text-body-sm text-slate-500 font-medium">Run backend backtests only when real historical data is available</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-caption font-black uppercase tracking-wider text-emerald-400">
               <Server size={10} />
               Backend source
             </span>
             {response?.fallback && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-amber-300">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 text-caption font-black uppercase tracking-wider text-amber-300">
                 <AlertTriangle size={10} />
                 Indicative
               </span>
@@ -84,7 +84,7 @@ export default function Backtesting() {
       </motion.div>
 
       {response && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.07] bg-[#0a1628]/70 px-4 py-3 text-[11px] font-bold text-slate-500">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.07] bg-[#0a1628]/70 px-4 py-3 text-label font-bold text-slate-500">
           <span>Provider: <span className="text-slate-300">{response.provider || '--'}</span></span>
           <span>Source: <span className="text-slate-300">{response.source || '--'}</span></span>
           <span>Updated: <span className="text-slate-300">{formatDateTime(response.timestamp)}</span></span>
@@ -103,7 +103,7 @@ export default function Backtesting() {
       {warnings.length > 0 && (
         <div className="space-y-2">
           {warnings.map((warning) => (
-            <div key={warning} className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-xs font-semibold text-amber-300">
+            <div key={warning} className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               {warning}
             </div>
@@ -112,7 +112,7 @@ export default function Backtesting() {
       )}
 
       {capabilitiesError && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-xs font-semibold text-amber-300">
+        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
           <span>{capabilitiesError}</span>
         </div>
@@ -150,8 +150,8 @@ export default function Backtesting() {
               <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
                 <FlaskConical size={22} className="text-rose-400" />
               </div>
-              <p className="text-sm text-slate-500 font-bold">No backtest run yet</p>
-              <p className="text-xs text-slate-700 mt-1 font-medium">Configure and run a strategy. Results are shown only from backend historical data.</p>
+              <p className="text-body text-slate-500 font-bold">No backtest run yet</p>
+              <p className="text-body-sm text-slate-700 mt-1 font-medium">Configure and run a strategy. Results are shown only from backend historical data.</p>
             </motion.div>
           )}
         </div>

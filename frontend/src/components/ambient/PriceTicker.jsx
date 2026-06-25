@@ -56,17 +56,17 @@ function TickerItem({ quote }) {
 
   return (
     <span className="inline-flex items-center gap-2.5 px-5 select-none">
-      <span className="text-[11px] font-bold text-slate-400 tracking-wider">{safeQuote.symbol || '--'}</span>
-      <span className="text-[11px] font-semibold text-white tabular-nums">{formatPrice(safeQuote)}</span>
-      <span className={`text-[10px] font-bold px-1.5 py-px rounded ${
+      <span className="text-label font-bold text-slate-400 tracking-wider">{safeQuote.symbol || '--'}</span>
+      <span className="text-label font-semibold text-white tabular-nums">{formatPrice(safeQuote)}</span>
+      <span className={`text-caption font-bold px-1.5 py-px rounded ${
         up ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
       }`}>
         {formatChange(change)}
       </span>
-      <span className={`text-[9px] font-black px-1.5 py-px rounded uppercase ${status.className}`}>
+      <span className={`text-caption font-black px-1.5 py-px rounded uppercase ${status.className}`}>
         {status.label}
       </span>
-      <span className="text-slate-800 text-[10px] select-none">|</span>
+      <span className="text-slate-800 text-caption select-none">|</span>
     </span>
   )
 }
@@ -115,7 +115,7 @@ export default function PriceTicker() {
           ))}
         </div>
       ) : (
-        <div className="px-5 text-[11px] font-semibold text-slate-500">
+        <div className="px-5 text-label font-semibold text-slate-500">
           {message}
         </div>
       )}

@@ -85,7 +85,7 @@ function NavGroup({ label, links, onLinkClick }) {
   return (
     <div>
       <p className="px-4 mb-1.5 text-caption bg-gradient-to-r from-rose-400/55 to-red-400/45
-                    bg-clip-text text-transparent uppercase tracking-[0.16em] font-black">
+                    bg-clip-text text-transparent uppercase tracking-widest font-black">
         {label}
       </p>
       <div className="space-y-0.5">
@@ -133,12 +133,12 @@ function SidebarContent({ onLinkClick, onLogout, user }) {
             </div>
           </div>
           <div className="leading-none">
-            <span className="block text-[12px] font-black tracking-[0.16em] text-white">ALPHA</span>
-            <span className="block text-[9px] font-bold tracking-[0.22em] text-rose-400 mt-[2px]">VISION</span>
+            <span className="block text-label font-black tracking-widest text-white">ALPHA</span>
+            <span className="block text-caption font-bold tracking-widest text-rose-400 mt-[2px]">VISION</span>
           </div>
           <div className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[9px] text-emerald-400 font-black tracking-wider">LIVE</span>
+            <span className="text-caption text-emerald-400 font-black tracking-wider">LIVE</span>
           </div>
         </div>
       </div>
@@ -341,7 +341,7 @@ export default function MainLayout() {
 
           {/* Label plateforme (desktop) */}
           <div className="hidden lg:flex items-center">
-            <p className="text-caption text-white/25 uppercase tracking-[0.14em] font-black">
+            <p className="text-caption text-white/25 uppercase tracking-wider font-black">
               Alpha Vision Platform
             </p>
           </div>

@@ -65,7 +65,7 @@ export default function MarketOverview({ markets = [], loading = false, dataQual
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Activity size={13} className="text-rose-400" />
-          <h2 className="text-sm font-bold text-white">Market Overview</h2>
+          <h2 className="text-body font-bold text-white">Market Overview</h2>
         </div>
         <Badge variant={statusVariant} size="sm">{statusLabel}</Badge>
       </div>
@@ -83,19 +83,19 @@ export default function MarketOverview({ markets = [], loading = false, dataQual
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-caption font-black shrink-0"
                   style={{ background: `${a.color}16`, border: `1px solid ${a.color}28`, color: a.color }}
                 >
                   {a.symbol.slice(0, 2)}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white">{a.symbol}</p>
-                  <p className="text-[10px] text-slate-700">{a.name}</p>
+                  <p className="text-body font-bold text-white">{a.symbol}</p>
+                  <p className="text-caption text-slate-700">{a.name}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className={`text-sm font-bold tabular-nums ${a.priceAvailable ? 'text-white' : 'text-amber-400/80'}`}>{formatPrice(a.price)}</p>
-                <p className={`text-xs font-bold flex items-center justify-end gap-0.5 ${a.up ? 'text-emerald-400' : 'text-red-400'}`}>
+                <p className={`text-body font-bold tabular-nums ${a.priceAvailable ? 'text-white' : 'text-amber-400/80'}`}>{formatPrice(a.price)}</p>
+                <p className={`text-body-sm font-bold flex items-center justify-end gap-0.5 ${a.up ? 'text-emerald-400' : 'text-red-400'}`}>
                   {a.up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                   {formatChange(a.change)}
                 </p>
@@ -107,14 +107,14 @@ export default function MarketOverview({ markets = [], loading = false, dataQual
               {a.fallback && <Badge variant="warning" size="sm">Fallback</Badge>}
               {a.isStale && !a.fallback && a.priceAvailable && <Badge variant="warning" size="sm">Stale</Badge>}
               {!a.priceAvailable && <Badge variant="danger" size="sm">Unavailable</Badge>}
-              <span className="text-[10px] text-slate-700 ml-auto">{a.provider || a.source || '--'} - {formatDateTime(a.timestamp)}</span>
+              <span className="text-caption text-slate-700 ml-auto">{a.provider || a.source || '--'} - {formatDateTime(a.timestamp)}</span>
             </div>
-            {a.error && <p className="mt-1 text-[10px] text-amber-400/80 font-semibold flex items-center gap-1"><AlertTriangle size={10} />{a.error}</p>}
+            {a.error && <p className="mt-1 text-caption text-amber-400/80 font-semibold flex items-center gap-1"><AlertTriangle size={10} />{a.error}</p>}
           </motion.div>
         )) : (
           <div className="py-10 text-center">
             <Activity size={16} className="text-slate-700 mx-auto mb-3" />
-            <p className="text-xs text-slate-600 font-medium">{loading ? 'Loading market quotes...' : 'No backend market quotes available.'}</p>
+            <p className="text-body-sm text-slate-600 font-medium">{loading ? 'Loading market quotes...' : 'No backend market quotes available.'}</p>
           </div>
         )}
       </div>

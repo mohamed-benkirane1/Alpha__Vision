@@ -22,10 +22,10 @@ export default function PortfolioCard({ icon: Icon, label, value, sub, subUp, ac
         <div className={`absolute -inset-0.5 rounded-xl border ${c.border} opacity-50 blur-[2px]`} />
         <Icon size={17} className={`relative ${c.icon}`} />
       </div>
-      <p className="text-[10px] text-slate-600 mb-1.5 uppercase tracking-[0.12em] font-black">{label}</p>
-      <p className="text-[1.55rem] font-black text-white leading-tight tracking-tight tabular-nums">{value}</p>
+      <p className="text-caption text-slate-600 mb-1.5 uppercase tracking-wider font-black">{label}</p>
+      <p className="text-display-sm font-black text-white leading-tight tracking-tight tabular-nums font-mono">{value}</p>
       {sub && (
-        <p className={`text-[11px] mt-2 font-bold ${subUp ? 'text-emerald-400' : 'text-rose-400'}`}>{sub}</p>
+        <p className={`text-label mt-2 font-bold ${subUp ? 'text-emerald-400' : 'text-rose-400'}`}>{sub}</p>
       )}
     </motion.div>
   )

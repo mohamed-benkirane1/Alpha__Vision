@@ -54,8 +54,8 @@ export default function NotFound() {
           transition={{ duration: 0.4, delay: 0.35 }}
           className="mb-8 space-y-2"
         >
-          <h1 className="text-xl font-black text-white tracking-tight">Page not found</h1>
-          <p className="text-sm text-slate-500 max-w-xs mx-auto leading-relaxed font-medium">
+          <h1 className="text-heading font-black text-white tracking-tight">Page not found</h1>
+          <p className="text-body text-slate-500 max-w-xs mx-auto leading-relaxed font-medium">
             The page you're looking for doesn't exist or has been moved to another location.
           </p>
         </motion.div>
@@ -70,7 +70,7 @@ export default function NotFound() {
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
             <Link
               to="/"
-              className="ripple-btn inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-red-700 text-white text-sm font-black rounded-xl shadow-[0_0_22px_rgba(225,29,72,0.28)] hover:shadow-[0_0_30px_rgba(225,29,72,0.45)] transition-all duration-200"
+              className="ripple-btn inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-red-700 text-white text-body font-black rounded-xl shadow-[0_0_22px_rgba(225,29,72,0.28)] hover:shadow-[0_0_30px_rgba(225,29,72,0.45)] transition-all duration-200"
             >
               <Home size={14} />
               Back to home
@@ -81,7 +81,7 @@ export default function NotFound() {
             onClick={() => window.history.back()}
             whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.06)' }}
             whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/[0.04] border border-white/[0.09] text-slate-300 text-sm font-bold rounded-xl transition-all duration-200"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/[0.04] border border-white/[0.09] text-slate-300 text-body font-bold rounded-xl transition-all duration-200"
           >
             <ArrowLeft size={14} />
             Go back
@@ -96,7 +96,7 @@ export default function NotFound() {
           className="mt-12 flex items-center justify-center gap-3"
         >
           <div className="h-px w-12 bg-white/[0.06]" />
-          <div className="flex items-center gap-1.5 text-[10px] text-slate-700 font-bold tracking-widest uppercase">
+          <div className="flex items-center gap-1.5 text-caption text-slate-700 font-bold tracking-widest uppercase">
             <Compass size={10} />
             Alpha Vision
           </div>

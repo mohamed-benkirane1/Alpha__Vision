@@ -156,7 +156,7 @@ function DashboardMockup() {
           <div className="w-2.5 h-2.5 rounded-full bg-amber-500/50" />
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/50" />
           <div className="flex-1 max-w-[190px] mx-auto bg-white/[0.04] rounded-md h-5 flex items-center justify-center">
-            <span className="text-[9px] text-white/20 font-mono">alphavision.app/dashboard</span>
+            <span className="text-caption text-white/20 font-mono">alphavision.app/dashboard</span>
           </div>
         </div>
 
@@ -170,8 +170,8 @@ function DashboardMockup() {
               { l: 'Win Rate',   v: '68,4 %',  hi: false },
             ].map((s) => (
               <div key={s.l} className="bg-white/[0.04] border border-white/[0.05] rounded-xl p-2.5">
-                <p className="text-[9px] text-white/35 mb-1 font-medium">{s.l}</p>
-                <p className={`text-sm font-black tabular-nums ${s.hi ? 'text-emerald-400' : 'text-white'}`}>{s.v}</p>
+                <p className="text-caption text-white/35 mb-1 font-medium">{s.l}</p>
+                <p className={`text-body font-black tabular-nums ${s.hi ? 'text-emerald-400' : 'text-white'}`}>{s.v}</p>
               </div>
             ))}
           </div>
@@ -179,8 +179,8 @@ function DashboardMockup() {
           {/* Chart */}
           <div className="bg-white/[0.025] border border-white/[0.04] rounded-xl p-3 mb-3">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[9px] text-white/30 font-medium">Performance — 30 jours</p>
-              <span className="text-[9px] text-emerald-400 font-bold">+12,4 %</span>
+              <p className="text-caption text-white/30 font-medium">Performance — 30 jours</p>
+              <span className="text-caption text-emerald-400 font-bold">+12,4 %</span>
             </div>
             <svg className="w-full h-14" viewBox="0 0 280 52" preserveAspectRatio="none">
               <defs>
@@ -205,18 +205,18 @@ function DashboardMockup() {
             <div className="bg-rose-500/[0.08] border border-rose-500/[0.18] rounded-xl p-2.5">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse shrink-0" />
-                <p className="text-[9px] text-rose-400 font-black tracking-wider uppercase">AI Signal</p>
+                <p className="text-caption text-rose-400 font-black tracking-wider uppercase">AI Signal</p>
               </div>
-              <p className="text-sm font-black text-white mb-0.5">BUY</p>
-              <p className="text-[9px] text-white/35 font-medium">BTC/USDT · 78 % conf.</p>
+              <p className="text-body font-black text-white mb-0.5">BUY</p>
+              <p className="text-caption text-white/35 font-medium">BTC/USDT · 78 % conf.</p>
             </div>
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-2.5">
-              <p className="text-[9px] text-white/30 font-medium mb-1.5">Bot actif</p>
+              <p className="text-caption text-white/30 font-medium mb-1.5">Bot actif</p>
               <div className="flex items-center gap-1.5 mb-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
-                <p className="text-xs font-black text-amber-300">RUNNING</p>
+                <p className="text-body-sm font-black text-amber-300">RUNNING</p>
               </div>
-              <p className="text-[9px] text-white/30 font-medium">MA Cross · Paper</p>
+              <p className="text-caption text-white/30 font-medium">MA Cross · Paper</p>
             </div>
           </div>
         </div>
@@ -231,8 +231,8 @@ function DashboardMockup() {
         <div className="flex items-center gap-2">
           <TrendingUp size={14} className="text-emerald-400 shrink-0" />
           <div>
-            <p className="text-[9px] text-white/35 font-medium">Trade exécuté</p>
-            <p className="text-sm font-black text-emerald-400">+$342</p>
+            <p className="text-caption text-white/35 font-medium">Trade exécuté</p>
+            <p className="text-body font-black text-emerald-400">+$342</p>
           </div>
         </div>
       </motion.div>
@@ -292,8 +292,8 @@ export default function Home() {
           <Link to="/" className="flex items-center gap-2.5 shrink-0 select-none">
             <LogoMark size={28} />
             <div className="leading-none">
-              <span className="block text-[13px] font-black tracking-[0.16em] text-white">ALPHA</span>
-              <span className="block text-[9px] font-bold tracking-[0.22em] text-rose-400 mt-[2px]">VISION</span>
+              <span className="block text-body-sm font-black tracking-widest text-white">ALPHA</span>
+              <span className="block text-caption font-bold tracking-widest text-rose-400 mt-[2px]">VISION</span>
             </div>
           </Link>
 

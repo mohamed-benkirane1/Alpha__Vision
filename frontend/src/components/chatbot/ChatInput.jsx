@@ -28,7 +28,7 @@ export default function ChatInput({ onSend, disabled }) {
           placeholder="Ask Alpha Vision AI about BTC, ETH, portfolio risk…"
           disabled={disabled}
           rows={1}
-          className="flex-1 bg-[#0a1628]/80 border border-white/[0.09] text-white text-sm rounded-xl px-4 py-2.5 placeholder-slate-700 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] resize-none transition-all duration-200 disabled:opacity-40 leading-relaxed"
+          className="flex-1 bg-[#0a1628]/80 border border-white/[0.09] text-white text-body rounded-xl px-4 py-2.5 placeholder-slate-700 focus:outline-none focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.12)] resize-none transition-all duration-200 disabled:opacity-40 leading-relaxed"
           style={{ maxHeight: '120px' }}
           onInput={(e) => {
             e.target.style.height = 'auto'
@@ -45,7 +45,7 @@ export default function ChatInput({ onSend, disabled }) {
           <Send size={14} className="text-white" />
         </motion.button>
       </div>
-      <p className="text-[10px] text-slate-700 mt-1.5 text-center font-medium">
+      <p className="text-caption text-slate-700 mt-1.5 text-center font-medium">
         Press Enter to send · Shift+Enter for new line
       </p>
     </div>

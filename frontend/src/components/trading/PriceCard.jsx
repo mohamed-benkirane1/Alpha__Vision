@@ -14,7 +14,7 @@ function Badge({ label, tone = 'slate' }) {
     rose: 'bg-rose-500/10 border-rose-500/22 text-rose-400',
     slate: 'bg-white/[0.03] border-white/[0.07] text-slate-500',
   }
-  return <span className={`rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase ${tones[tone]}`}>{label}</span>
+  return <span className={`rounded-full border px-1.5 py-0.5 text-caption font-black uppercase ${tones[tone]}`}>{label}</span>
 }
 
 export default function PriceCard({ symbol, name, type, price, change, source, provider, providerSymbol, timestamp, fetchedAt, cached, fallback, stale, isLive, isStale, priceAvailable = true, error, selected, onSelect }) {
@@ -40,7 +40,7 @@ export default function PriceCard({ symbol, name, type, price, change, source, p
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-caption font-black shrink-0"
             style={
               selected
                 ? { background: 'rgba(225,29,72,0.18)', border: '1px solid rgba(225,29,72,0.3)', color: '#fb7185' }
@@ -50,15 +50,15 @@ export default function PriceCard({ symbol, name, type, price, change, source, p
             {symbol.slice(0, 2)}
           </div>
           <div>
-            <p className="text-sm font-bold text-white">{symbol}</p>
-            <p className="text-[10px] text-slate-700 font-medium">{name}</p>
+            <p className="text-body font-bold text-white">{symbol}</p>
+            <p className="text-caption text-slate-700 font-medium">{name}</p>
           </div>
         </div>
         <div className="text-right">
-          <p className={`text-sm font-black tabular-nums ${available ? 'text-white' : 'text-amber-400/80'}`}>
+          <p className={`text-body font-black tabular-nums font-mono ${available ? 'text-white' : 'text-amber-400/80'}`}>
             {available ? `$${validPrice.toLocaleString()}` : 'Unavailable'}
           </p>
-          <p className={`text-[11px] font-bold flex items-center justify-end gap-0.5 ${up ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <p className={`text-label font-bold flex items-center justify-end gap-0.5 ${up ? 'text-emerald-400' : 'text-rose-400'}`}>
             {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
             {up ? '+' : ''}{validChange}%
           </p>
@@ -71,7 +71,7 @@ export default function PriceCard({ symbol, name, type, price, change, source, p
         {staleQuote && !fallback && available && <Badge label="Stale" tone="amber" />}
         {!available && <Badge label="Unavailable" tone="rose" />}
       </div>
-      <div className="mt-2 text-[9px] text-slate-700 font-medium leading-relaxed">
+      <div className="mt-2 text-caption text-slate-700 font-medium leading-relaxed">
         <p>{type || 'asset'} - {source || '--'} - {formatDateTime(displayTimestamp)}</p>
         <p className="truncate" title={provider || providerSymbol || displayTimestamp || error || undefined}>{provider || providerSymbol || error || '--'}</p>
         {error && <p className="text-amber-400/75 flex items-center gap-1"><AlertTriangle size={9} />{error}</p>}

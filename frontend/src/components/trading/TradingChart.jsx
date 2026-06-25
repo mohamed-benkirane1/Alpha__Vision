@@ -131,7 +131,7 @@ function StatusBadge({ meta, hasData }) {
     : meta?.isStale ? 'border-amber-500/24 bg-amber-500/10 text-amber-400'
     : meta?.isLive ? 'border-emerald-500/24 bg-emerald-500/10 text-emerald-400'
     : 'border-white/[0.08] bg-white/[0.03] text-slate-500'
-  return <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase ${tone}`}>{label}</span>
+  return <span className={`rounded-full border px-2 py-1 text-caption font-black uppercase ${tone}`}>{label}</span>
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -317,7 +317,7 @@ export default function TradingChart({ symbol, quote }) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <BarChart3 size={14} className="text-rose-400" />
-            <h2 className="text-sm font-bold text-white">{activeSymbol || '--'} Chart</h2>
+            <h2 className="text-body font-bold text-white">{activeSymbol || '--'} Chart</h2>
             <StatusBadge meta={meta} hasData={candles.length > 0} />
           </div>
 
@@ -328,7 +328,7 @@ export default function TradingChart({ symbol, quote }) {
                 key={t.label} type="button"
                 onClick={() => setTimeframe(t.label)}
                 disabled={loading}
-                className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-black transition ${
+                className={`rounded-lg border px-2.5 py-1.5 text-caption font-black transition ${
                   timeframe === t.label
                     ? 'border-rose-500/35 bg-rose-500/12 text-rose-300'
                     : 'border-white/[0.07] bg-white/[0.02] text-slate-600 hover:text-slate-300'
@@ -348,7 +348,7 @@ export default function TradingChart({ symbol, quote }) {
 
         {/* ── Indicator toolbar ─────────────────────────────────────────────── */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] text-slate-600 font-bold mr-1">Indicators:</span>
+          <span className="text-caption text-slate-600 font-bold mr-1">Indicators:</span>
           {ALL_INDICATORS.map(({ id, label, color, minPlan }) => {
             const isAllowed = allowed.includes(id)
             const isActive  = active.includes(id)
@@ -358,7 +358,7 @@ export default function TradingChart({ symbol, quote }) {
                 key={id} type="button"
                 onClick={() => toggleIndicator(id)}
                 title={!isAllowed ? `Available on ${requiresPlan} plan` : isActive ? `Hide ${label}` : `Show ${label}`}
-                className={`px-2 py-0.5 text-[10px] rounded border font-bold transition-all ${
+                className={`px-2 py-0.5 text-caption rounded border font-bold transition-all ${
                   !isAllowed
                     ? 'border-white/[0.06] text-slate-700 cursor-not-allowed'
                     : isActive
@@ -372,7 +372,7 @@ export default function TradingChart({ symbol, quote }) {
             )
           })}
           {plan !== 'elite' && (
-            <Link to="/payments" className="text-[10px] text-rose-400 hover:underline ml-1">
+            <Link to="/payments" className="text-caption text-rose-400 hover:underline ml-1">
               {plan === 'free' ? 'Upgrade → Pro/Elite' : 'Upgrade → Elite'}
             </Link>
           )}
@@ -384,14 +384,14 @@ export default function TradingChart({ symbol, quote }) {
         {loading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#060d1c]/60">
             <Loader2 size={16} className="mr-2 animate-spin text-rose-400" />
-            <span className="text-xs text-slate-400 font-bold">Loading chart...</span>
+            <span className="text-body-sm text-slate-400 font-bold">Loading chart...</span>
           </div>
         )}
         {!loading && candles.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
             <AlertTriangle size={18} className="mb-2 text-amber-400" />
-            <p className="text-sm font-black text-white">No chart data</p>
-            <p className="mt-1 max-w-md text-[11px] text-slate-600">{error || message || 'No OHLC candles available.'}</p>
+            <p className="text-body font-black text-white">No chart data</p>
+            <p className="mt-1 max-w-md text-label text-slate-600">{error || message || 'No OHLC candles available.'}</p>
           </div>
         )}
         <div ref={containerRef} className="w-full" />
@@ -402,28 +402,28 @@ export default function TradingChart({ symbol, quote }) {
         <div className="px-5 pb-5 pt-3">
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <div className={`rounded-xl border px-3 py-2.5 ${trendTone}`}>
-              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase"><TrendIcon size={11} />Trend</div>
-              <p className="mt-1 text-sm font-black">{trend.label}</p>
-              <p className="mt-0.5 text-[10px] text-slate-500">{trend.detail}</p>
+              <div className="flex items-center gap-1.5 text-caption font-black uppercase"><TrendIcon size={11} />Trend</div>
+              <p className="mt-1 text-body font-black">{trend.label}</p>
+              <p className="mt-0.5 text-caption text-slate-500">{trend.detail}</p>
             </div>
             <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
-              <p className="text-[10px] font-black uppercase text-slate-600">Last close</p>
-              <p className="mt-1 text-sm font-black text-white">{fmtPrice(lastCandle?.close)}</p>
-              <p className="mt-0.5 text-[10px] text-slate-700">Quote: {fmtPrice(quote?.price)}</p>
+              <p className="text-caption font-black uppercase text-slate-600">Last close</p>
+              <p className="mt-1 text-body font-black text-white">{fmtPrice(lastCandle?.close)}</p>
+              <p className="mt-0.5 text-caption text-slate-700">Quote: {fmtPrice(quote?.price)}</p>
             </div>
             <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
-              <p className="text-[10px] font-black uppercase text-slate-600">Period High / Low</p>
-              <p className="mt-1 text-sm font-black text-white">{fmtPrice(periodHigh)}</p>
-              <p className="mt-0.5 text-[10px] text-slate-700">{fmtPrice(periodLow)}</p>
+              <p className="text-caption font-black uppercase text-slate-600">Period High / Low</p>
+              <p className="mt-1 text-body font-black text-white">{fmtPrice(periodHigh)}</p>
+              <p className="mt-0.5 text-caption text-slate-700">{fmtPrice(periodLow)}</p>
             </div>
             <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
-              <p className="text-[10px] font-black uppercase text-slate-600">Volume / Candles</p>
-              <p className="mt-1 text-sm font-black text-white">{fmtVol(lastCandle?.volume)}</p>
-              <p className="mt-0.5 text-[10px] text-slate-700">{candles.length} candles</p>
+              <p className="text-caption font-black uppercase text-slate-600">Volume / Candles</p>
+              <p className="mt-1 text-body font-black text-white">{fmtVol(lastCandle?.volume)}</p>
+              <p className="mt-0.5 text-caption text-slate-700">{candles.length} candles</p>
             </div>
           </div>
           {(warnings.length > 0 || error) && (
-            <div className="mt-2 rounded-xl border border-amber-500/18 bg-amber-500/[0.055] px-3 py-2 text-[11px] font-semibold text-amber-300/90">
+            <div className="mt-2 rounded-xl border border-amber-500/18 bg-amber-500/[0.055] px-3 py-2 text-label font-semibold text-amber-300/90">
               {error || warnings.join(' ')}
             </div>
           )}
