@@ -1,35 +1,8 @@
 import { motion } from 'framer-motion'
 import { Zap, Clock, Activity, AlertTriangle, BrainCircuit, ShieldAlert } from 'lucide-react'
+import { formatDateTime, formatPrice, formatPercent } from '../../utils/formatters'
 
 const DISCLAIMER = 'Educational signal, not financial advice.'
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
-
-const formatPrice = (value) => {
-  const number = Number(value)
-  if (!Number.isFinite(number)) return '--'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  }).format(number)
-}
-
-const formatPercent = (value) => {
-  const number = Number(value)
-  if (!Number.isFinite(number)) return '--'
-  return `${number >= 0 ? '+' : ''}${number.toFixed(2)}%`
-}
 
 const badgeTone = {
   buy: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300',

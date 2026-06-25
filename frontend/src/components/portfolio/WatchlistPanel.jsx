@@ -1,44 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, Eye, Loader2, Plus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
+import { formatPrice, formatPercent, formatDateTime } from '../../utils/formatters'
 
 const suggestedSymbols = ['BTC', 'ETH', 'AAPL', 'GOLD', 'SP500']
-
-const getNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const formatPrice = (value) => {
-  const number = getNumber(value)
-  if (number === null) return 'Unavailable'
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: number >= 1 ? 2 : 6,
-  }).format(number)
-}
-
-const formatPercent = (value) => {
-  const number = getNumber(value)
-  if (number === null) return '--'
-  return `${number >= 0 ? '+' : ''}${number.toFixed(2)}%`
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
 
 function getStatus(item) {
   if (!item.priceAvailable) return { label: 'Unavailable', tone: 'rose' }

@@ -1,36 +1,10 @@
 import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Activity, AlertTriangle } from 'lucide-react'
+import { getValidNumber, formatPrice, formatPercent, formatDateTime } from '../../utils/formatters'
 
 const assetColors = ['#f97316', '#6366f1', '#8b5cf6', '#eab308', '#64748b', '#06b6d4']
 
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const formatPrice = (price) => {
-  const number = getValidNumber(price)
-  if (number === null) return 'Unavailable'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: number >= 1000 ? 0 : 2,
-  }).format(number)
-}
-
-const formatChange = (change) => {
-  const number = getValidNumber(change)
-  if (number === null) return '--'
-  return `${number >= 0 ? '+' : ''}${number.toFixed(1)}%`
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(date)
-}
+const formatChange = (change) => formatPercent(change, 1)
 
 function StatusBadge({ label, tone = 'slate' }) {
   const tones = {

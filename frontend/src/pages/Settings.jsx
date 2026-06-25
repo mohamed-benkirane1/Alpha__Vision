@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { getProfile, updateProfile } from '../services/authService'
 import { useAuth } from '../context/useAuth'
+import { formatDateTime } from '../utils/formatters'
 
 const fadeUp = { hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
@@ -54,18 +55,6 @@ function ComingSoonRow({ title, description }) {
   )
 }
 
-function formatDateTime(value) {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return date.toLocaleString([], {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 function getInitial(name) {
   return (typeof name === 'string' && name.trim() ? name.trim()[0] : '?').toUpperCase()

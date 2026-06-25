@@ -1,25 +1,8 @@
 import { Shield, Target, AlertTriangle, TrendingUp } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { getValidNumber, formatCurrency, formatDateTime } from '../../utils/formatters'
 
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) && number > 0 ? number : null
-}
-
-const fmt = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-
-  return `$${number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(date)
-}
+const fmt = formatCurrency
 
 export default function TradingPanel({ symbol, price, type, quote }) {
   const normalizedType = type === 'SELL' ? 'SELL' : 'BUY'

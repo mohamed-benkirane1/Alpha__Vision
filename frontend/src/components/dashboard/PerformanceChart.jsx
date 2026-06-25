@@ -1,43 +1,9 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { motion } from 'framer-motion'
 import { AlertTriangle, TrendingUp, Clock } from 'lucide-react'
+import { formatCurrency, formatDateTime } from '../../utils/formatters'
 
-const toFiniteNumber = (value) => {
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const formatCurrency = (value) => {
-  const number = toFiniteNumber(value)
-  if (number === null) return '--'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  }).format(number)
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
-
-const formatTick = (value) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-  }).format(date)
-}
+const formatTick = (value) => formatDateTime(value, 'date')
 
 function HistoryTooltip({ active, payload }) {
   const point = payload?.[0]?.payload

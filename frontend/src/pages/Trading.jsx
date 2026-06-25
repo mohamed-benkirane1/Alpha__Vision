@@ -11,6 +11,7 @@ import { addDemoFunds, getPaymentStatus } from '../services/paymentService'
 import { getPortfolio } from '../services/portfolioService'
 import { createTrade, getTradeHistory } from '../services/tradingService'
 import { useAuth } from '../context/useAuth'
+import { getValidNumber, formatCurrency } from '../utils/formatters'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
@@ -61,24 +62,6 @@ const getTradeErrorMessage = (error) => {
   }
   if (error?.message) return error.message
   return 'Unable to place paper order right now.'
-}
-
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const formatCurrency = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(number)
 }
 
 export default function Trading() {

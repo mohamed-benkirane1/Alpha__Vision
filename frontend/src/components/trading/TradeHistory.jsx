@@ -1,29 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { ClipboardList } from 'lucide-react'
+import { formatCurrency, formatDateTime } from '../../utils/formatters'
 
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const fmt = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-
-  return `$${number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-const fmtDate = (value) => {
-  const date = value ? new Date(value) : null
-  if (!date || Number.isNaN(date.getTime())) return '--'
-
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-}
+const fmt     = formatCurrency
+const fmtDate = (value) => formatDateTime(value, 'time')
 
 function MetaBadge({ label, tone = 'slate' }) {
   const tones = {

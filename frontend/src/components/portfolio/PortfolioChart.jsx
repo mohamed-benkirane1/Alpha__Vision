@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion } from 'framer-motion'
 import { PieChart as PieIcon } from 'lucide-react'
+import { getValidNumber, formatCurrency } from '../../utils/formatters'
 
 const colors = [
   { color: '#f97316', glow: 'rgba(249,115,22,0.6)' },
@@ -9,23 +10,6 @@ const colors = [
   { color: '#f59e0b', glow: 'rgba(245,158,11,0.6)' },
   { color: '#64748b', glow: 'rgba(100,116,139,0.6)' },
 ]
-
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const formatCurrency = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(number)
-}
 
 const buildAllocation = (holdings, totalValue) => {
   const total = getValidNumber(totalValue)

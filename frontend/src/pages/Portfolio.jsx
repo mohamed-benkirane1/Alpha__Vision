@@ -8,58 +8,13 @@ import PortfolioChart from '../components/portfolio/PortfolioChart'
 import WatchlistPanel from '../components/portfolio/WatchlistPanel'
 import { demoDeposit, getPortfolio } from '../services/portfolioService'
 import { addWatchlistSymbol, getWatchlist, removeWatchlistSymbol } from '../services/watchlistService'
+import { getValidNumber, toNumber, formatCurrency, formatPercent, formatDateTime } from '../utils/formatters'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
 const DEMO_DEPOSIT_AMOUNT = 10000
 const AUTO_REFRESH_MS = 30000
 const showDemoFunding = import.meta.env.DEV || import.meta.env.VITE_ALLOW_DEMO_FUNDING === 'true'
-
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const toNumber = (value) => {
-  const number = getValidNumber(value)
-  return number ?? 0
-}
-
-const formatCurrency = (value, { sign = false } = {}) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-
-  const formatted = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Math.abs(number))
-
-  if (!sign) return formatted
-  return `${number >= 0 ? '+' : '-'}${formatted}`
-}
-
-const formatPercent = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return 'N/A'
-
-  return `${number >= 0 ? '+' : ''}${number.toFixed(1)}%`
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
 
 const getResponseData = (response) => response?.data ?? response
 

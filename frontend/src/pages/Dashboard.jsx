@@ -11,6 +11,7 @@ import PortfolioSummary from '../components/dashboard/PortfolioSummary'
 import RecentTrades     from '../components/dashboard/RecentTrades'
 import { useAuth } from '../context/useAuth'
 import { getDashboardLiveData } from '../services/dashboardService'
+import { getValidNumber, formatCurrency, formatPercent, formatDateTime } from '../utils/formatters'
 
 const fadeUp  = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
@@ -21,43 +22,6 @@ function getGreeting() {
   if (h < 12) return 'Good morning'
   if (h < 17) return 'Good afternoon'
   return 'Good evening'
-}
-
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const formatCurrency = (value, { sign = false } = {}) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-  const formatted = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  }).format(Math.abs(number))
-
-  if (!sign) return formatted
-  return `${number >= 0 ? '+' : '-'}${formatted}`
-}
-
-const formatPercent = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-  return `${number >= 0 ? '+' : ''}${number.toFixed(1)}%`
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
 }
 
 const getFirstName = (name) => {

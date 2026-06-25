@@ -1,22 +1,10 @@
 import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { getValidNumber, formatDateTime } from '../../utils/formatters'
 
 const assetColors = {
   BTC: '#f97316', ETH: '#6366f1', SOL: '#8b5cf6',
   XAU: '#eab308', AAPL: '#64748b',
-}
-
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(date)
 }
 
 function Badge({ label, tone = 'slate' }) {

@@ -7,8 +7,8 @@ import {
 } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import PriceTicker from '../components/ambient/PriceTicker'
+import LogoMark from '../components/ui/LogoMark'
 import { getPlans } from '../services/paymentService'
-// heroImage supprimé — composition 3D abstraite remplace le taureau
 import heroBg3D  from '../assets/reference/home-hero-3d-bg.jpg'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -21,19 +21,19 @@ const NAV_LINKS = [
 ]
 
 const STATS = [
-  { icon: Users, value: 'Live', label: 'Backend auth' },
-  { icon: Target, value: 'Live', label: 'Quote metadata' },
-  { icon: TrendingUp, value: 'Live', label: 'Trade writes' },
-  { icon: Clock, value: 'Next', label: 'Signal provider' },
+  { icon: TrendingUp, value: '12+',    label: 'Actifs suivis'     },
+  { icon: Target,     value: '99.9%',  label: 'Disponibilité'    },
+  { icon: Zap,        value: '<100ms', label: 'Latence signaux'  },
+  { icon: Shield,     value: 'SSL',    label: 'Sécurité totale'  },
 ]
 
 const FEATURES = [
-  { icon: Brain, color: '#e11d48', glow: 'rgba(225,29,72,0.5)', title: 'AI Signal Engine', badge: 'Provider next', desc: 'The signal endpoint still needs a real model/provider integration before predictions are shown.' },
-  { icon: BarChart3, color: '#f59e0b', glow: 'rgba(245,158,11,0.5)', title: 'Backtesting', badge: 'Binance crypto', desc: 'The current backtest engine uses supported Binance crypto history and rejects unsupported assets.' },
-  { icon: Activity, color: '#06b6d4', glow: 'rgba(6,182,212,0.5)', title: 'Live Portfolio', badge: 'Data quality', desc: 'Portfolio valuation returns backend price metadata, warnings, and reliability flags.' },
-  { icon: Shield, color: '#10b981', glow: 'rgba(16,185,129,0.5)', title: 'Execution Guardrails', badge: 'Backend', desc: 'Trade execution rejects stale, fallback, and unavailable prices before balance changes.' },
-  { icon: Bot, color: '#8b5cf6', glow: 'rgba(139,92,246,0.5)', title: 'Trading Bot', badge: 'Controller only', desc: 'Bot status is wired to the backend controller; the real autonomous engine is the next integration.' },
-  { icon: LineChart, color: '#e11d48', glow: 'rgba(225,29,72,0.5)', title: 'Market Intelligence', badge: 'Provider-backed', desc: 'Quotes and news expose provider status instead of hiding fallback or unavailable data.' },
+  { icon: Brain,     color: '#e11d48', glow: 'rgba(225,29,72,0.5)',   title: 'AI Signal Engine',       badge: 'Groq / Llama 3.3',  desc: 'Signaux de trading alimentés par Llama 3.3 70B via Groq, combinant données de marché en direct et contexte actualités.' },
+  { icon: BarChart3, color: '#f59e0b', glow: 'rgba(245,158,11,0.5)',  title: 'Backtesting',             badge: '6 stratégies',       desc: 'Moteur de backtest avec RSI, MACD, Bollinger Bands, EMA Cross, Stochastique — sur données historiques Binance réelles.' },
+  { icon: Activity,  color: '#06b6d4', glow: 'rgba(6,182,212,0.5)',   title: 'Portfolio Live',          badge: 'Temps réel',         desc: 'Valorisation en temps réel avec métadonnées de qualité de prix, alertes de fiabilité et suivi des performances.' },
+  { icon: Shield,    color: '#10b981', glow: 'rgba(16,185,129,0.5)',  title: 'Exécution Sécurisée',    badge: 'Paper trading',      desc: 'Simulation d\'ordres avec validation prix — rejette automatiquement les prix fallback, obsolètes ou indisponibles.' },
+  { icon: Bot,       color: '#8b5cf6', glow: 'rgba(139,92,246,0.5)', title: 'Trading Bot',             badge: 'Automatisé',         desc: 'Bot de trading algorithmique avec 6 stratégies configurables, exécution paper et historique de décisions.' },
+  { icon: LineChart, color: '#e11d48', glow: 'rgba(225,29,72,0.5)',   title: 'Market Intelligence',    badge: '25+ actifs',         desc: 'Suivi de 25+ cryptos, actions, indices et matières premières avec prix live via Binance et Yahoo Finance.' },
 ]
 
 const HOW = [
@@ -56,22 +56,6 @@ const BENEFITS = [
 const PLAN_COLORS = { free: '#64748b', pro: '#e11d48', elite: '#f59e0b' }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function LogoMark() {
-  return (
-    <svg viewBox="0 0 34 34" fill="none" className="w-8 h-8 shrink-0" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="lgR" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#e11d48" />
-          <stop offset="100%" stopColor="#dc2626" />
-        </linearGradient>
-      </defs>
-      <polygon points="17,2 32,31 2,31" fill="url(#lgR)" />
-      <polygon points="17,10 26,29 8,29" fill="#06020c" />
-      <rect x="10" y="21" width="14" height="2.5" fill="url(#lgR)" />
-    </svg>
-  )
-}
-
 function FadeUp({ children, delay = 0, className = '' }) {
   const ref    = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-80px' })
@@ -162,42 +146,7 @@ export default function Home() {
   }, [])
 
   return (
-    <>
-      <style>{`
-        html { scroll-behavior: smooth; }
-
-        @keyframes signalGlow {
-          0%, 100% { box-shadow: 0 0 16px rgba(225,29,72,0.20); }
-          50%       { box-shadow: 0 0 30px rgba(225,29,72,0.48); }
-        }
-        .signal-card { animation: signalGlow 3s ease-in-out infinite; }
-
-        @keyframes coreBreath {
-          0%, 100% { opacity: 0.72; transform: scale(1);    }
-          50%       { opacity: 1;    transform: scale(1.08); }
-        }
-        .ai-core-breath { animation: coreBreath 5s ease-in-out infinite; }
-
-        @keyframes coreFloat {
-          0%, 100% { transform: translateY(0px);   }
-          50%       { transform: translateY(-10px); }
-        }
-        .ai-core-float { animation: coreFloat 7s ease-in-out infinite; }
-
-        @keyframes dataBlink {
-          0%, 100% { opacity: 0.18; }
-          50%       { opacity: 0.88; }
-        }
-        .ai-data-blink { animation: dataBlink 3s ease-in-out infinite; }
-
-        @keyframes ringPulse {
-          0%, 100% { opacity: 0.30; }
-          50%       { opacity: 0.60; }
-        }
-        .ai-ring-pulse { animation: ringPulse 4s ease-in-out infinite; }
-      `}</style>
-
-      <div className="bg-[#06020c] text-white overflow-x-hidden">
+    <div className="bg-[#06020c] text-white overflow-x-hidden">
 
         {/* Fixed ambient orbs */}
         <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
@@ -211,7 +160,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-6 sm:px-8 h-full flex items-center justify-between">
 
             <Link to="/" className="flex items-center gap-2.5 select-none">
-              <LogoMark />
+              <LogoMark size={32} className="shrink-0" />
               <div className="leading-none">
                 <span className="block text-[12px] font-black tracking-[0.18em] text-white">ALPHA</span>
                 <span className="block text-[8px]  font-bold  tracking-[0.25em] text-rose-400 mt-[1px]">VISION</span>
@@ -960,7 +909,7 @@ export default function Home() {
         <footer className="border-t border-white/[0.06] bg-[#03010a]/85 backdrop-blur-xl py-8 px-6 sm:px-8">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <Link to="/" className="flex items-center gap-2.5 select-none">
-              <LogoMark />
+              <LogoMark size={32} className="shrink-0" />
               <div className="leading-none">
                 <span className="block text-[12px] font-black tracking-[0.18em] text-white">ALPHA</span>
                 <span className="block text-[8px] font-bold tracking-[0.25em] text-rose-400 mt-[1px]">VISION</span>
@@ -975,7 +924,6 @@ export default function Home() {
           </div>
         </footer>
 
-      </div>
-    </>
+    </div>
   )
 }

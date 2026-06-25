@@ -1,9 +1,9 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { motion } from 'framer-motion'
 import { AlertTriangle, TrendingUp } from 'lucide-react'
+import { getValidNumber, formatCurrency } from '../../utils/formatters'
 
-const isFiniteNumber = (value) => Number.isFinite(Number(value))
-const formatCurrency = (value) => (isFiniteNumber(value) ? `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '--')
+const isFiniteNumber = (value) => getValidNumber(value) !== null
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null

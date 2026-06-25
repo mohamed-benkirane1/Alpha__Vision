@@ -21,53 +21,15 @@ import {
   getWebhookInfo,
 } from '../services/paymentService'
 import { useAuth } from '../context/useAuth'
+import { formatCurrency, formatCurrencyFromCents, formatDateTime } from '../utils/formatters'
+
+const formatTransactionAmount = (value, currency = 'EUR') => formatCurrencyFromCents(
+  Number(value) * 100,
+  currency,
+)
 
 const DEMO_AMOUNT = 10000
 const fadeUp = { hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } } }
-
-function formatCurrencyFromCents(value, currency = 'eur') {
-  const number = Number(value)
-  if (!Number.isFinite(number)) return '--'
-
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-  }).format(number / 100)
-}
-
-function formatCurrency(value) {
-  const number = Number(value)
-  if (!Number.isFinite(number)) return '--'
-
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-  }).format(number)
-}
-
-function formatTransactionAmount(value, currency = 'EUR') {
-  const number = Number(value)
-  if (!Number.isFinite(number)) return '--'
-
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: String(currency || 'EUR').toUpperCase(),
-  }).format(number)
-}
-
-function formatDateTime(value) {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-
-  return date.toLocaleString([], {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 function Notice({ tone = 'warning', children }) {
   const styles = tone === 'success'

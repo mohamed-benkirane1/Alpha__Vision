@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { PieChart, AlertTriangle, ShieldCheck } from 'lucide-react'
+import { getValidNumber, formatCurrency } from '../../utils/formatters'
 
 const colors = [
   { color: '#e11d48', glow: 'rgba(225,29,72,0.50)' },
@@ -8,22 +9,6 @@ const colors = [
   { color: '#06b6d4', glow: 'rgba(6,182,212,0.35)' },
   { color: '#8b5cf6', glow: 'rgba(139,92,246,0.35)' },
 ]
-
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const formatCurrency = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(number)
-}
 
 const buildAllocation = (portfolio) => {
   const holdings = Array.isArray(portfolio?.holdings) ? portfolio.holdings : []

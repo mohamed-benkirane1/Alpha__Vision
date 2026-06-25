@@ -1,10 +1,8 @@
 import { motion } from 'framer-motion'
 import { AlertTriangle, BarChart2, CheckCircle, DollarSign, Target, TrendingUp } from 'lucide-react'
+import { getValidNumber, formatCurrency, formatPercent, formatNumber } from '../../utils/formatters'
 
-const isFiniteNumber = (value) => Number.isFinite(Number(value))
-const formatCurrency = (value) => (isFiniteNumber(value) ? `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '--')
-const formatPercent = (value) => (isFiniteNumber(value) ? `${Number(value).toFixed(1)}%` : '--')
-const formatNumber = (value) => (isFiniteNumber(value) ? Number(value).toLocaleString() : '--')
+const isFiniteNumber = (value) => getValidNumber(value) !== null
 
 export default function BacktestResults({ response }) {
   const results = response?.results

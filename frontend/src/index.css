@@ -139,3 +139,36 @@ body {
 .ripple-btn:active::after {
   animation: ripple 0.55s ease-out forwards;
 }
+
+/* ── Home page — keyframes (déplacés depuis Home.jsx) ───────────────────────── */
+html { scroll-behavior: smooth; }
+
+@keyframes signalGlow {
+  0%, 100% { box-shadow: 0 0 16px rgba(225,29,72,0.20); }
+  50%       { box-shadow: 0 0 30px rgba(225,29,72,0.48); }
+}
+.signal-card { animation: signalGlow 3s ease-in-out infinite; }
+
+@keyframes coreBreath {
+  0%, 100% { opacity: 0.72; transform: scale(1);    }
+  50%       { opacity: 1;    transform: scale(1.08); }
+}
+.ai-core-breath { animation: coreBreath 5s ease-in-out infinite; }
+
+@keyframes coreFloat {
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-10px); }
+}
+.ai-core-float { animation: coreFloat 7s ease-in-out infinite; }
+
+@keyframes dataBlink {
+  0%, 100% { opacity: 0.18; }
+  50%       { opacity: 0.88; }
+}
+.ai-data-blink { animation: dataBlink 3s ease-in-out infinite; }
+
+@keyframes aiRingPulse {
+  0%, 100% { opacity: 0.30; }
+  50%       { opacity: 0.60; }
+}
+.ai-ring-pulse { animation: aiRingPulse 4s ease-in-out infinite; }

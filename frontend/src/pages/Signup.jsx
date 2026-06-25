@@ -4,26 +4,10 @@ import { motion } from 'framer-motion'
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
 import { signup, startGoogleOAuth } from '../services/authService'
+import LogoMark from '../components/ui/LogoMark'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
-
-// ── Inline LogoMark ────────────────────────────────────────────────────────────
-function LogoMark({ size = 28 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 34 34" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="lgSignup" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#e11d48" />
-          <stop offset="100%" stopColor="#dc2626" />
-        </linearGradient>
-      </defs>
-      <polygon points="17,2 32,31 2,31" fill="url(#lgSignup)" />
-      <polygon points="17,10 26,29 8,29" fill="#06020c" />
-      <rect x="10" y="21" width="14" height="2.5" fill="url(#lgSignup)" />
-    </svg>
-  )
-}
 
 // ── Password strength helper ───────────────────────────────────────────────────
 function getStrength(pw) {

@@ -1,34 +1,8 @@
 import { motion } from 'framer-motion'
 import { ClipboardList } from 'lucide-react'
+import { formatCurrency, formatNumber, formatDateTime } from '../../utils/formatters'
 
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const formatCurrency = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  }).format(number)
-}
-
-const formatQuantity = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 8 }).format(number)
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(date)
-}
+const formatQuantity = (value) => formatNumber(value, 8)
 
 const normalizeTrades = (trades) => {
   if (!Array.isArray(trades) || trades.length === 0) return []

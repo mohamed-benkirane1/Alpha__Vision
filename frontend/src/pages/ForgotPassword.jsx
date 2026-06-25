@@ -3,25 +3,10 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle, Mail } from 'lucide-react'
 import { requestPasswordReset } from '../services/authService'
+import LogoMark from '../components/ui/LogoMark'
 
 const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
-
-function LogoMark({ size = 24 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 34 34" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="lgFP" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#e11d48" />
-          <stop offset="100%" stopColor="#dc2626" />
-        </linearGradient>
-      </defs>
-      <polygon points="17,2 32,31 2,31" fill="url(#lgFP)" />
-      <polygon points="17,10 26,29 8,29" fill="#06020c" />
-      <rect x="10" y="21" width="14" height="2.5" fill="url(#lgFP)" />
-    </svg>
-  )
-}
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')

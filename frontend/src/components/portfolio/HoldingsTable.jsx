@@ -1,49 +1,9 @@
 import { motion } from 'framer-motion'
 import { AlertTriangle, TrendingUp, TrendingDown, BarChart2 } from 'lucide-react'
+import { formatCurrency, formatPercent, formatDateTime, formatNumber } from '../../utils/formatters'
 
-const getValidNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const number = Number(value)
-  return Number.isFinite(number) ? number : null
-}
-
-const fmt = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(number)
-}
-
-const fmtP = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return 'N/A'
-
-  return `${number > 0 ? '+' : ''}${number.toFixed(1)}%`
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
-
-const formatNumber = (value) => {
-  const number = getValidNumber(value)
-  if (number === null) return '--'
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 8 }).format(number)
-}
+const fmt  = formatCurrency
+const fmtP = (value) => formatPercent(value, 1)
 
 const assetColors = {
   BTC: '#f97316', ETH: '#6366f1', SOL: '#8b5cf6',

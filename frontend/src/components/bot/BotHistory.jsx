@@ -1,28 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { History } from 'lucide-react'
+import { formatDateTime, formatPrice, formatNumber } from '../../utils/formatters'
 
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return date.toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-}
-
-const formatPrice = (value) => {
-  const number = Number(value)
-  if (!Number.isFinite(number)) return '--'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-  }).format(number)
-}
-
-const formatQuantity = (value) => {
-  const number = Number(value)
-  if (!Number.isFinite(number)) return '--'
-  return number.toLocaleString('en-US', { maximumFractionDigits: 8 })
-}
+const formatQuantity = (value) => formatNumber(value, 8)
 
 export default function BotHistory({ actions = [] }) {
   const cleanActions = Array.isArray(actions) ? actions.filter(Boolean) : []
