@@ -1,9 +1,10 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
-import MainLayout from '../components/layout/MainLayout'
+import { Routes, Route, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import MainLayout    from '../components/layout/MainLayout'
 import ProtectedRoute from '../components/ProtectedRoute'
 
-// ── Lazy-loaded pages — each becomes its own JS chunk ─────────────────────────
+// ── Lazy-loaded pages ─────────────────────────────────────────────────────────
 const Home           = lazy(() => import('../pages/Home'))
 const Login          = lazy(() => import('../pages/Login'))
 const Signup         = lazy(() => import('../pages/Signup'))
@@ -21,7 +22,25 @@ const Settings       = lazy(() => import('../pages/Settings'))
 const Payments       = lazy(() => import('../pages/Payments'))
 const NotFound       = lazy(() => import('../pages/NotFound'))
 
-// ── Brand-aligned loading fallback ────────────────────────────────────────────
+// ── Page transition variants ──────────────────────────────────────────────────
+const pageVariants = {
+  initial: {
+    opacity: 0,
+    y: 12,
+  },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    transition: { duration: 0.15, ease: [0.25, 0.1, 0.25, 1] },
+  },
+}
+
+// ── Loading fallback ──────────────────────────────────────────────────────────
 function AppFallback() {
   return (
     <div className="min-h-screen bg-[#06020c] flex items-center justify-center">
@@ -43,34 +62,57 @@ function AppFallback() {
   )
 }
 
-// ── Routes — paths and layout unchanged ───────────────────────────────────────
+// ── Animated wrapper for public pages ─────────────────────────────────────────
+function PageWrapper({ children }) {
+  return (
+    <motion.div
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 function AppRoutes() {
+  const location = useLocation()
+
   return (
     <Suspense fallback={<AppFallback />}>
-      <Routes>
-        <Route path="/"                element={<Home />}           />
-        <Route path="/login"           element={<Login />}          />
-        <Route path="/signup"          element={<Signup />}         />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password"  element={<ResetPassword />}  />
-        <Route path="/auth/callback"   element={<AuthCallback />}   />
+      {/* AnimatePresence gère les transitions entre pages publiques.
+          Les pages protégées ont leur propre transition dans MainLayout. */}
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={location.pathname}>
 
-        <Route element={<ProtectedRoute />}>
-          <Route element={<MainLayout />}>
-            <Route path="/dashboard"   element={<Dashboard />}   />
-            <Route path="/portfolio"   element={<Portfolio />}   />
-            <Route path="/news"        element={<News />}        />
-            <Route path="/chatbot"     element={<Chatbot />}    />
-            <Route path="/trading"     element={<Trading />}    />
-            <Route path="/backtesting" element={<Backtesting />}/>
-            <Route path="/bot"         element={<TradingBot />} />
-            <Route path="/payments"    element={<Payments />}   />
-            <Route path="/settings"    element={<Settings />}   />
+          {/* ── Public pages — avec transition de page ─── */}
+          <Route path="/"                element={<PageWrapper><Home /></PageWrapper>}           />
+          <Route path="/login"           element={<PageWrapper><Login /></PageWrapper>}          />
+          <Route path="/signup"          element={<PageWrapper><Signup /></PageWrapper>}         />
+          <Route path="/forgot-password" element={<PageWrapper><ForgotPassword /></PageWrapper>} />
+          <Route path="/reset-password"  element={<PageWrapper><ResetPassword /></PageWrapper>}  />
+          <Route path="/auth/callback"   element={<PageWrapper><AuthCallback /></PageWrapper>}   />
+
+          {/* ── Protected pages — transition gérée dans MainLayout ── */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<MainLayout />}>
+              <Route path="/dashboard"   element={<Dashboard />}   />
+              <Route path="/portfolio"   element={<Portfolio />}   />
+              <Route path="/news"        element={<News />}        />
+              <Route path="/chatbot"     element={<Chatbot />}    />
+              <Route path="/trading"     element={<Trading />}    />
+              <Route path="/backtesting" element={<Backtesting />}/>
+              <Route path="/bot"         element={<TradingBot />} />
+              <Route path="/payments"    element={<Payments />}   />
+              <Route path="/settings"    element={<Settings />}   />
+            </Route>
           </Route>
-        </Route>
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
+        </Routes>
+      </AnimatePresence>
     </Suspense>
   )
 }

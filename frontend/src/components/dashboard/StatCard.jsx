@@ -1,5 +1,7 @@
-import Card   from '../ui/Card'
-import Badge  from '../ui/Badge'
+import { useReducedMotion } from 'framer-motion'
+import Card  from '../ui/Card'
+import Badge from '../ui/Badge'
+import { useCountUp } from '../../hooks/useCountUp'
 
 /**
  * StatCard — carte KPI secondaire.
@@ -7,43 +9,51 @@ import Badge  from '../ui/Badge'
  * Props :
  *   icon        Component lucide-react
  *   label       string
- *   value       string (déjà formaté)
+ *   value       string | number — si number → count-up animation
+ *   formatFn    function (number) => string — formatteur pour count-up (optionnel)
  *   sub         ReactNode — ligne d'info additionnelle (optionnel)
- *   subUp       boolean | null — colore sub en vert/rouge
- *   change      number | undefined — % variation → badge auto (optionnel)
- *   loading     boolean — mode skeleton
- *   onClick     function — active hover lift sur la Card
- *   accentColor ignoré (conservé pour compat call-site sans breaking change)
+ *   subUp       boolean | null
+ *   change      number | undefined — % variation → badge
+ *   loading     boolean
+ *   onClick     function
+ *   accentColor ignoré (conservé pour compat)
  */
 export default function StatCard({
   icon: Icon,
   label,
   value,
+  formatFn,
   sub,
   subUp,
   change,
   loading = false,
   onClick,
-  // accentColor conservé pour ne pas casser buildStats
   accentColor, // eslint-disable-line no-unused-vars
 }) {
-  // ── Skeleton ──────────────────────────────────────────────────────────
+  const shouldReduce = useReducedMotion()
+  const isNumeric    = typeof value === 'number' && Number.isFinite(value)
+  const animated     = useCountUp(isNumeric ? value : 0, 900, isNumeric && !shouldReduce)
+
+  const displayValue = isNumeric
+    ? (formatFn ? formatFn(animated) : animated.toLocaleString())
+    : (value || '--')
+
+  // ── Skeleton ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <Card padding="md">
         <div className="flex justify-between items-start mb-3">
-          <div className="w-9 h-9 rounded-xl bg-white/[0.06] animate-pulse" />
-          <div className="w-14 h-5 rounded-lg bg-white/[0.06] animate-pulse" />
+          <div className="w-9 h-9 rounded-xl bg-white/[0.06] animate-shimmer" />
+          <div className="w-14 h-5 rounded-lg bg-white/[0.06] animate-shimmer" />
         </div>
-        <div className="w-24 h-7 rounded-lg bg-white/[0.06] animate-pulse mb-2" />
-        <div className="w-16 h-4 rounded-md bg-white/[0.06] animate-pulse" />
+        <div className="w-24 h-7 rounded-lg bg-white/[0.06] animate-shimmer mb-2" />
+        <div className="w-16 h-4 rounded-md bg-white/[0.06] animate-shimmer" />
       </Card>
     )
   }
 
-  // ── Badge de variation ────────────────────────────────────────────────
-  const showChangeBadge = change !== undefined && change !== null && Number.isFinite(change)
-  // Fallback : si pas de change numérique mais subUp renseigné, affiche un indicateur
+  // ── Badge variation ──────────────────────────────────────────────────────────
+  const showChangeBadge   = change !== undefined && change !== null && Number.isFinite(change)
   const showDirectionBadge = !showChangeBadge && typeof subUp === 'boolean'
 
   return (
@@ -59,7 +69,6 @@ export default function StatCard({
             {change >= 0 ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
           </Badge>
         )}
-
         {showDirectionBadge && (
           <Badge variant={subUp ? 'success' : 'neutral'} size="sm">
             {subUp ? '↑' : '—'}
@@ -69,7 +78,7 @@ export default function StatCard({
 
       {/* Valeur principale */}
       <p className="text-heading font-black text-white mb-0.5 tabular-nums font-mono leading-none">
-        {value || '--'}
+        {displayValue}
       </p>
 
       {/* Label */}
@@ -77,7 +86,7 @@ export default function StatCard({
         {label}
       </p>
 
-      {/* Ligne supplémentaire */}
+      {/* Sous-info */}
       {sub && (
         <p className={`text-body-sm mt-2 font-medium leading-snug ${
           subUp === true  ? 'text-emerald-400/70' :

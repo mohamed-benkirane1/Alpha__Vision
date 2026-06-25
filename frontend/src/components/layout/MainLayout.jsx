@@ -56,8 +56,8 @@ function NavItem({ to, label, icon: Icon, onClick }) {
         `group relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-body font-medium
          transition-all duration-200 overflow-hidden ${
           isActive
-            ? 'bg-gradient-to-r from-rose-500/12 to-red-500/5 text-rose-300 border border-rose-500/22 shadow-[0_0_22px_rgba(225,29,72,0.10)]'
-            : 'text-white/40 hover:text-white/80 hover:bg-white/[0.045] border border-transparent hover:border-white/[0.05]'
+            ? 'bg-rose-500/10 text-white border-l-2 border-app-accent pl-[14px] shadow-[0_0_18px_rgba(225,29,72,0.08)]'
+            : 'text-white/40 hover:text-white/80 hover:bg-white/[0.05] border border-transparent hover:border-white/[0.06]'
         }`
       }
     >

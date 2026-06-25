@@ -204,12 +204,17 @@ body {
 
 /* Skeleton shimmer */
 @keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position:  400px 0; }
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
 .animate-shimmer {
-  background: linear-gradient(90deg, #0f1c33 0%, #192d4c 50%, #0f1c33 100%);
-  background-size: 400px 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 75%
+  );
+  background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
 }
 

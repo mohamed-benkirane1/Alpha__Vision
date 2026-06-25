@@ -54,7 +54,7 @@ export default function BotStatusCard({ bot }) {
           { label: 'Mode',     value: status.mode || '--',                                                      color: running ? 'text-amber-300' : 'text-slate-500' },
           { label: 'Status',   value: status.status ? status.status.toUpperCase() : '--',                      color: running ? 'text-amber-300' : 'text-slate-500' },
         ].map((item) => (
-          <div key={item.label} className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3">
+          <div key={item.label} className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3 hover:bg-white/[0.04] transition-colors duration-150">
             <p className="text-caption text-slate-600 mb-1 font-bold uppercase tracking-wider">{item.label}</p>
             <p className={`text-body font-black tabular-nums font-mono ${item.color}`}>{item.value}</p>
           </div>

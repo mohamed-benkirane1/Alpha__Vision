@@ -1,29 +1,10 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
 import { login as loginRequest, startGoogleOAuth } from '../services/authService'
-import LogoMark from '../components/ui/LogoMark'
-import Button from '../components/ui/Button'
-
-const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
-const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
-
-// ── Feature bullet for the left panel ─────────────────────────────────────────
-function Feature({ icon: Icon, title, desc }) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="mt-0.5 w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/18 flex items-center justify-center shrink-0">
-        <Icon size={14} className="text-rose-400" />
-      </div>
-      <div>
-        <p className="text-body font-bold text-white/90">{title}</p>
-        <p className="text-label text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
-      </div>
-    </div>
-  )
-}
+import { LogoMark, Card, Button } from '../components/ui'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -38,11 +19,11 @@ export default function Login() {
   const validate = () => {
     const e = {}
     if (!form.email.trim())
-      e.email = 'Email is required'
+      e.email = 'Email requis'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      e.email = 'Enter a valid email address'
+      e.email = 'Email invalide'
     if (!form.password)
-      e.password = 'Password is required'
+      e.password = 'Mot de passe requis'
     return e
   }
 
@@ -59,20 +40,15 @@ export default function Login() {
         email: form.email.trim(),
         password: form.password,
       })
-
       if (data?.success !== true || !data?.user) {
         throw new Error(data?.message || 'Invalid authentication response.')
       }
-
       authLogin(data?.user)
-
       const redirectTo = location.state?.from?.pathname || '/dashboard'
-      setSuccess('Signed in successfully. Redirecting...')
+      setSuccess('Connexion réussie. Redirection...')
       setTimeout(() => navigate(redirectTo, { replace: true }), 500)
     } catch (err) {
-      setErrors({
-        submit: err.message || 'Unable to sign in. Please try again.',
-      })
+      setErrors({ submit: err.message || 'Impossible de se connecter.' })
     } finally {
       setLoading(false)
     }
@@ -92,143 +68,66 @@ export default function Login() {
   const isValid = (field) => form[field] && !errors[field]
 
   const inputClass = (field, extra = '') =>
-    `w-full bg-[#06020c]/70 border ${
-      errors[field]
-        ? 'border-rose-500/50 focus:border-rose-500/70 focus:shadow-[0_0_12px_rgba(225,29,72,0.14)]'
+    `w-full h-11 px-4 rounded-xl text-body text-white placeholder:text-white/30
+     focus:outline-none transition-all duration-200
+     ${errors[field]
+        ? 'bg-rose-500/5 border border-rose-500/40 focus:border-rose-500/60 focus:bg-rose-500/8'
         : isValid(field)
-        ? 'border-emerald-500/40 focus:border-emerald-500/60 focus:shadow-[0_0_12px_rgba(16,185,129,0.12)]'
-        : 'border-white/[0.09] focus:border-rose-500/50 focus:shadow-[0_0_18px_rgba(225,29,72,0.16)]'
-    } text-white text-body rounded-xl py-2.5 placeholder-slate-700 focus:outline-none transition-all duration-200 ${extra}`
+        ? 'bg-emerald-500/5 border border-emerald-500/30 focus:border-emerald-500/50 focus:bg-emerald-500/8'
+        : 'bg-white/[0.04] border border-white/[0.08] focus:border-app-accent/50 focus:bg-white/[0.06]'
+     } ${extra}`
 
   return (
-    <div className="min-h-screen bg-[#06020c] flex overflow-hidden">
-
-      {/* ── Left panel — branding ─────────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-col justify-between w-[46%] xl:w-[42%] relative overflow-hidden px-12 py-10">
-
-        {/* Ambient orbs */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute -top-32 -left-24 w-[540px] h-[540px] bg-rose-600/[0.12] rounded-full blur-[110px]" />
-          <div className="absolute bottom-0 right-[-10%] w-[420px] h-[420px] bg-red-700/[0.09] rounded-full blur-[90px]" />
-          <div className="absolute top-1/2 -translate-y-1/2 left-[30%] w-[300px] h-[300px] bg-rose-500/[0.05] rounded-full blur-[80px]" />
-          {/* Grid */}
-          <div className="absolute inset-0 home-grid opacity-45" />
-          {/* Subtle right edge fade */}
-          <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-[#06020c] to-transparent" />
-        </div>
-
-        {/* Logo */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="relative shrink-0">
-            <div className="absolute -inset-1.5 rounded-xl bg-rose-500/15 blur-md -z-10" />
-            <div className="w-10 h-10 rounded-xl bg-[#06020c] border border-rose-500/25 flex items-center justify-center shadow-[0_0_20px_rgba(225,29,72,0.30)]">
-              <LogoMark size={24} />
-            </div>
-          </div>
-          <div className="leading-none">
-            <span className="block text-body-sm font-black tracking-widest text-white">ALPHA</span>
-            <span className="block text-caption font-bold tracking-widest text-rose-400 mt-[2px]">VISION</span>
-          </div>
-        </div>
-
-        {/* Hero text */}
-        <div className="relative z-10 space-y-6">
-          <div>
-            <h2 className="text-display xl:text-display-lg font-black text-white leading-[1.15] tracking-tight">
-              Verify your trades<br />
-              <span className="bg-gradient-to-r from-rose-400 to-red-500 bg-clip-text text-transparent">
-                with backend data
-              </span>
-            </h2>
-            <p className="mt-3 text-body text-slate-500 leading-relaxed max-w-xs">
-              Backend quotes, execution metadata, portfolio warnings, and provider status in one workspace.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <Feature icon={Zap}  title="Price Metadata" desc="Source, freshness, fallback, and availability stay visible before execution." />
-            <Feature icon={Mail} title="Portfolio Analytics" desc="Backend holdings, cash balance, valuation quality, and allocation insights." />
-            <Feature icon={Lock} title="Protected Flows" desc="Authentication and guarded backend writes stay the source of truth." />
-          </div>
-        </div>
-
-        {/* Integration status */}
-        <div className="relative z-10">
-          <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm">
-            <p className="text-body-sm text-slate-400 leading-relaxed">
-              AI signals still need a real backend signal provider. Live market, trading, portfolio, news, and payment flows stay explicit about provider status.
-            </p>
-            <div className="flex items-center gap-2 mt-3">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-caption font-black text-white">API</div>
-              <div>
-                <p className="text-label font-bold text-white/80">Integration status</p>
-                <p className="text-caption text-slate-600">Provider-backed data only</p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#06020c] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Ambient */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-rose-600/[0.08] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-5%] right-[10%] w-[400px] h-[400px] bg-red-700/[0.05] rounded-full blur-[100px]" />
+        <div className="absolute inset-0 home-grid opacity-25" />
       </div>
 
-      {/* ── Right panel — form ────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 relative">
-
-        {/* Ambient orbs — all viewports */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[560px] h-[560px] bg-rose-600/[0.08] rounded-full blur-[110px]" />
-          <div className="absolute bottom-0 right-[-8%] w-[380px] h-[380px] bg-red-700/[0.06] rounded-full blur-[90px]" />
-          <div className="absolute top-1/2 -translate-y-1/2 left-[-6%] w-[240px] h-[240px] bg-rose-500/[0.04] rounded-full blur-[70px]" />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+        className="relative z-10 w-full max-w-md"
+      >
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-5">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shadow-[0_0_28px_rgba(225,29,72,0.18)]">
+              <LogoMark size={32} />
+            </div>
+          </div>
+          <h1 className="text-heading font-bold text-white mb-1">Bon retour</h1>
+          <p className="text-body text-white/40">Connectez-vous à Alpha Vision</p>
         </div>
 
-        {/* Vertical separator — desktop only */}
-        <div className="hidden lg:block absolute left-0 inset-y-0 w-px bg-gradient-to-b from-transparent via-white/[0.06] to-transparent" />
-
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={stagger}
-          className="relative z-10 w-full max-w-sm bg-[#0a0d16]/80 border border-white/[0.08] rounded-2xl p-8 backdrop-blur-2xl shadow-[0_8px_60px_rgba(0,0,0,0.50),0_0_40px_rgba(225,29,72,0.06),0_0_0_1px_rgba(225,29,72,0.05)]"
-        >
-          {/* Mobile logo */}
-          <motion.div variants={fadeUp} className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-9 h-9 rounded-xl bg-[#06020c] border border-rose-500/25 flex items-center justify-center shadow-[0_0_18px_rgba(225,29,72,0.25)]">
-              <LogoMark size={20} />
-            </div>
-            <div className="leading-none">
-              <span className="block text-label font-black tracking-widest text-white">ALPHA</span>
-              <span className="block text-caption font-bold tracking-widest text-rose-400 mt-[2px]">VISION</span>
-            </div>
-          </motion.div>
-
-          {/* Heading */}
-          <motion.div variants={fadeUp} className="mb-7">
-            <div className="inline-flex items-center gap-1.5 bg-rose-500/8 border border-rose-500/20 rounded-full px-3 py-1 mb-4">
-              <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-              <span className="text-caption font-bold text-rose-300 tracking-wider uppercase">Secure Login</span>
-            </div>
-            <h1 className="text-display-sm font-black text-white tracking-tight">Welcome back</h1>
-            <p className="text-body-sm text-slate-500 font-medium mt-1">Sign in to your Alpha Vision account</p>
-          </motion.div>
-
-          {/* Form */}
-          <motion.form variants={fadeUp} onSubmit={handleSubmit} noValidate className="space-y-4">
+        {/* Form card */}
+        <Card padding="lg">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
 
             {/* Email */}
             <div>
-              <label className="block text-label font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Email Address</label>
+              <label className="text-label uppercase tracking-wide text-white/50 mb-1.5 block">
+                Email
+              </label>
               <div className="relative">
-                <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
+                <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
                 <input
                   type="email"
                   value={form.email}
                   onChange={handleChange('email')}
-                  placeholder="your@email.com"
+                  placeholder="vous@exemple.com"
                   className={inputClass('email', 'pl-10 pr-10')}
+                  autoComplete="email"
                 />
-                {errors.email    && <AlertCircle  size={13} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-rose-400 pointer-events-none" />}
-                {isValid('email') && <CheckCircle size={13} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none" />}
+                {errors.email     && <AlertCircle  size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-rose-400 pointer-events-none" />}
+                {isValid('email') && <CheckCircle  size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none" />}
               </div>
               {errors.email && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
+                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                  className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
                   <AlertCircle size={10} />{errors.email}
                 </motion.p>
               )}
@@ -236,51 +135,50 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label className="block text-label font-bold text-slate-500 mb-1.5 tracking-wide uppercase">Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-label uppercase tracking-wide text-white/50">
+                  Mot de passe
+                </label>
+                <Link to="/forgot-password" className="text-label text-rose-400 hover:text-rose-300 transition-colors font-medium">
+                  Oublié ?
+                </Link>
+              </div>
               <div className="relative">
-                <Lock size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
+                <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={handleChange('password')}
-                  placeholder="••••••••••"
+                  placeholder="••••••••"
                   className={inputClass('password', 'pl-10 pr-10')}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                 >
-                  {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
               {errors.password && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
+                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                  className="text-label text-rose-400 mt-1.5 flex items-center gap-1">
                   <AlertCircle size={10} />{errors.password}
                 </motion.p>
               )}
             </div>
 
-            {/* Remember + Forgot */}
-            <div className="flex items-center justify-between text-body-sm">
-              <label className="flex items-center gap-2 text-slate-500 cursor-pointer select-none font-medium">
-                <input type="checkbox" className="w-3.5 h-3.5 rounded accent-rose-600" />
-                Remember me
-              </label>
-              <Link to="/forgot-password" className="text-rose-400 hover:text-rose-300 transition-colors font-bold text-label">
-                Forgot password?
-              </Link>
-            </div>
-
+            {/* Feedback */}
             {(errors.submit || success) && (
               <motion.p
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`text-label mt-1.5 flex items-center gap-1 font-medium ${
+                className={`text-label flex items-center gap-1.5 font-medium ${
                   success ? 'text-emerald-400' : 'text-rose-400'
                 }`}
               >
-                {success ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                {success ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
                 {success || errors.submit}
               </motion.p>
             )}
@@ -291,27 +189,25 @@ export default function Login() {
               size="lg"
               loading={loading}
               rightIcon={<ArrowRight size={15} />}
-              className="w-full mt-1 font-black"
+              className="w-full font-bold"
             >
-              {loading ? 'Signing in…' : 'Sign In'}
+              {loading ? 'Connexion…' : 'Se connecter'}
             </Button>
-          </motion.form>
 
-          {/* Divider */}
-          <motion.div variants={fadeUp} className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-white/[0.06]" />
-            <span className="text-caption text-slate-600 font-bold tracking-wider uppercase">or continue with</span>
-            <div className="flex-1 h-px bg-white/[0.06]" />
-          </motion.div>
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-1">
+              <div className="flex-1 h-px bg-white/[0.06]" />
+              <span className="text-caption text-white/25 uppercase tracking-widest">ou</span>
+              <div className="flex-1 h-px bg-white/[0.06]" />
+            </div>
 
-          {/* Google OAuth — seul bouton social */}
-          <motion.div variants={fadeUp} className="flex justify-center">
+            {/* Google OAuth */}
             <motion.button
               type="button"
               onClick={startGoogleOAuth}
-              whileHover={{ y: -1, backgroundColor: 'rgba(255,255,255,0.06)' }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 w-full bg-white/[0.03] border border-white/[0.07] rounded-xl text-body-sm font-bold text-slate-300 hover:text-white transition-all duration-200"
+              whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center justify-center gap-2.5 w-full h-11 bg-white/[0.03] border border-white/[0.08] rounded-xl text-body font-medium text-white/60 hover:text-white transition-all duration-200"
             >
               <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -321,17 +217,17 @@ export default function Login() {
               </svg>
               Continuer avec Google
             </motion.button>
-          </motion.div>
+          </form>
+        </Card>
 
-          {/* Footer link */}
-          <motion.p variants={fadeUp} className="text-label text-slate-600 text-center mt-6 font-medium">
-            Don&apos;t have an account?{' '}
-            <Link to="/signup" className="text-rose-400 hover:text-rose-300 font-black transition-colors">
-              Sign up free
-            </Link>
-          </motion.p>
-        </motion.div>
-      </div>
+        {/* Footer */}
+        <p className="text-center text-body-sm text-white/35 mt-6">
+          Pas encore de compte ?{' '}
+          <Link to="/signup" className="text-rose-400 hover:text-rose-300 font-medium transition-colors">
+            Créer un compte
+          </Link>
+        </p>
+      </motion.div>
     </div>
   )
 }

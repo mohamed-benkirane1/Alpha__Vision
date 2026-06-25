@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { AlertTriangle, RefreshCw, Wallet, TrendingUp, Database, Cpu, Zap } from 'lucide-react'
+import { useCountUp } from '../hooks/useCountUp'
 
 import StatCard         from '../components/dashboard/StatCard'
 import PerformanceChart from '../components/dashboard/PerformanceChart'
@@ -164,6 +165,14 @@ export default function Dashboard() {
   const portfolioChange = getValidNumber(portfolio?.totals?.totalProfitPercent)
   const hasDataError    = Boolean(error)
 
+  // Count-up Hero KPI
+  const shouldReduce         = useReducedMotion()
+  const animatedPortfolioVal = useCountUp(
+    portfolioValue ?? 0,
+    900,
+    portfolioValue !== null && !shouldReduce,
+  )
+
   return (
     <div className="space-y-6">
 
@@ -231,10 +240,10 @@ export default function Dashboard() {
               </p>
 
               {loading && !portfolio ? (
-                <div className="w-48 h-10 rounded-xl bg-white/[0.06] animate-pulse mb-3" />
+                <div className="w-48 h-10 rounded-xl bg-white/[0.06] animate-shimmer mb-3" />
               ) : (
                 <p className="text-display font-black text-white tabular-nums font-mono leading-none mb-3">
-                  {portfolioValue !== null ? formatCurrency(portfolioValue) : '--'}
+                  {portfolioValue !== null ? formatCurrency(animatedPortfolioVal) : '--'}
                 </p>
               )}
 

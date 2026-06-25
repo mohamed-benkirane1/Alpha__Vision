@@ -48,13 +48,14 @@ export default function ForgotPassword() {
 
   const isValid = email && !error
   const inputClass =
-    `w-full bg-[#06020c]/70 border ${
-      error
-        ? 'border-rose-500/50 focus:border-rose-500/70 focus:shadow-[0_0_12px_rgba(225,29,72,0.14)]'
+    `w-full h-11 pl-10 pr-10 rounded-xl text-body text-white placeholder:text-white/30
+     focus:outline-none transition-all duration-200
+     ${error
+        ? 'bg-rose-500/5 border border-rose-500/40 focus:border-rose-500/60 focus:bg-rose-500/8'
         : isValid
-          ? 'border-emerald-500/40 focus:border-emerald-500/60 focus:shadow-[0_0_12px_rgba(16,185,129,0.12)]'
-          : 'border-white/[0.09] focus:border-rose-500/50 focus:shadow-[0_0_14px_rgba(225,29,72,0.10)]'
-    } text-white text-body rounded-xl py-2.5 pl-10 pr-10 placeholder-slate-700 focus:outline-none transition-all duration-200`
+          ? 'bg-emerald-500/5 border border-emerald-500/30 focus:border-emerald-500/50 focus:bg-emerald-500/8'
+          : 'bg-white/[0.04] border border-white/[0.08] focus:border-app-accent/50 focus:bg-white/[0.06]'
+     }`
 
   return (
     <div className="min-h-screen bg-[#06020c] flex flex-col items-center justify-center px-6 relative overflow-hidden">

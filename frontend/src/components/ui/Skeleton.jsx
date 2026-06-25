@@ -1,6 +1,7 @@
 /**
  * Skeleton — placeholder shimmer pour les états de chargement.
- * Remplace les divs ad-hoc `animate-pulse bg-white/[0.06]`.
+ * Utilise animate-shimmer (défini dans index.css) pour un effet
+ * de balayage lumineux plutôt qu'un simple pulse.
  */
 export default function Skeleton({
   width    = 'w-full',
@@ -10,7 +11,7 @@ export default function Skeleton({
 }) {
   return (
     <div
-      className={`animate-pulse bg-white/[0.06] ${width} ${height} ${rounded} ${className}`}
+      className={`animate-shimmer ${width} ${height} ${rounded} ${className}`}
       aria-hidden="true"
     />
   )
