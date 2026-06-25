@@ -1,111 +1,94 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, FlaskConical, Server } from 'lucide-react'
-import BacktestForm from '../components/backtest/BacktestForm'
+import { AlertTriangle, BarChart2, FlaskConical, Server } from 'lucide-react'
+import BacktestForm    from '../components/backtest/BacktestForm'
 import BacktestResults from '../components/backtest/BacktestResults'
-import BacktestChart from '../components/backtest/BacktestChart'
+import BacktestChart   from '../components/backtest/BacktestChart'
+import { Card, Badge, EmptyState } from '../components/ui'
 import { getBacktestCapabilities, runBacktest } from '../services/backtestService'
+import { formatDateTime } from '../utils/formatters'
 
 const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return date.toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-}
-
 export default function Backtesting() {
-  const [response, setResponse] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [capabilities, setCapabilities] = useState(null)
-  const [capabilitiesError, setCapabilitiesError] = useState('')
+  const [response,           setResponse]          = useState(null)
+  const [loading,            setLoading]           = useState(false)
+  const [error,              setError]             = useState(null)
+  const [capabilities,       setCapabilities]      = useState(null)
+  const [capabilitiesError,  setCapabilitiesError] = useState('')
 
   useEffect(() => {
     let active = true
-
     getBacktestCapabilities().then((result) => {
       if (!active) return
-      if (result.success) {
-        setCapabilities(result)
-        setCapabilitiesError('')
-      } else {
-        setCapabilities(null)
-        setCapabilitiesError(result.error || 'Unable to load supported backtest symbols.')
-      }
+      if (result.success) { setCapabilities(result); setCapabilitiesError('') }
+      else { setCapabilities(null); setCapabilitiesError(result.error || 'Impossible de charger les symboles supportés.') }
     })
-
-    return () => {
-      active = false
-    }
+    return () => { active = false }
   }, [])
 
   async function handleRun(payload) {
-    setLoading(true)
-    setError(null)
-
+    setLoading(true); setError(null)
     const result = await runBacktest(payload)
-
     setResponse(result)
-    setError(result.success ? null : result.error || 'Unable to run backtest.')
+    setError(result.success ? null : result.error || 'Impossible de lancer le backtest.')
     setLoading(false)
   }
 
-  const warnings = [
-    ...(response?.warnings || []),
-    ...(response?.dataQuality?.warnings || []),
-  ].filter(Boolean)
+  const warnings = [...(response?.warnings || []), ...(response?.dataQuality?.warnings || [])].filter(Boolean)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <FlaskConical size={16} className="text-rose-400" />
-              <h1 className="text-display-sm font-black text-white">Backtesting</h1>
-            </div>
-            <p className="text-body-sm text-slate-500 font-medium">Run backend backtests only when real historical data is available</p>
+            <p className="text-label uppercase tracking-wider text-white/40 mb-1">Backtesting</p>
+            <h1 className="text-display-sm font-black text-white">Testez vos Stratégies</h1>
+            <p className="text-body text-white/40">Simulez vos stratégies sur des données historiques</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-caption font-black uppercase tracking-wider text-emerald-400">
-              <Server size={10} />
-              Backend source
-            </span>
+            <Badge variant="success" size="sm">
+              <Server size={9} className="mr-1 inline" />
+              Backend réel
+            </Badge>
             {response?.fallback && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 text-caption font-black uppercase tracking-wider text-amber-300">
-                <AlertTriangle size={10} />
-                Indicative
-              </span>
+              <Badge variant="warning" size="sm">
+                <AlertTriangle size={9} className="mr-1 inline" />
+                Indicatif
+              </Badge>
             )}
           </div>
         </div>
       </motion.div>
 
+      {/* ── Meta bar si résultats ────────────────────────────────────────── */}
       {response && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.07] bg-[#0a1628]/70 px-4 py-3 text-label font-bold text-slate-500">
-          <span>Provider: <span className="text-slate-300">{response.provider || '--'}</span></span>
-          <span>Source: <span className="text-slate-300">{response.source || '--'}</span></span>
-          <span>Updated: <span className="text-slate-300">{formatDateTime(response.timestamp)}</span></span>
-          <span>Real historical data: <span className={response.dataQuality?.usesRealHistoricalData ? 'text-emerald-400' : 'text-amber-300'}>{response.dataQuality?.usesRealHistoricalData ? 'Yes' : 'No'}</span></span>
-          {response.params && (
-            <span>
-              Strategy: <span className="text-slate-300 uppercase">{response.params.strategy || '--'}</span>
-              {' | '}Params: <span className="text-slate-300">capital={response.params.initialCapital} pos={response.params.positionSize}</span>
-              {response.params.startDate && <span> | from={response.params.startDate}</span>}
-              {response.params.endDate && <span> | to={response.params.endDate}</span>}
-            </span>
-          )}
-        </div>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <Card padding="sm">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-label font-bold text-white/35">
+              <span>Provider : <span className="text-white/55">{response.provider || '--'}</span></span>
+              <span>Source : <span className="text-white/55">{response.source || '--'}</span></span>
+              <span>Données réelles : <span className={response.dataQuality?.usesRealHistoricalData ? 'text-emerald-400' : 'text-amber-400'}>{response.dataQuality?.usesRealHistoricalData ? 'Oui' : 'Non'}</span></span>
+              <span>Mis à jour : <span className="text-white/55">{formatDateTime(response.timestamp)}</span></span>
+              {response.params && (
+                <span>
+                  Stratégie : <span className="text-white/55 uppercase">{response.params.strategy || '--'}</span>
+                  {' | '}Capital : <span className="font-mono text-white/55">{response.params.initialCapital}</span>
+                </span>
+              )}
+            </div>
+          </Card>
+        </motion.div>
       )}
 
+      {/* ── Warnings ─────────────────────────────────────────────────────── */}
       {warnings.length > 0 && (
         <div className="space-y-2">
-          {warnings.map((warning) => (
-            <div key={warning} className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
-              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-              {warning}
+          {warnings.map((w) => (
+            <div key={w} className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />{w}
             </div>
           ))}
         </div>
@@ -113,21 +96,22 @@ export default function Backtesting() {
 
       {capabilitiesError && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
-          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          <span>{capabilitiesError}</span>
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" /><span>{capabilitiesError}</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+      {/* ── Layout 2 colonnes ───────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Formulaire */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <BacktestForm
-            onRun={handleRun}
-            loading={loading}
-            error={error}
-          />
+          <Card padding="none">
+            <BacktestForm onRun={handleRun} loading={loading} error={error} />
+          </Card>
         </motion.div>
 
-        <div className="lg:col-span-2 space-y-3.5">
+        {/* Résultats */}
+        <div className="space-y-4">
           {response ? (
             <>
               <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
@@ -142,16 +126,14 @@ export default function Backtesting() {
               </motion.div>
             </>
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-10 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)] flex flex-col items-center justify-center text-center h-full min-h-[260px]"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
-                <FlaskConical size={22} className="text-rose-400" />
-              </div>
-              <p className="text-body text-slate-500 font-bold">No backtest run yet</p>
-              <p className="text-body-sm text-slate-700 mt-1 font-medium">Configure and run a strategy. Results are shown only from backend historical data.</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Card padding="lg" className="min-h-[280px] flex items-center justify-center">
+                <EmptyState
+                  icon={BarChart2}
+                  title="Aucun résultat"
+                  description="Configurez et lancez un backtest pour voir les résultats ici"
+                />
+              </Card>
             </motion.div>
           )}
         </div>

@@ -31,40 +31,51 @@ export default function BotHistory({ actions = [] }) {
           </p>
         </div>
       ) : (
-        <>
-          <div className="hidden sm:grid grid-cols-5 px-3 mb-2 text-caption text-slate-700 uppercase tracking-wide font-black">
-            <span>Time</span><span>Action</span><span>Symbol</span><span>Quote</span><span className="text-right">Reason</span>
-          </div>
-          <div className="space-y-1.5">
-            <AnimatePresence initial={false}>
-              {cleanActions.map((action, i) => (
-                <motion.div
-                  key={`${action.id || action.timestamp || i}-${action.action || 'action'}`}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.25 }}
-                  whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
-                  className="grid grid-cols-2 sm:grid-cols-5 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-body-sm gap-1 sm:gap-2"
-                >
-                  <span className="text-slate-600 font-mono text-caption">{formatDateTime(action.createdAt || action.timestamp)}</span>
-                  <span className="text-slate-300 font-bold">{action.decision || action.action || '--'}</span>
-                  <span className="hidden sm:block text-slate-600 font-medium">{action.symbol || '--'}</span>
-                  <span className="text-slate-500 font-medium">
-                    {formatPrice(action.price)}
-                    <span className="block text-caption text-slate-700">{formatQuantity(action.quantity)} / {action.priceProvider || '--'}</span>
-                  </span>
-                  <span className="text-right text-slate-500 font-medium">
-                    {action.reason || action.error || '--'}
-                    <span className="block text-caption text-slate-700">
-                      {action.executed ? 'Simulated trade executed' : action.error ? action.error : 'Decision recorded only'}
+        /* overflow-x-auto pour scroll horizontal mobile */
+        <div className="overflow-x-auto">
+          <div className="min-w-[500px]">
+            <div className="hidden sm:grid grid-cols-5 px-3 mb-2 text-caption text-slate-700 uppercase tracking-wide font-black">
+              <span>Time</span><span>Action</span><span>Symbol</span><span>Quote</span><span className="text-right">Reason</span>
+            </div>
+            <div className="space-y-1.5">
+              <AnimatePresence initial={false}>
+                {cleanActions.map((action, i) => (
+                  <motion.div
+                    key={`${action.id || action.timestamp || i}-${action.action || 'action'}`}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.25 }}
+                    whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
+                    className="grid grid-cols-2 sm:grid-cols-5 items-center px-3 py-2.5 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-body-sm gap-1 sm:gap-2"
+                  >
+                    <span className="text-slate-600 font-mono text-caption">
+                      {formatDateTime(action.createdAt || action.timestamp)}
                     </span>
-                  </span>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                    <span className="text-slate-300 font-bold">
+                      {action.decision || action.action || '--'}
+                    </span>
+                    <span className="hidden sm:block text-slate-600 font-medium">
+                      {action.symbol || '--'}
+                    </span>
+                    <span className="text-slate-500 font-medium">
+                      {formatPrice(action.price)}
+                      <span className="block text-caption text-slate-700">
+                        {formatQuantity(action.quantity)} / {action.priceProvider || '--'}
+                      </span>
+                    </span>
+                    <span className="text-right text-slate-500 font-medium">
+                      {action.reason || action.error || '--'}
+                      <span className="block text-caption text-slate-700">
+                        {action.executed ? 'Simulated trade executed' : action.error ? action.error : 'Decision recorded only'}
+                      </span>
+                    </span>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </motion.div>
   )

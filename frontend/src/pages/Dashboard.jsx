@@ -258,7 +258,7 @@ export default function Dashboard() {
         <Card padding="lg" className="relative overflow-hidden">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-rose-500/[0.05] to-transparent" />
 
-          <div className="relative flex items-start justify-between gap-4">
+          <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <p className="text-label uppercase tracking-wide text-white/40 mb-2">
                 Valeur du Portfolio
@@ -285,7 +285,7 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="text-right shrink-0">
+            <div className="sm:text-right shrink-0">
               <p className="text-label uppercase tracking-wide text-white/35 mb-1">Actifs</p>
               <p className="text-heading font-black text-white tabular-nums font-mono">
                 {holdingsDisplay}

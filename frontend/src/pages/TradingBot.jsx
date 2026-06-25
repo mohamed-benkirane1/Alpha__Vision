@@ -1,57 +1,34 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Cpu, RefreshCw, Server } from 'lucide-react'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
 import BotControlPanel from '../components/bot/BotControlPanel'
-import BotStatusCard from '../components/bot/BotStatusCard'
-import BotHistory from '../components/bot/BotHistory'
+import BotStatusCard   from '../components/bot/BotStatusCard'
+import BotHistory      from '../components/bot/BotHistory'
+import { Card, Badge, Button } from '../components/ui'
 import { getBotStatus, runBotTick, startBot, stopBot } from '../services/botService'
 
 const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 
 const emptyBot = {
-  success: true,
-  timestamp: null,
-  source: 'backend',
-  provider: 'internal-paper-bot',
-  fallback: false,
-  dataQuality: {
-    hasRealBotEngine: true,
-    usesMockPerformance: false,
-    isIndicative: false,
-    warnings: ['Bot status has not been loaded yet.'],
-  },
-  status: {
-    isRunning: false,
-    mode: 'paper',
-    strategy: null,
-    symbol: null,
-    startedAt: null,
-    stoppedAt: null,
-    lastTickAt: null,
-    positionSize: null,
-  },
-  performance: null,
-  recentActions: [],
-  warnings: [],
-  error: null,
-  message: '',
+  success: true, timestamp: null, source: 'backend', provider: 'internal-paper-bot', fallback: false,
+  dataQuality: { hasRealBotEngine: true, usesMockPerformance: false, isIndicative: false, warnings: ['Bot status has not been loaded yet.'] },
+  status: { isRunning: false, mode: 'paper', strategy: null, symbol: null, startedAt: null, stoppedAt: null, lastTickAt: null, positionSize: null },
+  performance: null, recentActions: [], warnings: [], error: null, message: '',
 }
 
 export default function TradingBot() {
-  const [bot, setBot] = useState(emptyBot)
-  const [loading, setLoading] = useState(true)
+  const [bot,          setBot]          = useState(emptyBot)
+  const [loading,      setLoading]      = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
-  const [tickLoading, setTickLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [tickLoading,  setTickLoading]  = useState(false)
+  const [error,        setError]        = useState(null)
 
   const loadStatus = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true)
     setError(null)
-
     const data = await getBotStatus()
     setBot(data)
-    if (!data.success) setError(data.error || data.message || 'Unable to load bot status.')
-
+    if (!data.success) setError(data.error || data.message || 'Impossible de charger le statut.')
     if (!silent) setLoading(false)
   }, [])
 
@@ -61,110 +38,104 @@ export default function TradingBot() {
   }, [loadStatus])
 
   const handleStart = async (config) => {
-    setActionLoading(true)
-    setError(null)
-
+    setActionLoading(true); setError(null)
     const data = await startBot(config)
     setBot(data)
-    if (!data.success) setError(data.error || data.message || 'Unable to start bot.')
-
+    if (!data.success) setError(data.error || data.message || 'Impossible de démarrer le bot.')
     setActionLoading(false)
   }
 
   const handleStop = async () => {
-    setActionLoading(true)
-    setError(null)
-
+    setActionLoading(true); setError(null)
     const data = await stopBot()
     setBot(data)
-    if (!data.success) setError(data.error || data.message || 'Unable to stop bot.')
-
+    if (!data.success) setError(data.error || data.message || 'Impossible d\'arrêter le bot.')
     setActionLoading(false)
   }
 
   const handleTick = async () => {
-    setTickLoading(true)
-    setError(null)
-
+    setTickLoading(true); setError(null)
     const data = await runBotTick()
     setBot(data)
-    if (!data.success) setError(data.error || data.message || 'Unable to run bot tick.')
-
+    if (!data.success) setError(data.error || data.message || 'Impossible d\'exécuter le tick.')
     setTickLoading(false)
   }
 
   const running = Boolean(bot?.status?.isRunning)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <Cpu size={16} className="text-rose-400" />
-              <h1 className="text-display-sm font-black text-white">Paper Trading Bot</h1>
-            </div>
-            <p className="text-body-sm text-slate-500 font-medium">
-              Simulated bot decisions and optional paper execution. No real broker orders are sent.
-            </p>
+            <p className="text-label uppercase tracking-wider text-white/40 mb-1">Automatisation</p>
+            <h1 className="text-display-sm font-black text-white">Trading Bot</h1>
+            <p className="text-body text-white/40">Configurez et pilotez votre bot autonome</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-caption font-black uppercase tracking-wider text-emerald-400">
-              <Server size={10} />
-              Backend API
-            </span>
-            <button
-              type="button"
+            {running ? (
+              <Badge variant="success" dot size="sm">Actif</Badge>
+            ) : (
+              <Badge variant="neutral" size="sm">Inactif</Badge>
+            )}
+            <Button
+              variant="secondary" size="sm"
               onClick={() => loadStatus()}
               disabled={loading || actionLoading}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-caption font-black uppercase tracking-wider text-slate-400 transition hover:border-white/[0.16] hover:text-white disabled:opacity-45"
+              loading={loading}
             >
-              <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
-              Refresh
-            </button>
+              <RefreshCw size={12} className="mr-1.5" />
+              Actualiser
+            </Button>
           </div>
         </div>
       </motion.div>
 
+      {/* ── Erreur ──────────────────────────────────────────────────────── */}
       {error && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
-          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          <span>{error}</span>
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" /><span>{error}</span>
         </div>
       )}
 
+      {/* ── Contenu ─────────────────────────────────────────────────────── */}
       {loading ? (
-        <div className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-10 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.28)] flex flex-col items-center justify-center text-center min-h-[260px]">
-          <span className="w-6 h-6 border-2 border-white/20 border-t-rose-400 rounded-full animate-spin mb-4" />
-          <p className="text-body text-slate-500 font-bold">Loading bot status...</p>
-        </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <Card padding="lg" className="min-h-[260px] flex items-center justify-center text-center">
+            <div>
+              <span className="w-6 h-6 border-2 border-white/20 border-t-rose-400 rounded-full animate-spin inline-block mb-4" />
+              <p className="text-body text-white/40 font-bold">Chargement du statut...</p>
+            </div>
+          </Card>
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Panneau de contrôle + statut */}
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="space-y-3.5"
+            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+            className="space-y-4"
           >
-            <BotControlPanel
-              running={running}
-              loading={actionLoading}
-              error={error}
-              onStart={handleStart}
-              onStop={handleStop}
-              onTick={handleTick}
-              tickLoading={tickLoading}
-            />
+            <Card padding="none">
+              <BotControlPanel
+                running={running} loading={actionLoading} error={error}
+                onStart={handleStart} onStop={handleStop}
+                onTick={handleTick} tickLoading={tickLoading}
+              />
+            </Card>
             <BotStatusCard bot={bot} />
           </motion.div>
 
+          {/* Historique */}
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="lg:col-span-2"
           >
-            <BotHistory actions={bot?.recentActions || []} />
+            <Card padding="md">
+              <BotHistory actions={bot?.recentActions || []} />
+            </Card>
           </motion.div>
         </div>
       )}

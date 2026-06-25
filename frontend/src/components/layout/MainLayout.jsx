@@ -349,7 +349,7 @@ export default function MainLayout() {
           {/* Actions droite */}
           <div className="flex items-center gap-2.5 ml-auto">
 
-            {/* Badge marché — heure réelle */}
+            {/* Badge marché — desktop seulement (sm+) */}
             <div className="hidden sm:block">
               <Badge variant={marketOpen ? 'success' : 'neutral'} dot size="sm">
                 {marketOpen ? 'Marchés ouverts' : 'Marchés fermés'}

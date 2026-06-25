@@ -5,8 +5,8 @@ import { getValidNumber, formatCurrency, formatPercent, formatNumber } from '../
 const isFiniteNumber = (value) => getValidNumber(value) !== null
 
 export default function BacktestResults({ response }) {
-  const results = response?.results
-  const params = response?.params || {}
+  const results  = response?.results
+  const params   = response?.params || {}
   const warnings = [
     ...(response?.warnings || []),
     ...(response?.dataQuality?.warnings || []),
@@ -39,14 +39,14 @@ export default function BacktestResults({ response }) {
   }
 
   const stats = [
-    { label: 'Final Capital', value: formatCurrency(results.finalCapital), color: 'text-white', icon: DollarSign },
-    { label: 'Total Profit', value: formatCurrency(results.totalProfit), color: Number(results.totalProfit) >= 0 ? 'text-emerald-400' : 'text-rose-400', icon: TrendingUp },
-    { label: 'Return', value: formatPercent(results.totalReturn), color: Number(results.totalReturn) >= 0 ? 'text-emerald-400' : 'text-rose-400', icon: TrendingUp },
-    { label: 'Win Rate', value: formatPercent(results.winRate), color: 'text-rose-400', icon: Target },
-    { label: 'Total Trades', value: formatNumber(results.totalTrades), color: 'text-white', icon: BarChart2 },
-    { label: 'Max Drawdown', value: formatPercent(results.maxDrawdown), color: 'text-amber-400', icon: CheckCircle },
-    { label: 'Profit Factor', value: isFiniteNumber(results.profitFactor) ? Number(results.profitFactor).toFixed(2) : '--', color: 'text-white', icon: BarChart2 },
-    { label: 'Wins / Losses', value: `${formatNumber(results.wins)} / ${formatNumber(results.losses)}`, color: 'text-white', icon: CheckCircle },
+    { label: 'Final Capital',  value: formatCurrency(results.finalCapital),  color: 'text-white',        icon: DollarSign },
+    { label: 'Total Profit',   value: formatCurrency(results.totalProfit),    color: Number(results.totalProfit)  >= 0 ? 'text-emerald-400' : 'text-rose-400', icon: TrendingUp },
+    { label: 'Return',         value: formatPercent(results.totalReturn),     color: Number(results.totalReturn)  >= 0 ? 'text-emerald-400' : 'text-rose-400', icon: TrendingUp },
+    { label: 'Win Rate',       value: formatPercent(results.winRate),         color: 'text-rose-400',     icon: Target   },
+    { label: 'Total Trades',   value: formatNumber(results.totalTrades),      color: 'text-white',        icon: BarChart2 },
+    { label: 'Max Drawdown',   value: formatPercent(results.maxDrawdown),     color: 'text-amber-400',    icon: CheckCircle },
+    { label: 'Profit Factor',  value: isFiniteNumber(results.profitFactor) ? Number(results.profitFactor).toFixed(2) : '--', color: 'text-white', icon: BarChart2 },
+    { label: 'Wins / Losses',  value: `${formatNumber(results.wins)} / ${formatNumber(results.losses)}`, color: 'text-white', icon: CheckCircle },
   ]
 
   return (
@@ -80,23 +80,26 @@ export default function BacktestResults({ response }) {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        {stats.map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.04, type: 'spring', stiffness: 180 }}
-            whileHover={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
-            className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3.5 transition-colors"
-          >
-            <div className="flex items-center gap-1.5 mb-2">
-              <s.icon size={10} className="text-slate-600" />
-              <p className="text-caption text-slate-600 font-bold uppercase tracking-wider">{s.label}</p>
-            </div>
-            <p className={`text-ui font-black tabular-nums font-mono ${s.color}`}>{s.value}</p>
-          </motion.div>
-        ))}
+      {/* overflow-x-auto pour mobile */}
+      <div className="overflow-x-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 min-w-[300px]">
+          {stats.map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.04, type: 'spring', stiffness: 180 }}
+              whileHover={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
+              className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3.5 transition-colors"
+            >
+              <div className="flex items-center gap-1.5 mb-2">
+                <s.icon size={10} className="text-slate-600" />
+                <p className="text-caption text-slate-600 font-bold uppercase tracking-wider">{s.label}</p>
+              </div>
+              <p className={`text-ui font-black tabular-nums font-mono ${s.color}`}>{s.value}</p>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </motion.div>
   )
