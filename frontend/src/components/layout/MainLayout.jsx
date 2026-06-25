@@ -404,12 +404,19 @@ export default function MainLayout() {
 
             <div className="w-px h-5 bg-white/[0.08]" />
 
-            {/* Avatar topbar */}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-600 to-red-700
-                            flex items-center justify-center text-body-sm font-black select-none
-                            shadow-[0_0_12px_rgba(225,29,72,0.35)]">
+            {/* Avatar topbar — clic → /settings */}
+            <button
+              type="button"
+              onClick={() => navigate('/settings')}
+              title="Paramètres du compte"
+              aria-label="Paramètres du compte"
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-600 to-red-700
+                         flex items-center justify-center text-body-sm font-black select-none
+                         shadow-[0_0_12px_rgba(225,29,72,0.35)] cursor-pointer
+                         hover:ring-2 hover:ring-app-accent/50 transition-all duration-200"
+            >
               {getInitial(user?.name)}
-            </div>
+            </button>
           </div>
         </header>
 
