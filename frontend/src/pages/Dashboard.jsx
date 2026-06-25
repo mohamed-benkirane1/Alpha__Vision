@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { AlertTriangle, RefreshCw, Wallet, TrendingUp, Database, Cpu, Zap } from 'lucide-react'
-import { useCountUp } from '../hooks/useCountUp'
+import useCountUp from '../hooks/useCountUp'
 
 import StatCard         from '../components/dashboard/StatCard'
 import PerformanceChart from '../components/dashboard/PerformanceChart'

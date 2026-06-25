@@ -1,7 +1,7 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { motion } from 'framer-motion'
 import { AlertTriangle, TrendingUp, Clock } from 'lucide-react'
-import { formatCurrency, formatDateTime } from '../../utils/formatters'
+import { getValidNumber, formatCurrency, formatDateTime } from '../../utils/formatters'
 
 const formatTick = (value) => formatDateTime(value, 'date')
 
@@ -49,7 +49,7 @@ export default function PerformanceChart({ history = null, loading = false, unav
     ? history.data
       .map((point) => ({
         ...point,
-        totalPortfolioValue: toFiniteNumber(point.totalPortfolioValue),
+        totalPortfolioValue: getValidNumber(point.totalPortfolioValue),
       }))
       .filter((point) => point.timestamp && point.totalPortfolioValue !== null)
     : []

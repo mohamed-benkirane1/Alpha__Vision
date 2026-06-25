@@ -1,7 +1,7 @@
 import { useReducedMotion } from 'framer-motion'
 import Card  from '../ui/Card'
 import Badge from '../ui/Badge'
-import { useCountUp } from '../../hooks/useCountUp'
+import useCountUp from '../../hooks/useCountUp'
 
 /**
  * StatCard — carte KPI secondaire.
