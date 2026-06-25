@@ -21,36 +21,42 @@ const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
 const AUTO_REFRESH_MS = 30000
 
 function getGreeting() {
-  const h = new Date().getHours()
-  if (h < 12) return 'Bonjour'
-  if (h < 17) return 'Bon après-midi'
-  return 'Bonsoir'
+  try {
+    const h = new Date().getHours()
+    if (h < 12) return 'Bonjour'
+    if (h < 17) return 'Bon après-midi'
+    return 'Bonsoir'
+  } catch {
+    return 'Bonjour'
+  }
 }
 
 const getFirstName = (name) => {
-  if (!name) return 'Trader'
+  if (!name || typeof name !== 'string') return 'Trader'
   return name.trim().split(' ')[0] || 'Trader'
 }
 
+/** Construit les 4 StatCards secondaires depuis les données portfolio/bot/trades */
 function buildStats({ portfolio, trades, bot, loading }) {
-  const totals        = portfolio?.totals || {}
-  const totalValue    = totals.totalPortfolioValue
-  const cashBalance   = totals.cashBalance ?? portfolio?.balance
-  const holdingsValue = totals.holdingsValue ?? portfolio?.totalValue
-  const totalProfit   = totals.totalProfit ?? portfolio?.totalProfit
-  const totalProfitPct = totals.totalProfitPercent ?? portfolio?.totalProfitPercent
-  const holdingsCount = Array.isArray(portfolio?.holdings) ? portfolio.holdings.length : 0
-  const investedValue = getValidNumber(totals.totalInvested)
-  const hasPnlData    = holdingsCount > 0 || (investedValue !== null && investedValue > 0)
-  const hasTradeData  = Array.isArray(trades)
-  const tradeCount    = hasTradeData ? trades.length : 0
+  const totals         = portfolio?.totals || {}
+  const cashBalance    = getValidNumber(totals.cashBalance ?? portfolio?.balance)
+  const holdingsValue  = getValidNumber(totals.holdingsValue ?? portfolio?.totalValue)
+  const totalProfit    = getValidNumber(totals.totalProfit ?? portfolio?.totalProfit)
+  const totalProfitPct = getValidNumber(totals.totalProfitPercent ?? portfolio?.totalProfitPercent)
+  const holdingsCount  = Array.isArray(portfolio?.holdings) ? portfolio.holdings.length : 0
+  const investedValue  = getValidNumber(totals.totalInvested)
+  const hasPnlData     = holdingsCount > 0 || (investedValue !== null && investedValue > 0)
+  const tradeCount     = Array.isArray(trades) ? trades.length : 0
 
   const botStatus          = bot?.status || {}
   const botEngineAvailable = bot?.dataQuality?.hasRealBotEngine === true
     && bot?.fallback !== true
     && botStatus.mode !== 'unavailable'
   const activeBot = botEngineAvailable && botStatus.isRunning === true
-  const botValue  = !bot ? '--' : !botEngineAvailable ? 'UNAVAILABLE' : activeBot ? 'RUNNING' : 'STOPPED'
+  const botValue  = !bot ? '--'
+    : !botEngineAvailable ? 'UNAVAILABLE'
+    : activeBot ? 'RUNNING'
+    : 'STOPPED'
 
   const botDetails = !bot
     ? `Bot unavailable / ${tradeCount} trades`
@@ -77,28 +83,32 @@ function buildStats({ portfolio, trades, bot, loading }) {
     {
       icon: TrendingUp,
       label: 'Profit total',
-      value: loading && !portfolio ? '…' : (hasPnlData ? formatCurrency(totalProfit, { sign: true }) : '--'),
-      sub:   hasPnlData ? `${formatPercent(totalProfitPct, 1)} non réalisé` : 'Aucune position ouverte',
-      subUp: hasPnlData ? (getValidNumber(totalProfit) ?? 0) >= 0 : null,
+      value: (loading && !portfolio) ? '…'
+        : hasPnlData ? formatCurrency(totalProfit, { sign: true })
+        : '--',
+      sub:   hasPnlData
+        ? `${formatPercent(totalProfitPct, 1)} non réalisé`
+        : 'Aucune position ouverte',
+      subUp: hasPnlData ? (totalProfit ?? 0) >= 0 : null,
     },
     {
       icon: Database,
       label: 'Cash disponible',
-      value: loading && !portfolio ? '…' : formatCurrency(cashBalance),
+      value: (loading && !portfolio) ? '…' : formatCurrency(cashBalance),
       sub:   `Holdings ${formatCurrency(holdingsValue)}`,
       subUp: true,
     },
     {
       icon: Wallet,
       label: 'Positions ouvertes',
-      value: loading && !portfolio ? '…' : String(holdingsCount),
+      value: (loading && !portfolio) ? '…' : String(holdingsCount),
       sub:   portfolio ? `${tradeCount} trades exécutés` : 'Aucune donnée',
       subUp: holdingsCount > 0,
     },
     {
       icon: Cpu,
       label: 'Bot status',
-      value: loading && !bot ? '…' : botValue,
+      value: (loading && !bot) ? '…' : botValue,
       sub:   botSubNode,
       subUp: activeBot,
     },
@@ -108,17 +118,17 @@ function buildStats({ portfolio, trades, bot, loading }) {
 export default function Dashboard() {
   const { user } = useAuth()
 
-  const [portfolio,        setPortfolio]        = useState(null)
-  const [portfolioHistory, setPortfolioHistory] = useState(null)
-  const [trades,           setTrades]           = useState(null)
-  const [markets,          setMarkets]          = useState([])
+  const [portfolio,         setPortfolio]         = useState(null)
+  const [portfolioHistory,  setPortfolioHistory]  = useState(null)
+  const [trades,            setTrades]            = useState(null)
+  const [markets,           setMarkets]           = useState([])
   const [marketDataQuality, setMarketDataQuality] = useState(null)
-  const [serviceQuality,   setServiceQuality]   = useState(null)
-  const [bot,              setBot]              = useState(null)
-  const [aiSignal,         setAiSignal]         = useState(null)
-  const [loading,          setLoading]          = useState(true)
-  const [refreshing,       setRefreshing]       = useState(false)
-  const [error,            setError]            = useState('')
+  const [serviceQuality,    setServiceQuality]    = useState(null)
+  const [bot,               setBot]               = useState(null)
+  const [aiSignal,          setAiSignal]          = useState(null)
+  const [loading,           setLoading]           = useState(true)
+  const [refreshing,        setRefreshing]        = useState(false)
+  const [error,             setError]             = useState('')
   const loadingRef = useRef(false)
 
   const loadDashboardData = useCallback(async ({ refresh = false } = {}) => {
@@ -130,17 +140,17 @@ export default function Dashboard() {
 
     try {
       const data = await getDashboardLiveData()
-      setPortfolio(data.portfolio)
-      setPortfolioHistory(data.portfolioHistory)
+      setPortfolio(data.portfolio ?? null)
+      setPortfolioHistory(data.portfolioHistory ?? null)
       setTrades(Array.isArray(data.trades) ? data.trades : [])
       setMarkets(Array.isArray(data.markets) ? data.markets : [])
-      setMarketDataQuality(data.marketDataQuality)
-      setServiceQuality(data.dataQuality)
-      setBot(data.bot)
-      setAiSignal(data.aiSignal)
+      setMarketDataQuality(data.marketDataQuality ?? null)
+      setServiceQuality(data.dataQuality ?? null)
+      setBot(data.bot ?? null)
+      setAiSignal(data.aiSignal ?? null)
       if (!data.success) setError('Some dashboard data could not be refreshed.')
     } catch (err) {
-      console.error('Dashboard load failed:', err)
+      console.error('[Dashboard] load failed:', err)
       setError('Dashboard data could not be refreshed from the backend.')
     } finally {
       loadingRef.current = false
@@ -155,23 +165,39 @@ export default function Dashboard() {
     return () => { window.clearTimeout(timer); window.clearInterval(interval) }
   }, [loadDashboardData])
 
-  // Derived values
+  // ── Derived values — toutes sécurisées ──────────────────────────────────────
   const stats = useMemo(
     () => buildStats({ portfolio, trades, bot, loading }),
     [portfolio, trades, bot, loading],
   )
 
+  // portfolioValue : null si pas de donnée, number si disponible
   const portfolioValue  = getValidNumber(portfolio?.totals?.totalPortfolioValue)
+  // portfolioChange : null si pas de donnée
   const portfolioChange = getValidNumber(portfolio?.totals?.totalProfitPercent)
   const hasDataError    = Boolean(error)
 
-  // Count-up Hero KPI
-  const shouldReduce         = useReducedMotion()
+  // shouldReduce peut être null (SSR-like env dans framer-motion v12)
+  const reducedMotionRaw = useReducedMotion()
+  const shouldReduce     = reducedMotionRaw === true // null/undefined → false
+
+  // Count-up Hero KPI — uniquement si on a un vrai nombre > 0
+  const animationEnabled   = portfolioValue !== null && portfolioValue > 0 && !shouldReduce
   const animatedPortfolioVal = useCountUp(
-    portfolioValue ?? 0,
+    portfolioValue ?? 0,  // toujours un number, jamais null/NaN
     900,
-    portfolioValue !== null && !shouldReduce,
+    animationEnabled,
   )
+
+  // Valeur affichée dans le Hero KPI (toujours formatée proprement)
+  const heroDisplay = portfolioValue !== null
+    ? formatCurrency(animatedPortfolioVal)
+    : '--'
+
+  // Nombre de holdings (toujours un number ou '--')
+  const holdingsDisplay = Array.isArray(portfolio?.holdings)
+    ? String(portfolio.holdings.length)
+    : '--'
 
   return (
     <div className="space-y-6">
@@ -189,7 +215,7 @@ export default function Dashboard() {
           <p className="text-body-sm text-white/40 mt-1 font-medium">
             Dernière mise à jour{' '}
             <span className="text-white/55">
-              {formatDateTime(portfolio?.lastUpdated || portfolio?.timestamp, 'time')}
+              {formatDateTime(portfolio?.lastUpdated || portfolio?.timestamp || null, 'time')}
             </span>
             {refreshing && <span className="text-rose-400/70 font-bold"> · Actualisation…</span>}
           </p>
@@ -216,7 +242,7 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      {/* ── Erreur discrète (remplace le banner data quality) ────────────── */}
+      {/* ── Erreur discrète ─────────────────────────────────────────────── */}
       {hasDataError && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="flex items-center gap-2 px-4 py-2 rounded-lg
@@ -227,10 +253,9 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* ── Hero KPI — Valeur totale du portfolio ─────────────────────── */}
+      {/* ── Hero KPI ─────────────────────────────────────────────────────── */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <Card padding="lg" className="relative overflow-hidden">
-          {/* Glow décoratif */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-rose-500/[0.05] to-transparent" />
 
           <div className="relative flex items-start justify-between gap-4">
@@ -239,11 +264,11 @@ export default function Dashboard() {
                 Valeur du Portfolio
               </p>
 
-              {loading && !portfolio ? (
+              {(loading && !portfolio) ? (
                 <div className="w-48 h-10 rounded-xl bg-white/[0.06] animate-shimmer mb-3" />
               ) : (
                 <p className="text-display font-black text-white tabular-nums font-mono leading-none mb-3">
-                  {portfolioValue !== null ? formatCurrency(animatedPortfolioVal) : '--'}
+                  {heroDisplay}
                 </p>
               )}
 
@@ -263,7 +288,7 @@ export default function Dashboard() {
             <div className="text-right shrink-0">
               <p className="text-label uppercase tracking-wide text-white/35 mb-1">Actifs</p>
               <p className="text-heading font-black text-white tabular-nums font-mono">
-                {Array.isArray(portfolio?.holdings) ? portfolio.holdings.length : '--'}
+                {holdingsDisplay}
               </p>
               <p className="text-body-sm text-white/35 mt-0.5">positions</p>
             </div>
@@ -310,7 +335,11 @@ export default function Dashboard() {
         className="grid grid-cols-1 lg:grid-cols-2 gap-4"
       >
         <motion.div variants={fadeUp}>
-          <MarketOverview markets={markets} dataQuality={marketDataQuality} loading={loading && markets.length === 0} />
+          <MarketOverview
+            markets={markets}
+            dataQuality={marketDataQuality}
+            loading={loading && markets.length === 0}
+          />
         </motion.div>
         <motion.div variants={fadeUp}>
           <PortfolioSummary portfolio={portfolio} loading={loading && !portfolio} />

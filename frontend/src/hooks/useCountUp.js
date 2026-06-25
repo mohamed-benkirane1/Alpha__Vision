@@ -1,40 +1,81 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
- * Anime un nombre de 0 vers target avec un easing ease-out cubic.
- * @param {number}  target   — valeur finale
- * @param {number}  duration — durée en ms (défaut 900)
- * @param {boolean} enabled  — désactive si false ou si prefers-reduced-motion
- * @returns {number} valeur courante animée
+ * Anime un nombre de 0 → target avec un easing ease-out cubic.
+ * Complètement défensif : accepte n'importe quel input sans jamais crasher.
+ *
+ * @param {*}       target   — valeur finale (doit être un number fini > 0 pour animer)
+ * @param {number}  duration — durée en ms (défaut 900, min 100)
+ * @param {boolean} enabled  — false ou prefers-reduced-motion → renvoie target immédiatement
+ * @returns {number} valeur courante animée (toujours un number fini)
  */
 export function useCountUp(target, duration = 900, enabled = true) {
-  const [current, setCurrent] = useState(0)
+  // Normalise target : tout ce qui n'est pas un number fini positif → 0
+  const safeTarget = (typeof target === 'number' && Number.isFinite(target) && target >= 0)
+    ? Math.round(target)
+    : 0
+
+  // shouldAnimate : uniquement si activé ET target valide ET > 0
+  const shouldAnimate = Boolean(enabled) && safeTarget > 0
+
+  const [current, setCurrent] = useState(shouldAnimate ? 0 : safeTarget)
+  const rafRef  = useRef(null)
+  const prevTarget = useRef(safeTarget)
 
   useEffect(() => {
-    if (!enabled || typeof target !== 'number' || !Number.isFinite(target)) {
-      setCurrent(target ?? 0)
-      return
+    // Annule toute animation en cours
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
     }
 
-    let rafId = null
-    let start = null
-    setCurrent(0)
+    // Si pas d'animation → set directement et sortir
+    if (!shouldAnimate) {
+      setCurrent(safeTarget)
+      prevTarget.current = safeTarget
+      return undefined
+    }
+
+    // Si le target n'a pas changé → ne rien faire
+    if (safeTarget === prevTarget.current && current === safeTarget) {
+      return undefined
+    }
+
+    prevTarget.current = safeTarget
+    const safeDuration = Math.max(100, duration)
+    let startTime = null
 
     const step = (timestamp) => {
-      if (!start) start = timestamp
-      const progress = Math.min((timestamp - start) / duration, 1)
+      if (startTime === null) startTime = timestamp
+      const elapsed  = timestamp - startTime
+      const progress = Math.min(elapsed / safeDuration, 1)
+      // Ease-out cubic
       const eased    = 1 - Math.pow(1 - progress, 3)
-      setCurrent(Math.floor(eased * target))
+      const next     = Math.round(eased * safeTarget)
+
+      setCurrent(next)
+
       if (progress < 1) {
-        rafId = requestAnimationFrame(step)
+        rafRef.current = requestAnimationFrame(step)
       } else {
-        setCurrent(target)
+        setCurrent(safeTarget)
+        rafRef.current = null
       }
     }
 
-    rafId = requestAnimationFrame(step)
-    return () => { if (rafId) cancelAnimationFrame(rafId) }
-  }, [target, duration, enabled])
+    // Repart de 0 pour une nouvelle animation
+    setCurrent(0)
+    rafRef.current = requestAnimationFrame(step)
 
-  return current
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeTarget, safeDuration, shouldAnimate])
+
+  // Garantie de retour : toujours un number fini
+  return typeof current === 'number' && Number.isFinite(current) ? current : safeTarget
 }

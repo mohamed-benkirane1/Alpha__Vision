@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import MainLayout    from '../components/layout/MainLayout'
+import { Routes, Route } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import MainLayout     from '../components/layout/MainLayout'
 import ProtectedRoute from '../components/ProtectedRoute'
 
 // ── Lazy-loaded pages ─────────────────────────────────────────────────────────
@@ -21,24 +21,6 @@ const TradingBot     = lazy(() => import('../pages/TradingBot'))
 const Settings       = lazy(() => import('../pages/Settings'))
 const Payments       = lazy(() => import('../pages/Payments'))
 const NotFound       = lazy(() => import('../pages/NotFound'))
-
-// ── Page transition variants ──────────────────────────────────────────────────
-const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 12,
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1] },
-  },
-  exit: {
-    opacity: 0,
-    y: -8,
-    transition: { duration: 0.15, ease: [0.25, 0.1, 0.25, 1] },
-  },
-}
 
 // ── Loading fallback ──────────────────────────────────────────────────────────
 function AppFallback() {
@@ -62,14 +44,15 @@ function AppFallback() {
   )
 }
 
-// ── Animated wrapper for public pages ─────────────────────────────────────────
+// ── Page entry animation — appliquée sur chaque page publique au montage ──────
+// Pas d'exit animation (nécessiterait AnimatePresence + key sur Routes,
+// ce qui remonte toute la hiérarchie de routes et casse l'état Dashboard).
 function PageWrapper({ children }) {
   return (
     <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
     >
       {children}
     </motion.div>
@@ -77,42 +60,39 @@ function PageWrapper({ children }) {
 }
 
 // ── Routes ────────────────────────────────────────────────────────────────────
+// IMPORTANT : PAS de key={location.pathname} sur <Routes>.
+// Mettre une key sur Routes force React à démonter/remonter la hiérarchie entière
+// (ProtectedRoute → MainLayout → Dashboard) à chaque navigation, ce qui cause
+// une page blanche et perte de l'état du dashboard.
 function AppRoutes() {
-  const location = useLocation()
-
   return (
     <Suspense fallback={<AppFallback />}>
-      {/* AnimatePresence gère les transitions entre pages publiques.
-          Les pages protégées ont leur propre transition dans MainLayout. */}
-      <AnimatePresence mode="wait" initial={false}>
-        <Routes location={location} key={location.pathname}>
+      <Routes>
+        {/* ── Pages publiques — animation d'entrée au montage ──────── */}
+        <Route path="/"                element={<PageWrapper><Home /></PageWrapper>}           />
+        <Route path="/login"           element={<PageWrapper><Login /></PageWrapper>}          />
+        <Route path="/signup"          element={<PageWrapper><Signup /></PageWrapper>}         />
+        <Route path="/forgot-password" element={<PageWrapper><ForgotPassword /></PageWrapper>} />
+        <Route path="/reset-password"  element={<PageWrapper><ResetPassword /></PageWrapper>}  />
+        <Route path="/auth/callback"   element={<PageWrapper><AuthCallback /></PageWrapper>}   />
 
-          {/* ── Public pages — avec transition de page ─── */}
-          <Route path="/"                element={<PageWrapper><Home /></PageWrapper>}           />
-          <Route path="/login"           element={<PageWrapper><Login /></PageWrapper>}          />
-          <Route path="/signup"          element={<PageWrapper><Signup /></PageWrapper>}         />
-          <Route path="/forgot-password" element={<PageWrapper><ForgotPassword /></PageWrapper>} />
-          <Route path="/reset-password"  element={<PageWrapper><ResetPassword /></PageWrapper>}  />
-          <Route path="/auth/callback"   element={<PageWrapper><AuthCallback /></PageWrapper>}   />
-
-          {/* ── Protected pages — transition gérée dans MainLayout ── */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<MainLayout />}>
-              <Route path="/dashboard"   element={<Dashboard />}   />
-              <Route path="/portfolio"   element={<Portfolio />}   />
-              <Route path="/news"        element={<News />}        />
-              <Route path="/chatbot"     element={<Chatbot />}    />
-              <Route path="/trading"     element={<Trading />}    />
-              <Route path="/backtesting" element={<Backtesting />}/>
-              <Route path="/bot"         element={<TradingBot />} />
-              <Route path="/payments"    element={<Payments />}   />
-              <Route path="/settings"    element={<Settings />}   />
-            </Route>
+        {/* ── Pages protégées — transition gérée par MainLayout ────── */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<MainLayout />}>
+            <Route path="/dashboard"   element={<Dashboard />}   />
+            <Route path="/portfolio"   element={<Portfolio />}   />
+            <Route path="/news"        element={<News />}        />
+            <Route path="/chatbot"     element={<Chatbot />}     />
+            <Route path="/trading"     element={<Trading />}     />
+            <Route path="/backtesting" element={<Backtesting />} />
+            <Route path="/bot"         element={<TradingBot />}  />
+            <Route path="/payments"    element={<Payments />}    />
+            <Route path="/settings"    element={<Settings />}    />
           </Route>
+        </Route>
 
-          <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
-        </Routes>
-      </AnimatePresence>
+        <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
+      </Routes>
     </Suspense>
   )
 }

@@ -9,14 +9,16 @@ import { useCountUp } from '../../hooks/useCountUp'
  * Props :
  *   icon        Component lucide-react
  *   label       string
- *   value       string | number — si number → count-up animation
- *   formatFn    function (number) => string — formatteur pour count-up (optionnel)
- *   sub         ReactNode — ligne d'info additionnelle (optionnel)
+ *   value       string | number
+ *              → si number fini > 0 : count-up animation
+ *              → sinon : affiché directement
+ *   formatFn    (number) => string — formatteur pour count-up (optionnel)
+ *   sub         ReactNode — info additionnelle (optionnel)
  *   subUp       boolean | null
  *   change      number | undefined — % variation → badge
  *   loading     boolean
  *   onClick     function
- *   accentColor ignoré (conservé pour compat)
+ *   accentColor ignoré (compat)
  */
 export default function StatCard({
   icon: Icon,
@@ -30,13 +32,31 @@ export default function StatCard({
   onClick,
   accentColor, // eslint-disable-line no-unused-vars
 }) {
-  const shouldReduce = useReducedMotion()
-  const isNumeric    = typeof value === 'number' && Number.isFinite(value)
-  const animated     = useCountUp(isNumeric ? value : 0, 900, isNumeric && !shouldReduce)
+  // shouldReduce peut être null dans framer-motion v12 → on normalise
+  const reducedMotionRaw = useReducedMotion()
+  const shouldReduce     = reducedMotionRaw === true
 
-  const displayValue = isNumeric
-    ? (formatFn ? formatFn(animated) : animated.toLocaleString())
-    : (value || '--')
+  // On n'anime que les nombres finis positifs
+  const isNumeric       = typeof value === 'number' && Number.isFinite(value) && value > 0
+  const animationTarget = isNumeric ? value : 0
+  const animated        = useCountUp(
+    animationTarget,
+    900,
+    isNumeric && !shouldReduce,
+  )
+
+  // Valeur affichée — jamais undefined, jamais null
+  const displayValue = (() => {
+    if (value === null || value === undefined) return '--'
+    if (isNumeric) {
+      try {
+        return formatFn ? formatFn(animated) : animated.toLocaleString()
+      } catch {
+        return String(value)
+      }
+    }
+    return String(value) || '--'
+  })()
 
   // ── Skeleton ────────────────────────────────────────────────────────────────
   if (loading) {
@@ -52,8 +72,9 @@ export default function StatCard({
     )
   }
 
-  // ── Badge variation ──────────────────────────────────────────────────────────
-  const showChangeBadge   = change !== undefined && change !== null && Number.isFinite(change)
+  // ── Badge de variation ──────────────────────────────────────────────────────
+  const changeNum      = typeof change === 'number' && Number.isFinite(change) ? change : null
+  const showChangeBadge   = changeNum !== null
   const showDirectionBadge = !showChangeBadge && typeof subUp === 'boolean'
 
   return (
@@ -65,8 +86,8 @@ export default function StatCard({
         </div>
 
         {showChangeBadge && (
-          <Badge variant={change >= 0 ? 'success' : 'danger'} size="sm">
-            {change >= 0 ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
+          <Badge variant={changeNum >= 0 ? 'success' : 'danger'} size="sm">
+            {changeNum >= 0 ? '↑' : '↓'} {Math.abs(changeNum).toFixed(1)}%
           </Badge>
         )}
         {showDirectionBadge && (
@@ -83,11 +104,11 @@ export default function StatCard({
 
       {/* Label */}
       <p className="text-label uppercase tracking-wide text-white/40 font-medium">
-        {label}
+        {label || ''}
       </p>
 
       {/* Sous-info */}
-      {sub && (
+      {sub != null && (
         <p className={`text-body-sm mt-2 font-medium leading-snug ${
           subUp === true  ? 'text-emerald-400/70' :
           subUp === false ? 'text-red-400/70' :
