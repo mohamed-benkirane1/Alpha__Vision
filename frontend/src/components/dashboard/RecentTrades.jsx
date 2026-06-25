@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ClipboardList } from 'lucide-react'
 import { formatCurrency, formatNumber, formatDateTime } from '../../utils/formatters'
+import Card from '../ui/Card'
 
 const formatQuantity = (value) => formatNumber(value, 8)
 
@@ -26,7 +27,7 @@ export default function RecentTrades({ trades = [], loading = false }) {
   return (
     <motion.div
       whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
-      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      className="bg-app-surface border border-white/[0.07] rounded-card p-5 backdrop-blur-card shadow-card transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

@@ -9,6 +9,7 @@ import AISignalCard     from '../components/dashboard/AISignalCard'
 import MarketOverview   from '../components/dashboard/MarketOverview'
 import PortfolioSummary from '../components/dashboard/PortfolioSummary'
 import RecentTrades     from '../components/dashboard/RecentTrades'
+import Card from '../components/ui/Card'
 import { useAuth } from '../context/useAuth'
 import { getDashboardLiveData } from '../services/dashboardService'
 import { getValidNumber, formatCurrency, formatPercent, formatDateTime } from '../utils/formatters'
@@ -216,8 +217,8 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      <motion.div initial="hidden" animate="visible" variants={fadeUp}
-        className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-4 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.24)]">
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+      <Card padding="sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${portfolioReliable && !marketPartial ? 'bg-emerald-500/10 border-emerald-500/22 text-emerald-400' : 'bg-amber-500/10 border-amber-500/22 text-amber-400'}`}>
@@ -254,6 +255,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      </Card>
       </motion.div>
 
       {/* Stat cards */}

@@ -5,6 +5,7 @@ import { User, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle, Sh
 import { useAuth } from '../context/useAuth'
 import { signup, startGoogleOAuth } from '../services/authService'
 import LogoMark from '../components/ui/LogoMark'
+import Button from '../components/ui/Button'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.07 } } }
@@ -390,22 +391,15 @@ export default function Signup() {
             )}
 
             {/* Submit */}
-            <motion.button
+            <Button
               type="submit"
-              disabled={loading}
-              whileHover={{ scale: loading ? 1 : 1.01, boxShadow: '0 0 28px rgba(225,29,72,0.40)' }}
-              whileTap={{ scale: loading ? 1 : 0.98 }}
-              className="ripple-btn w-full mt-1 py-3 bg-gradient-to-r from-rose-600 to-red-600 disabled:opacity-55 text-white text-sm font-black rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_22px_rgba(225,29,72,0.28)]"
+              size="lg"
+              loading={loading}
+              rightIcon={<ArrowRight size={15} />}
+              className="w-full mt-1 font-black"
             >
-              {loading ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                <>Create Account <ArrowRight size={15} /></>
-              )}
-            </motion.button>
+              {loading ? 'Creating account…' : 'Create Account'}
+            </Button>
           </motion.form>
 
           {/* Divider */}

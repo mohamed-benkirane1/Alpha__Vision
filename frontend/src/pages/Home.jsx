@@ -8,6 +8,7 @@ import {
 import { motion, useInView } from 'framer-motion'
 import PriceTicker from '../components/ambient/PriceTicker'
 import LogoMark from '../components/ui/LogoMark'
+import Button from '../components/ui/Button'
 import { getPlans } from '../services/paymentService'
 import heroBg3D  from '../assets/reference/home-hero-3d-bg.jpg'
 
@@ -181,11 +182,9 @@ export default function Home() {
               <Link to="/login" className="text-[12px] font-bold text-slate-400 hover:text-white transition-colors">
                 Sign In
               </Link>
-              <Link to="/signup"
-                className="ripple-btn px-4 py-1.5 text-[12px] font-black text-white bg-rose-600 hover:bg-rose-500 rounded-lg transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] hover:shadow-[0_0_24px_rgba(225,29,72,0.55)]"
-              >
+              <Button as={Link} to="/signup" size="sm" className="text-[12px] font-black">
                 Get Started
-              </Link>
+              </Button>
             </div>
           </div>
         </nav>
@@ -238,11 +237,9 @@ export default function Home() {
                   className="flex items-center gap-4 pt-1"
                   variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}
                 >
-                  <Link to="/signup"
-                    className="ripple-btn px-7 py-3 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-sm font-black rounded-xl transition-all shadow-[0_0_24px_rgba(225,29,72,0.40)] hover:shadow-[0_0_36px_rgba(225,29,72,0.60)] hover:-translate-y-0.5"
-                  >
+                  <Button as={Link} to="/signup" size="lg" className="font-black hover:-translate-y-0.5">
                     Start for Free
-                  </Link>
+                  </Button>
                   <button type="button" className="flex items-center gap-2.5 text-sm font-semibold text-slate-400 hover:text-white transition-colors group">
                     <span className="w-9 h-9 rounded-full border border-slate-700/80 group-hover:border-rose-500/50 bg-white/[0.03] flex items-center justify-center transition-all group-hover:bg-rose-500/8">
                       <Play size={9} fill="currentColor" className="ml-0.5 text-slate-400 group-hover:text-rose-400 transition-colors" />
@@ -700,10 +697,9 @@ export default function Home() {
                   Alpha Vision was built from the ground up to remove every barrier between you
                   and profitable trading — no complexity, no compromise, no nonsense.
                 </p>
-                <Link to="/signup"
-                  className="ripple-btn inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-sm font-black rounded-xl transition-all shadow-[0_0_20px_rgba(225,29,72,0.35)]">
-                  Get Started Free <ArrowRight size={14} />
-                </Link>
+                <Button as={Link} to="/signup" size="lg" rightIcon={<ArrowRight size={14} />} className="font-black">
+                  Get Started Free
+                </Button>
               </FadeUp>
 
               <FadeUp delay={0.12}>
@@ -892,14 +888,12 @@ export default function Home() {
                 Use the real auth, quote, trade, portfolio, news, and payment flows now while the remaining providers are integrated.
               </p>
               <div className="flex items-center justify-center gap-4 flex-wrap">
-                <Link to="/signup"
-                  className="ripple-btn px-8 py-3.5 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-sm font-black rounded-xl transition-all shadow-[0_0_28px_rgba(225,29,72,0.42)] hover:shadow-[0_0_42px_rgba(225,29,72,0.62)] hover:-translate-y-0.5">
+                <Button as={Link} to="/signup" size="lg" className="px-8 font-black hover:-translate-y-0.5">
                   Create Free Account
-                </Link>
-                <Link to="/login"
-                  className="px-8 py-3.5 text-sm font-black text-slate-300 hover:text-white border border-white/[0.12] hover:border-white/[0.22] rounded-xl transition-all">
+                </Button>
+                <Button as={Link} to="/login" variant="secondary" size="lg" className="px-8 font-black">
                   Sign In
-                </Link>
+                </Button>
               </div>
             </FadeUp>
           </div>

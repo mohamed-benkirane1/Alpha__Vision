@@ -1,20 +1,12 @@
 import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Activity, AlertTriangle } from 'lucide-react'
 import { getValidNumber, formatPrice, formatPercent, formatDateTime } from '../../utils/formatters'
+import Card from '../ui/Card'
+import Badge from '../ui/Badge'
 
 const assetColors = ['#f97316', '#6366f1', '#8b5cf6', '#eab308', '#64748b', '#06b6d4']
 
 const formatChange = (change) => formatPercent(change, 1)
-
-function StatusBadge({ label, tone = 'slate' }) {
-  const tones = {
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-    amber: 'bg-amber-500/10 border-amber-500/22 text-amber-400',
-    rose: 'bg-rose-500/10 border-rose-500/22 text-rose-400',
-    slate: 'bg-white/[0.03] border-white/[0.07] text-slate-500',
-  }
-  return <span className={`rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase ${tones[tone]}`}>{label}</span>
-}
 
 const normalizeMarkets = (markets) => {
   if (!Array.isArray(markets) || markets.length === 0) return []
@@ -59,25 +51,23 @@ export default function MarketOverview({ markets = [], loading = false, dataQual
       : hasQualityIssue
         ? 'Partial'
         : 'Backend live'
-  const statusClass = assets.length > 0 && !hasQualityIssue
-    ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+  const statusVariant = assets.length > 0 && !hasQualityIssue
+    ? 'success'
     : hasQualityIssue
-      ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-      : 'text-slate-500 bg-white/[0.03] border-white/[0.07]'
+      ? 'warning'
+      : 'neutral'
 
   return (
     <motion.div
       whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
-      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+      className="bg-app-surface border border-white/[0.07] rounded-card p-5 backdrop-blur-card shadow-card transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Activity size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Market Overview</h2>
         </div>
-        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${statusClass}`}>
-          {statusLabel}
-        </span>
+        <Badge variant={statusVariant} size="sm">{statusLabel}</Badge>
       </div>
 
       <div className="space-y-1.5">
@@ -112,11 +102,11 @@ export default function MarketOverview({ markets = [], loading = false, dataQual
               </div>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1">
-              {a.isLive && <StatusBadge label="Live" tone="emerald" />}
-              {a.cached && <StatusBadge label="Cached" />}
-              {a.fallback && <StatusBadge label="Fallback" tone="amber" />}
-              {a.isStale && !a.fallback && a.priceAvailable && <StatusBadge label="Stale" tone="amber" />}
-              {!a.priceAvailable && <StatusBadge label="Unavailable" tone="rose" />}
+              {a.isLive && <Badge variant="success" size="sm">Live</Badge>}
+              {a.cached && !a.isLive && <Badge variant="neutral" size="sm">Cached</Badge>}
+              {a.fallback && <Badge variant="warning" size="sm">Fallback</Badge>}
+              {a.isStale && !a.fallback && a.priceAvailable && <Badge variant="warning" size="sm">Stale</Badge>}
+              {!a.priceAvailable && <Badge variant="danger" size="sm">Unavailable</Badge>}
               <span className="text-[10px] text-slate-700 ml-auto">{a.provider || a.source || '--'} - {formatDateTime(a.timestamp)}</span>
             </div>
             {a.error && <p className="mt-1 text-[10px] text-amber-400/80 font-semibold flex items-center gap-1"><AlertTriangle size={10} />{a.error}</p>}

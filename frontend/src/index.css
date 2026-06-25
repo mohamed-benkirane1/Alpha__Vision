@@ -1,35 +1,165 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 
-/* ── Design Tokens ─────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS — CSS Custom Properties
+   Usage : var(--app-accent), var(--app-surface), etc.
+   Ces variables sont disponibles dans toute l'app CSS/inline styles.
+───────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Zone publique — Home, Login, Signup */
-  --public-bg:      #06020c;
-  --accent-rose:    #e11d48;
-  --accent-red:     #dc2626;
+  /* Backgrounds */
+  --app-bg:          #070E20;
+  --app-bg-deep:     #040710;
+  --app-bg-public:   #06020c;
 
-  /* Zone app — Dashboard, Portfolio, Trading… */
-  --app-bg:         #070E20;
-  --accent-indigo:  #6366f1;
-  --accent-violet:  #8b5cf6;
-  --accent-emerald: #10b981;
-  --accent-amber:   #f59e0b;
+  /* Surfaces */
+  --app-surface:     rgba(10, 22, 40, 0.88);
+  --app-surface-2:   rgba(255, 255, 255, 0.03);
+  --app-surface-hover: rgba(255, 255, 255, 0.05);
 
-  /* Glassmorphism */
-  --card-bg:        rgba(10, 22, 40, 0.88);
-  --card-border:    rgba(255, 255, 255, 0.07);
-  --glass-blur:     24px;
+  /* Borders */
+  --app-border:      rgba(255, 255, 255, 0.07);
+  --app-border-focus: rgba(225, 29, 72, 0.5);
+
+  /* Text */
+  --app-text:        rgba(255, 255, 255, 1);
+  --app-muted:       rgba(255, 255, 255, 0.5);
+  --app-muted-2:     rgba(255, 255, 255, 0.35);
+
+  /* Accent — Rose/Red brand */
+  --app-accent:       #e11d48;
+  --app-accent-hover: #be123c;
+  --app-accent-glow:  rgba(225, 29, 72, 0.25);
+
+  /* Semantic trading colors */
+  --app-success:     #10b981;
+  --app-success-bg:  rgba(16, 185, 129, 0.12);
+  --app-danger:      #f43f5e;
+  --app-danger-bg:   rgba(244, 63, 94, 0.12);
+  --app-warning:     #f59e0b;
+  --app-warning-bg:  rgba(245, 158, 11, 0.12);
+  --app-info:        #3b82f6;
+  --app-info-bg:     rgba(59, 130, 246, 0.12);
+
+  /* Typography */
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing scale */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Shadows */
+  --shadow-card:      0 4px 28px rgba(0,0,0,0.32);
+  --shadow-card-hover: 0 8px 40px rgba(0,0,0,0.48);
+  --shadow-glow:      0 0 24px rgba(225,29,72,0.25);
 }
 
-/* ── Base ──────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   TAILWIND v4 THEME
+   Génère les classes utilitaires : bg-app-*, text-app-*, shadow-card, etc.
+───────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* Colors (crée bg-app-*, text-app-*, border-app-*) */
+  --color-app-bg:          #070E20;
+  --color-app-bg-deep:     #040710;
+  --color-app-bg-public:   #06020c;
+  --color-app-accent:      #e11d48;
+  --color-app-accent-hover: #be123c;
+  --color-app-success:     #10b981;
+  --color-app-danger:      #f43f5e;
+  --color-app-warning:     #f59e0b;
+  --color-app-info:        #3b82f6;
+
+  /* Fonts (crée font-sans, font-mono) */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Font sizes (crée text-caption, text-label, text-body, etc.) */
+  --text-caption:     10px;
+  --text-caption--line-height: 14px;
+  --text-caption--letter-spacing: 0.04em;
+  --text-label:       11px;
+  --text-label--line-height: 16px;
+  --text-label--letter-spacing: 0.06em;
+  --text-body-sm:     12px;
+  --text-body-sm--line-height: 18px;
+  --text-body:        14px;
+  --text-body--line-height: 20px;
+  --text-ui:          15px;
+  --text-ui--line-height: 22px;
+  --text-heading-sm:  18px;
+  --text-heading-sm--line-height: 26px;
+  --text-heading:     22px;
+  --text-heading--line-height: 30px;
+  --text-display-sm:  28px;
+  --text-display-sm--line-height: 36px;
+  --text-display:     36px;
+  --text-display--line-height: 44px;
+  --text-display-lg:  48px;
+  --text-display-lg--line-height: 56px;
+
+  /* Spacing extensions (crée p-18, m-22, gap-26, etc.) */
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+  --spacing-26: 6.5rem;
+  --spacing-30: 7.5rem;
+
+  /* Border radius (crée rounded-card, rounded-pill) */
+  --radius-card: 14px;
+  --radius-pill: 9999px;
+
+  /* Box shadows (crée shadow-card, shadow-card-hover, shadow-glow-rose) */
+  --shadow-card:         0 4px 28px rgba(0,0,0,0.32);
+  --shadow-card-hover:   0 8px 40px rgba(0,0,0,0.48);
+  --shadow-glow-rose:    0 0 24px rgba(225,29,72,0.25);
+  --shadow-glow-rose-lg: 0 0 48px rgba(225,29,72,0.35);
+
+  /* Backdrop blur (crée backdrop-blur-card) */
+  --blur-card: 24px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILITY CLASSES pour valeurs rgba (non supportées par @theme)
+   Ces classes sont équivalentes aux tokens surface/border.
+───────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  .bg-app-surface        { background-color: rgba(10, 22, 40, 0.88); }
+  .bg-app-surface-2      { background-color: rgba(255, 255, 255, 0.03); }
+  .bg-app-surface-hover  { background-color: rgba(255, 255, 255, 0.05); }
+  .border-app-border     { border-color: rgba(255, 255, 255, 0.07); }
+  .text-app-muted        { color: rgba(255, 255, 255, 0.5); }
+  .text-app-muted-2      { color: rgba(255, 255, 255, 0.35); }
+  .ring-app-accent       { --tw-ring-color: rgba(225, 29, 72, 0.5); }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────────────────────────────────────── */
 body {
   background-color: var(--app-bg);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-family-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Home hero grid ────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   HOME HERO GRID
+───────────────────────────────────────────────────────────────────────────── */
 .home-grid {
   background-image:
     linear-gradient(rgba(225, 29, 72, 0.04) 1px, transparent 1px),
@@ -37,22 +167,25 @@ body {
   background-size: 52px 52px;
 }
 
-/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCROLLBAR
+───────────────────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track  { background: transparent; }
 ::-webkit-scrollbar-thumb  { background: rgba(225, 29, 72, 0.28); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(225, 29, 72, 0.5); }
 
-/* Sidebar (even thinner) */
 .sidebar-scroll::-webkit-scrollbar       { width: 2px; }
 .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(225, 29, 72, 0.15); }
 
-/* ── Text selection ────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   TEXT SELECTION
+───────────────────────────────────────────────────────────────────────────── */
 ::selection { background: rgba(225, 29, 72, 0.28); color: #fff; }
 
-/* ────────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────────────
    KEYFRAMES
-────────────────────────────────────────────────────────────────────────────── */
+───────────────────────────────────────────────────────────────────────────── */
 
 /* Horizontal price ticker */
 @keyframes ticker {
@@ -140,7 +273,9 @@ body {
   animation: ripple 0.55s ease-out forwards;
 }
 
-/* ── Home page — keyframes (déplacés depuis Home.jsx) ───────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   HOME PAGE — Keyframes (déplacés depuis Home.jsx)
+───────────────────────────────────────────────────────────────────────────── */
 html { scroll-behavior: smooth; }
 
 @keyframes signalGlow {

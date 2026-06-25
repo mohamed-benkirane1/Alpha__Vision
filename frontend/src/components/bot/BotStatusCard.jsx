@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { AlertTriangle, Bot, Clock, Cpu, Server, Shield } from 'lucide-react'
 import { formatDateTime } from '../../utils/formatters'
+import Badge from '../ui/Badge'
 
 export default function BotStatusCard({ bot }) {
   const shouldReduce = useReducedMotion()
@@ -22,7 +23,7 @@ export default function BotStatusCard({ bot }) {
         ],
       } : { boxShadow: '0 4px 28px rgba(0,0,0,0.32)' }}
       transition={{ boxShadow: { duration: 3.5, repeat: Infinity, ease: 'easeInOut' } }}
-      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-colors duration-300 relative overflow-hidden"
+      className="bg-app-surface border border-white/[0.07] rounded-card p-5 backdrop-blur-card shadow-card transition-colors duration-300 relative overflow-hidden"
     >
       {running && !shouldReduce && (
         <motion.div
@@ -38,22 +39,20 @@ export default function BotStatusCard({ bot }) {
           <Cpu size={13} className="text-rose-400" />
           <h2 className="text-sm font-bold text-white">Bot Status</h2>
         </div>
-        <div className={`relative flex items-center gap-1.5 text-[10px] font-black px-3 py-1 rounded-full border tracking-wider ${
-          running
-            ? 'bg-amber-500/10 border-amber-500/22 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.12)]'
-            : 'bg-white/[0.04] border-white/[0.07] text-slate-600'
-        }`}>
-          {running && <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />}
+        <Badge
+          variant={running ? 'warning' : 'neutral'}
+          dot={running}
+        >
           {running ? 'PAPER ACTIVE' : 'INACTIVE'}
-        </div>
+        </Badge>
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 mb-4">
         {[
-          { label: 'Symbol', value: status.symbol || '--', color: 'text-white' },
-          { label: 'Strategy', value: status.strategy ? status.strategy.toUpperCase() : '--', color: 'text-white' },
-          { label: 'Mode', value: status.mode || '--', color: running ? 'text-amber-300' : 'text-slate-500' },
-          { label: 'Status', value: status.status ? status.status.toUpperCase() : '--', color: running ? 'text-amber-300' : 'text-slate-500' },
+          { label: 'Symbol',   value: status.symbol || '--',                                                    color: 'text-white' },
+          { label: 'Strategy', value: status.strategy ? status.strategy.toUpperCase() : '--',                  color: 'text-white' },
+          { label: 'Mode',     value: status.mode || '--',                                                      color: running ? 'text-amber-300' : 'text-slate-500' },
+          { label: 'Status',   value: status.status ? status.status.toUpperCase() : '--',                      color: running ? 'text-amber-300' : 'text-slate-500' },
         ].map((item) => (
           <div key={item.label} className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-3">
             <p className="text-[10px] text-slate-600 mb-1 font-bold uppercase tracking-wider">{item.label}</p>
@@ -104,9 +103,9 @@ export default function BotStatusCard({ bot }) {
           <div className="grid grid-cols-4 gap-2 text-center">
             {[
               { label: 'Actions', value: bot.performance.actionsCount },
-              { label: 'Buy', value: bot.performance.buyCount },
-              { label: 'Sell', value: bot.performance.sellCount },
-              { label: 'Hold', value: bot.performance.holdCount },
+              { label: 'Buy',     value: bot.performance.buyCount     },
+              { label: 'Sell',    value: bot.performance.sellCount    },
+              { label: 'Hold',    value: bot.performance.holdCount    },
             ].map((item) => (
               <div key={item.label}>
                 <p className="text-[10px] text-slate-600 font-bold uppercase">{item.label}</p>

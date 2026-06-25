@@ -1,4 +1,5 @@
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import Card from '../ui/Card'
 
 const accents = {
   rose: {
@@ -56,7 +57,13 @@ export default function StatCard({ icon: Icon, label, value, sub, subUp, accentC
   return (
     <motion.div
       whileHover={{ y: -3, transition: { duration: 0.2 } }}
-      className={`relative bg-[#0d0212]/90 border ${c.border} rounded-2xl p-5 backdrop-blur-2xl ${c.glow} transition-all duration-300 overflow-hidden shadow-[0_4px_28px_rgba(0,0,0,0.32)]`}
+      // Card remplace bg-[#0d0212]/90 border ... rounded-2xl p-5 backdrop-blur-2xl shadow-...
+      // On utilise Card comme wrapper via className, mais on a besoin de relative + overflow-hidden
+      className={`
+        relative bg-[#0d0212]/90 border ${c.border} rounded-card p-5
+        backdrop-blur-card shadow-card ${c.glow}
+        transition-all duration-300 overflow-hidden
+      `}
     >
       {/* Background orb */}
       <div className={`absolute -top-8 -right-8 w-36 h-36 ${c.orb} rounded-full blur-2xl pointer-events-none`} />
@@ -69,7 +76,7 @@ export default function StatCard({ icon: Icon, label, value, sub, subUp, accentC
         <div className={`absolute -inset-0.5 rounded-xl border ${c.ring} opacity-50 blur-[2px] pointer-events-none`} />
       </div>
 
-      <p className="text-[10px] text-slate-600 mb-1.5 uppercase tracking-[0.13em] font-black">{label}</p>
+      <p className="text-caption text-slate-600 mb-1.5 uppercase tracking-[0.13em] font-black">{label}</p>
       <p className="text-[1.6rem] font-black text-white leading-none tracking-tight tabular-nums overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.span

@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion'
 import { Zap, Clock, Activity, AlertTriangle, BrainCircuit, ShieldAlert } from 'lucide-react'
 import { formatDateTime, formatPrice, formatPercent } from '../../utils/formatters'
+import Card from '../ui/Card'
 
 const DISCLAIMER = 'Educational signal, not financial advice.'
 
 const badgeTone = {
-  buy: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300',
+  buy:  'bg-emerald-500/10 border-emerald-500/25 text-emerald-300',
   sell: 'bg-rose-500/10 border-rose-500/25 text-rose-300',
   hold: 'bg-cyan-500/10 border-cyan-500/25 text-cyan-300',
 }
@@ -63,7 +64,7 @@ export default function AISignalCard({ aiSignal, loading = false, unavailable = 
   return (
     <motion.div
       whileHover={{ borderColor: 'rgba(225,29,72,0.18)' }}
-      className="relative bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl flex flex-col h-full shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-colors duration-300"
+      className="relative bg-app-surface border border-white/[0.07] rounded-card p-5 backdrop-blur-card flex flex-col h-full shadow-card transition-colors duration-300"
     >
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
