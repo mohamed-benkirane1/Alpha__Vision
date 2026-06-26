@@ -1,9 +1,6 @@
 import { motion } from 'framer-motion'
 import { Zap, Clock, Activity, AlertTriangle, BrainCircuit, ShieldAlert } from 'lucide-react'
 import { formatDateTime, formatPrice, formatPercent } from '../../utils/formatters'
-import Card from '../ui/Card'
-
-const DISCLAIMER = 'Educational signal, not financial advice.'
 
 const badgeTone = {
   buy:  'bg-emerald-500/10 border-emerald-500/25 text-emerald-300',

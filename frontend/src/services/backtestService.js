@@ -2,6 +2,41 @@ import api, { extractApiError } from './api'
 
 const normalizeArray = (value) => (Array.isArray(value) ? value : [])
 
+const OPTIONAL_BACKTEST_PARAMS = [
+  'stopLoss',
+  'takeProfit',
+  'rsiPeriod',
+  'rsiOversold',
+  'rsiOverbought',
+  'bbPeriod',
+  'bbStdDev',
+  'emaFast',
+  'emaSlow',
+  'stochK',
+  'stochD',
+  'stochOversold',
+  'stochOverbought',
+]
+
+const hasValue = (value) => value !== undefined && value !== null && value !== ''
+
+const buildBacktestPayload = (params = {}) => {
+  const payload = {
+    symbol: params.symbol,
+    strategy: params.strategy,
+    initialCapital: params.initialCapital,
+    positionSize: params.positionSize,
+    startDate: params.startDate || null,
+    endDate: params.endDate || null,
+  }
+
+  OPTIONAL_BACKTEST_PARAMS.forEach((key) => {
+    if (hasValue(params[key])) payload[key] = params[key]
+  })
+
+  return payload
+}
+
 export const normalizeBacktestResponse = (payload = {}) => ({
   success: Boolean(payload.success),
   timestamp: payload.timestamp || null,
@@ -25,14 +60,7 @@ export const normalizeBacktestResponse = (payload = {}) => ({
 
 export const runBacktest = async (params = {}) => {
   try {
-    const response = await api.post('/backtest', {
-      symbol: params.symbol,
-      strategy: params.strategy,
-      initialCapital: params.initialCapital,
-      positionSize: params.positionSize,
-      startDate: params.startDate || null,
-      endDate: params.endDate || null,
-    })
+    const response = await api.post('/backtest', buildBacktestPayload(params))
 
     return normalizeBacktestResponse(response.data)
   } catch (error) {

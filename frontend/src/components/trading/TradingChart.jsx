@@ -241,7 +241,7 @@ function useChart({ containerRef, candles, active, allowed, ma20, ma50, ema9, em
       chart.remove()
       chartRef.current = null
     }
-  }, [candles, active, allowed, ma20, ma50, ema9, ema21, bbData, rsi, macdData, showRSI, showMACD, showVol, tfInterval, chartHeight, containerRef]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [candles, active, allowed, ma20, ma50, ema9, ema21, bbData, rsi, macdData, showRSI, showMACD, showVol, tfInterval, chartHeight, containerRef])
 
   return chartRef
 }
@@ -251,9 +251,10 @@ const CHART_NORMAL_HEIGHT = 400
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function TradingChart({ symbol, quote }) {
   const { user } = useAuth()
+  const plan = user?.plan || 'free'
   const allowed  = useMemo(
-    () => PLAN_INDICATORS[user?.plan || 'free'] || PLAN_INDICATORS.free,
-    [user?.plan],
+    () => PLAN_INDICATORS[plan] || PLAN_INDICATORS.free,
+    [plan],
   )
 
   // Deux refs séparés : un pour le mode normal, un pour le plein écran
@@ -275,11 +276,6 @@ export default function TradingChart({ symbol, quote }) {
 
   const activeSymbol = String(symbol || '').trim().toUpperCase()
   const tf = TIMEFRAMES.find((t) => t.label === timeframe) || TIMEFRAMES[3]
-
-  // Quand isFullscreen passe à false, reset fsReady
-  useEffect(() => {
-    if (!isFullscreen) setFsReady(false)
-  }, [isFullscreen])
 
   // ── Chargement bougies ─────────────────────────────────────────────────────
   const loadHistory = useCallback(async () => {
@@ -353,6 +349,19 @@ export default function TradingChart({ symbol, quote }) {
     setActive((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
   }
 
+  const closeFullscreen = () => {
+    setFsReady(false)
+    setIsFullscreen(false)
+  }
+
+  const toggleFullscreen = () => {
+    if (isFullscreen) {
+      closeFullscreen()
+      return
+    }
+    setIsFullscreen(true)
+  }
+
   const trendTone = TREND_TONE[trend.tone]
 
   // ── Header partagé (rendu dans les deux modes) ────────────────────────────
@@ -377,7 +386,7 @@ export default function TradingChart({ symbol, quote }) {
           ><RefreshCw size={13} className={loading ? 'animate-spin text-rose-400' : ''} /></button>
           <button
             type="button"
-            onClick={() => setIsFullscreen((v) => !v)}
+            onClick={toggleFullscreen}
             className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-1.5 text-slate-600 transition hover:text-white"
             title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
           >{isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}</button>
@@ -489,7 +498,7 @@ export default function TradingChart({ symbol, quote }) {
           {/* Bouton X */}
           <button
             type="button"
-            onClick={() => setIsFullscreen(false)}
+            onClick={closeFullscreen}
             aria-label="Quitter le plein écran"
             style={{
               position: 'absolute', top: 12, right: 12, zIndex: 10000,

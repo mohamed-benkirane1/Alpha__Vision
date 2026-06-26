@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, Eye, Loader2, Plus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
-import { formatPrice, formatPercent, formatDateTime } from '../../utils/formatters'
+import { getValidNumber, formatPrice, formatPercent, formatDateTime } from '../../utils/formatters'
 
 const suggestedSymbols = ['BTC', 'ETH', 'AAPL', 'GOLD', 'SP500']
 
@@ -113,7 +113,7 @@ export default function WatchlistPanel({
       <div className="space-y-1.5">
         {hasItems ? (
           items.map((item, index) => {
-            const change = getNumber(item.change24h)
+            const change = getValidNumber(item.change24h)
             const up = change === null ? true : change >= 0
             const provider = item.priceMeta?.provider || item.priceMeta?.source || '--'
             const providerSymbol = item.priceMeta?.providerSymbol || item.symbol

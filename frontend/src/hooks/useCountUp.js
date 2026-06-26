@@ -9,8 +9,10 @@ const useCountUp = (target, duration = 1000, enabled = true) => {
     const safeDuration = typeof duration === 'number' && duration > 0 ? duration : 1000
 
     if (!enabled || safeTarget === 0) {
-      setCurrent(safeTarget)
-      return
+      rafRef.current = requestAnimationFrame(() => setCurrent(safeTarget))
+      return () => {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      }
     }
 
     let start = null

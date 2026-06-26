@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight, BarChart3, Bot, Brain, Check,
-  FlaskConical, LineChart, Shield, TrendingUp, Zap,
+  FlaskConical, LineChart, Shield, TrendingUp,
 } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import { Badge, Button, Card, LogoMark } from '../components/ui'

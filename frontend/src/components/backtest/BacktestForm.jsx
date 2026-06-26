@@ -3,6 +3,8 @@ import { Play, FlaskConical, ChevronDown } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TRADING_ASSETS, ASSET_GROUPS, getAssetProvider } from '../../constants/tradingAssets'
 
+const SUPPORTED_BACKTEST_SYMBOLS = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE']
+
 const STRATEGIES = [
   { value: 'rsi',        label: 'RSI — Mean Reversion',              desc: 'Buys on RSI < oversold, sells on RSI > overbought. Classic momentum oscillator.' },
   { value: 'macd',       label: 'MACD Crossover — Momentum',         desc: 'Signal line crossover using 12/26/9 EMA. Trend-following momentum strategy.' },
@@ -27,7 +29,7 @@ function ParamRow({ label, children }) {
   )
 }
 
-export default function BacktestForm({ onRun, loading, error }) {
+export default function BacktestForm({ onRun, loading, error, supportedSymbols = SUPPORTED_BACKTEST_SYMBOLS }) {
   const [symbol,       setSymbol]       = useState('BTC')
   const [strategy,     setStrategy]     = useState('rsi')
   const [capital,      setCapital]      = useState('10000')
@@ -49,6 +51,11 @@ export default function BacktestForm({ onRun, loading, error }) {
   const [stochOversold, setStochOversold] = useState('20')
   const [stochOverbought, setStochOverbought] = useState('80')
 
+  const effectiveSupportedSymbols = Array.isArray(supportedSymbols) && supportedSymbols.length > 0
+    ? supportedSymbols.map((item) => String(item).trim().toUpperCase()).filter(Boolean)
+    : SUPPORTED_BACKTEST_SYMBOLS
+  const supportedSet = new Set(effectiveSupportedSymbols)
+  const backtestAssets = TRADING_ASSETS.filter((asset) => supportedSet.has(asset.value))
   const provider         = getAssetProvider(symbol)
   const providerLabel    = PROVIDER_LABELS[provider] || ''
   const selectedStrategy = STRATEGIES.find((s) => s.value === strategy) || STRATEGIES[0]
@@ -58,6 +65,7 @@ export default function BacktestForm({ onRun, loading, error }) {
     const cap = Number(capital)
     const ps  = Number(positionSize)
     if (!symbol) { setLocalError('Choose an asset.'); return }
+    if (!supportedSet.has(symbol)) { setLocalError('This asset is not supported by the Binance historical backtest provider.'); return }
     if (!Number.isFinite(cap) || cap <= 0) { setLocalError('Initial capital must be positive.'); return }
     if (!Number.isFinite(ps) || ps <= 0 || ps > 1) { setLocalError('Position size must be between 0 and 1.'); return }
     setLocalError(null)
@@ -104,7 +112,7 @@ export default function BacktestForm({ onRun, loading, error }) {
               className={`${fieldCls} pr-9 cursor-pointer`} style={{ backgroundImage: 'none' }}
             >
               {ASSET_GROUPS.map((group) => {
-                const assets = TRADING_ASSETS.filter((a) => a.type === group.type)
+                const assets = backtestAssets.filter((a) => a.type === group.type)
                 if (assets.length === 0) return null
                 return (
                   <optgroup key={group.type} label={group.label}>
@@ -117,11 +125,9 @@ export default function BacktestForm({ onRun, loading, error }) {
             </select>
             <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
-          {provider === 'yahoo' && (
-            <p className="text-caption text-amber-300/70 font-medium mt-1">
-              ⚠ Backtesting uses Binance data — only crypto assets are fully supported.
-            </p>
-          )}
+          <p className="text-caption text-slate-600 font-medium mt-1">
+            Backtests use Binance daily historical candles. Supported symbols: {effectiveSupportedSymbols.join(', ')}.
+          </p>
         </div>
 
         {/* ── Strategy ───────────────────────────────────────── */}

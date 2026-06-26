@@ -319,12 +319,11 @@ export default function Settings() {
                 <div className="space-y-3">
                   <p className="text-body-sm text-white/40">
                     Votre abonnement {PLAN_LABEL[plan]} est actif.
-                    La résiliation prend effet à la fin de la période en cours.
+                    La resiliation se gere depuis la page Paiements et prend effet a la fin de la periode en cours.
                   </p>
-                  <ComingSoonRow
-                    title="Annuler l'abonnement"
-                    description="L'annulation en libre-service nécessite un endpoint backend dédié."
-                  />
+                  <Button as={Link} to="/payments" variant="secondary" size="md">
+                    Gerer l'abonnement
+                  </Button>
                 </div>
               )}
             </Card>

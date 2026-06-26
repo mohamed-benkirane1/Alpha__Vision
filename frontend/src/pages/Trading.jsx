@@ -92,7 +92,7 @@ export default function Trading() {
       setMarketError('')
       if (nextAssets.length > 0)
         setSelectedSymbol((cur) => nextAssets.some((a) => a.symbol === cur) ? cur : nextAssets[0].symbol)
-    } catch (err) {
+    } catch {
       priceErrorCountRef.current += 1
       setMarketError('Impossible de charger les prix.')
     } finally { pricesLoadingRef.current = false; setPricesLoading(false) }
@@ -216,7 +216,7 @@ export default function Trading() {
         <div>
           <p className="text-label uppercase tracking-wider text-white/40 mb-1">Trading</p>
           <h1 className="text-display-sm font-black text-white">Marché en Direct</h1>
-          <p className="text-body text-white/40">Analysez et exécutez vos ordres en temps réel</p>
+          <p className="text-body text-white/40">Analysez le marché et placez des ordres virtuels de paper trading</p>
           <p className="text-label text-white/30 mt-1 font-mono tabular-nums">
             Solde virtuel : <span className="text-white/55">{balanceLabel}</span>
           </p>

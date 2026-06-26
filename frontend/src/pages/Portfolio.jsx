@@ -10,7 +10,7 @@ import HoldingsTable  from '../components/portfolio/HoldingsTable'
 import PortfolioChart from '../components/portfolio/PortfolioChart'
 import WatchlistPanel from '../components/portfolio/WatchlistPanel'
 
-import { Card, Badge, Button } from '../components/ui'
+import { Card, Button } from '../components/ui'
 import { demoDeposit, getPortfolio }             from '../services/portfolioService'
 import { addWatchlistSymbol, getWatchlist, removeWatchlistSymbol } from '../services/watchlistService'
 import { getValidNumber, toNumber, formatCurrency, formatPercent, formatDateTime } from '../utils/formatters'

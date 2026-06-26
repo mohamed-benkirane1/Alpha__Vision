@@ -2,6 +2,28 @@ import api, { extractApiError } from './api'
 
 const normalizeArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : [])
 
+const OPTIONAL_BOT_PARAMS = [
+  'quantity',
+  'intervalSeconds',
+  'riskLevel',
+  'rsiPeriod',
+  'rsiOversold',
+  'rsiOverbought',
+  'macdFast',
+  'macdSlow',
+  'macdSignal',
+  'bbPeriod',
+  'bbStdDev',
+  'emaFast',
+  'emaSlow',
+  'stochK',
+  'stochD',
+  'stochOversold',
+  'stochOverbought',
+]
+
+const hasValue = (value) => value !== undefined && value !== null && value !== ''
+
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null
   const number = Number(value)
@@ -142,23 +164,24 @@ export const startBot = async ({
   symbol,
   strategy,
   positionSize,
-  quantity,
   executeTrades,
-  intervalSeconds,
-  riskLevel,
   mode = 'paper',
+  ...params
 } = {}) => {
   try {
-    const response = await api.post('/bot/start', {
+    const payload = {
       symbol,
       strategy,
       mode,
       positionSize,
-      ...(quantity ? { quantity } : {}),
       executeTrades: executeTrades === true,
-      ...(intervalSeconds ? { intervalSeconds } : {}),
-      ...(riskLevel ? { riskLevel } : {}),
+    }
+
+    OPTIONAL_BOT_PARAMS.forEach((key) => {
+      if (hasValue(params[key])) payload[key] = params[key]
     })
+
+    const response = await api.post('/bot/start', payload)
     return normalizeBotResponse(response.data)
   } catch (error) {
     return normalizeError(error, 'Unable to start bot.')

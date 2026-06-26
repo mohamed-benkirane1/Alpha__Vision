@@ -55,7 +55,7 @@ function PerformanceChart({ history = null, loading = false, unavailable = false
         }))
         .filter((point) => point.timestamp && point.totalPortfolioValue !== null)
       : [],
-    [history?.data],
+    [history],
   )
   const hasEnoughData = history?.dataQuality?.hasEnoughData === true && data.length >= 2
   const minValue = hasEnoughData ? Math.min(...data.map((point) => point.totalPortfolioValue)) : 0

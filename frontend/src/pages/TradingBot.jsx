@@ -72,7 +72,7 @@ export default function TradingBot() {
           <div>
             <p className="text-label uppercase tracking-wider text-white/40 mb-1">Automatisation</p>
             <h1 className="text-display-sm font-black text-white">Trading Bot</h1>
-            <p className="text-body text-white/40">Configurez et pilotez votre bot autonome</p>
+            <p className="text-body text-white/40">Configurez et pilotez votre bot de paper trading</p>
           </div>
           <div className="flex items-center gap-2">
             {running ? (

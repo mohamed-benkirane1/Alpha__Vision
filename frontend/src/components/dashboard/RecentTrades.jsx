@@ -2,7 +2,6 @@ import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { ClipboardList, History } from 'lucide-react'
 import { formatCurrency, formatNumber, formatDateTime } from '../../utils/formatters'
-import Card      from '../ui/Card'
 import EmptyState from '../ui/EmptyState'
 
 const formatQuantity = (value) => formatNumber(value, 8)

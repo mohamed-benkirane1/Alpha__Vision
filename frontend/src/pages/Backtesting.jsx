@@ -106,7 +106,12 @@ export default function Backtesting() {
         {/* Formulaire */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <Card padding="none">
-            <BacktestForm onRun={handleRun} loading={loading} error={error} />
+            <BacktestForm
+              onRun={handleRun}
+              loading={loading}
+              error={error}
+              supportedSymbols={capabilities?.supportedSymbols}
+            />
           </Card>
         </motion.div>
 

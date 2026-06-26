@@ -41,7 +41,7 @@ const FAQS = [
   },
   {
     q: 'Les données sont-elles en temps réel ?',
-    a: 'Oui, les plans Pro et Elite incluent des données de marché en temps réel avec une latence inférieure à 100ms.',
+    a: 'Les prix viennent du backend et peuvent être live, cachés ou différés selon le fournisseur. Le statut de qualité est affiché dans l’interface.',
   },
   {
     q: 'Y a-t-il un essai gratuit ?',
@@ -49,7 +49,7 @@ const FAQS = [
   },
   {
     q: 'Quels actifs sont disponibles ?',
-    a: 'Plus de 12 actifs incluant crypto (BTC, ETH, BNB...), forex (XAUUSD, EURUSD...) et indices majeurs.',
+    a: 'Alpha Vision couvre des cryptos via Binance, des actions/indices US et des métaux via Yahoo Finance. Le forex et le trading broker réel ne sont pas disponibles.',
   },
 ]
 
@@ -345,7 +345,7 @@ export default function Payments() {
                 <div>
                   <h2 className="text-body font-bold text-white">Dépôt Stripe</h2>
                   <p className="text-body-sm font-medium text-slate-600">
-                    Ouvre Stripe Checkout. En mode test, utilisez les cartes test Stripe.
+                    Ouvre Stripe Checkout pour créditer le solde virtuel de paper trading. En mode test, utilisez les cartes test Stripe.
                   </p>
                 </div>
                 <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-caption font-black uppercase tracking-wider text-sky-300">

@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Activity, AlertTriangle } from 'lucide-react'
 import { getValidNumber, formatPrice, formatPercent, formatDateTime } from '../../utils/formatters'
-import Card from '../ui/Card'
 import Badge from '../ui/Badge'
 
 const assetColors = ['#f97316', '#6366f1', '#8b5cf6', '#eab308', '#64748b', '#06b6d4']
