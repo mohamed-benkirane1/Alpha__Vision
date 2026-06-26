@@ -4,7 +4,7 @@ const Portfolio = require('../models/portfolio');
 const User = require('../models/user');
 const { getPrice, getPricesBatch } = require('../services/marketService');
 const groqService = require('../services/groqService');
-const { logActivitySafe } = require('../services/activityService');
+const { logActivityDeferred } = require('../services/activityService');
 const {
   MIN_REQUIRED_HISTORY_POINTS,
   createPortfolioSnapshot,
@@ -450,7 +450,7 @@ router.post('/analyze', auth, async (req, res) => {
       notFinancialAdvice: true,
     };
 
-    await logActivitySafe({
+    logActivityDeferred({
       user: req.user.id,
       type: 'portfolio:analysis',
       title: 'Portfolio AI analysis generated',
@@ -461,7 +461,7 @@ router.post('/analyze', auth, async (req, res) => {
         provider: generated.provider,
         fallback: generated.fallback,
         holdingsCount: portfolioState.holdings.length,
-        totalPortfolioValue: portfolioState.totals.totalPortfolioValue,
+        status: 'completed',
       },
     });
 

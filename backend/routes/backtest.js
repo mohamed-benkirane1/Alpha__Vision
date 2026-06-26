@@ -9,7 +9,7 @@ const {
   VALID_STRATEGIES,
   SUPPORTED_SYMBOLS,
 } = require('../services/backtestEngine');
-const { logActivitySafe } = require('../services/activityService');
+const { logActivityDeferred } = require('../services/activityService');
 
 const backtestValidator = require('../validators/backtestValidator');
 
@@ -100,7 +100,7 @@ router.post('/', auth, checkPlan('pro'), validate(fullBacktestValidator), async 
   try {
     const params = buildBacktestParams(req.body);
     const result = await runBacktest(params);
-    await logActivitySafe({
+    logActivityDeferred({
       user: req.user.id,
       type: 'backtest:run',
       title: 'Backtest executed',
@@ -108,9 +108,8 @@ router.post('/', auth, checkPlan('pro'), validate(fullBacktestValidator), async 
       metadata: {
         symbol: params.symbol,
         strategy: params.strategy,
-        success: result.success === true,
+        status: result.success === true ? 'success' : 'failed',
         fallback: result.fallback === true,
-        totalReturn: result.results?.totalReturn ?? null,
       },
     });
     return res.status(result.success ? 200 : 400).json(result);
@@ -197,7 +196,7 @@ router.post('/compare', auth, checkPlan('pro'), validate(compareBacktestValidato
       error: null,
     };
 
-    await logActivitySafe({
+    logActivityDeferred({
       user: req.user.id,
       type: 'backtest:compare',
       title: 'Backtest comparison executed',
@@ -206,6 +205,7 @@ router.post('/compare', auth, checkPlan('pro'), validate(compareBacktestValidato
         symbol: response.params.symbol,
         strategies,
         bestStrategy: response.bestStrategy,
+        status: 'completed',
       },
     });
 

@@ -5,7 +5,7 @@ const User = require('../models/user');
 const auth = require('../middleware/auth');
 const passport = require('../config/passport');
 const { isSmtpConfigured, sendPasswordResetEmail } = require('../services/emailService');
-const { logActivitySafe } = require('../services/activityService');
+const { logActivityDeferred } = require('../services/activityService');
 
 const PROFILE_FIELDS = ['name'];
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -240,12 +240,12 @@ router.post('/signup', async (req, res) => {
     const user = await User.create({ name, email, password });
     const token = signAuthToken(user);
     setAuthCookie(res, token);
-    await logActivitySafe({
+    logActivityDeferred({
       user: user._id,
       type: 'auth:signup',
       title: 'Account created',
       description: 'A new Alpha Vision account was created.',
-      metadata: { email: user.email, provider: 'local' },
+      metadata: { provider: 'local', status: 'created' },
     });
 
     return res.status(201).json(authSessionResponse(user, token));
@@ -278,12 +278,12 @@ router.post('/login', async (req, res) => {
 
     const token = signAuthToken(user);
     setAuthCookie(res, token);
-    await logActivitySafe({
+    logActivityDeferred({
       user: user._id,
       type: 'auth:login',
       title: 'Signed in',
       description: 'User signed in with email and password.',
-      metadata: { provider: 'local' },
+      metadata: { provider: 'local', status: 'success' },
     });
     return res.json(authSessionResponse(user, token));
   } catch (err) {
@@ -475,12 +475,12 @@ router.get('/google/callback',
     try {
       const token = signAuthToken(req.user);
       setAuthCookie(res, token);
-      logActivitySafe({
+      logActivityDeferred({
         user: req.user._id,
         type: 'auth:login',
         title: 'Signed in',
         description: 'User signed in with Google OAuth.',
-        metadata: { provider: 'google' },
+        metadata: { provider: 'google', status: 'success' },
       });
       // Cookie httpOnly posé — redirection directe vers /dashboard sans token dans l'URL
       res.redirect(`${getFrontendUrl()}/dashboard`);

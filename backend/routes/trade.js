@@ -8,7 +8,7 @@ const {
   getTradeHistory,
   parseTradeInput,
 } = require('../services/paperTradingService');
-const { logActivitySafe } = require('../services/activityService');
+const { logActivityDeferred } = require('../services/activityService');
 
 async function handlePaperTradeOrder(req, res) {
   try {
@@ -31,18 +31,18 @@ async function handlePaperTradeOrder(req, res) {
     });
 
     if (payload?.success) {
-      await logActivitySafe({
+      logActivityDeferred({
         user: req.user.id,
         type: 'trade:executed',
         title: `${input.type} paper trade executed`,
         description: `${input.quantity} ${input.symbol} was executed in paper trading mode.`,
         metadata: {
           symbol: input.symbol,
-          side: input.type,
+          action: input.type,
           quantity: input.quantity,
           orderType: input.orderType,
           mode: PAPER_TRADING_MODE,
-          tradeId: payload.trade?._id || payload.trade?.id || null,
+          status: 'executed',
         },
       });
     }

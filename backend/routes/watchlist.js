@@ -2,7 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const Watchlist = require('../models/watchlist');
 const { getPrice, getPricesBatch, normalizeSymbol } = require('../services/marketService');
-const { logActivitySafe } = require('../services/activityService');
+const { logActivityDeferred } = require('../services/activityService');
 
 function nowIso() {
   return new Date().toISOString();
@@ -153,12 +153,12 @@ router.post('/', auth, async (req, res) => {
     }
 
     const item = await Watchlist.create({ userId: req.user.id, symbol });
-    await logActivitySafe({
+    logActivityDeferred({
       user: req.user.id,
       type: 'watchlist:add',
       title: 'Watchlist symbol added',
       description: `${symbol} was added to the watchlist.`,
-      metadata: { symbol },
+      metadata: { symbol, action: 'add', status: 'completed' },
     });
 
     return res.status(201).json({
@@ -192,12 +192,12 @@ router.delete('/:symbol', auth, async (req, res) => {
 
     const result = await Watchlist.deleteOne({ userId: req.user.id, symbol });
     if (result.deletedCount > 0) {
-      await logActivitySafe({
+      logActivityDeferred({
         user: req.user.id,
         type: 'watchlist:remove',
         title: 'Watchlist symbol removed',
         description: `${symbol} was removed from the watchlist.`,
-        metadata: { symbol },
+        metadata: { symbol, action: 'remove', status: 'completed' },
       });
     }
 

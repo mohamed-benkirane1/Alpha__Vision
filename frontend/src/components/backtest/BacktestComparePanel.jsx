@@ -66,6 +66,16 @@ export default function BacktestComparePanel({ capabilities = null }) {
   const [result, setResult] = useState(null)
 
   const chartData = useMemo(() => buildChartData(result?.comparisons || []), [result])
+  const compareWarnings = useMemo(() => {
+    const warnings = [
+      ...(Array.isArray(result?.warnings) ? result.warnings : []),
+      ...(Array.isArray(result?.comparisons)
+        ? result.comparisons.flatMap((row) => (Array.isArray(row.warnings) ? row.warnings : []))
+        : []),
+    ].filter(Boolean)
+
+    return [...new Set(warnings)]
+  }, [result])
 
   const toggleStrategy = (strategy) => {
     setStrategies((current) => {
@@ -180,7 +190,7 @@ export default function BacktestComparePanel({ capabilities = null }) {
         </div>
 
         <div className="lg:col-span-5">
-          <Button type="submit" size="md" loading={loading} disabled={strategies.length < 2}>
+          <Button type="submit" size="md" loading={loading} disabled={loading || strategies.length < 2}>
             Run comparison
           </Button>
         </div>
@@ -190,6 +200,17 @@ export default function BacktestComparePanel({ capabilities = null }) {
         <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-body-sm font-semibold text-amber-300">
           <AlertTriangle size={13} className="mt-0.5 shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {compareWarnings.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {compareWarnings.map((warning) => (
+            <div key={warning} className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-body-sm font-semibold text-amber-300">
+              <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+              <span>{warning}</span>
+            </div>
+          ))}
         </div>
       )}
 

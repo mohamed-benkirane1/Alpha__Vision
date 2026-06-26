@@ -13,7 +13,7 @@ const {
   createErrorResponse,
 } = require('../services/botService');
 const { registerBot, unregisterBot } = require('../services/botScheduler');
-const { logActivitySafe } = require('../services/activityService');
+const { logActivityDeferred } = require('../services/activityService');
 
 function sendBotError(res, err, fallbackMessage) {
   return res.status(err.statusCode || 500).json(
@@ -44,7 +44,7 @@ router.post('/start', auth, checkPlan('elite'), validate(botStartValidator), asy
     if (response.success) {
       const bot = await findRunningBotId(req.user.id);
       if (bot) registerBot(bot._id.toString(), bot.intervalSeconds);
-      await logActivitySafe({
+      logActivityDeferred({
         user: req.user.id,
         type: 'bot:start',
         title: 'Paper bot started',
@@ -53,7 +53,8 @@ router.post('/start', auth, checkPlan('elite'), validate(botStartValidator), asy
           symbol: response.status?.symbol || req.body.symbol || null,
           strategy: response.status?.strategy || req.body.strategy || null,
           mode: response.status?.mode || 'paper',
-          executeTrades: response.status?.executeTrades === true,
+          action: 'start',
+          status: 'running',
         },
       });
     }
@@ -72,12 +73,12 @@ router.post('/stop', auth, checkPlan('elite'), async (req, res) => {
 
     if (runningBot) unregisterBot(runningBot._id.toString());
     if (response.success && runningBot) {
-      await logActivitySafe({
+      logActivityDeferred({
         user: req.user.id,
         type: 'bot:stop',
         title: 'Paper bot stopped',
         description: 'The running paper bot was stopped.',
-        metadata: { botId: runningBot._id, mode: 'paper' },
+        metadata: { mode: 'paper', action: 'stop', status: 'stopped' },
       });
     }
 

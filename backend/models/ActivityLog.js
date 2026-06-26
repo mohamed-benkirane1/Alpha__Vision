@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 
+const ACTIVITY_LOG_RETENTION_SECONDS = 60 * 60 * 24 * 180;
+const ACTIVITY_LOG_RETENTION_MS = ACTIVITY_LOG_RETENTION_SECONDS * 1000;
+
 const activityLogSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -34,7 +37,12 @@ const activityLogSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    index: true,
+  },
+  expiresAt: {
+    type: Date,
+    default: () => new Date(Date.now() + ACTIVITY_LOG_RETENTION_MS),
+    expires: 0,
+    select: false,
   },
 });
 

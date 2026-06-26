@@ -2,6 +2,7 @@ const ActivityLog = require('../models/ActivityLog');
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
+const MAX_PAGE = 1000;
 
 function cleanString(value, fallback = '') {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback;
@@ -66,8 +67,16 @@ async function logActivitySafe(input) {
   }
 }
 
+function logActivityDeferred(input) {
+  try {
+    void logActivitySafe(input);
+  } catch (error) {
+    console.warn('[activity] deferred log failed:', error.message || error);
+  }
+}
+
 async function getUserActivities(userId, query = {}) {
-  const page = toPositiveInt(query.page, 1);
+  const page = Math.min(MAX_PAGE, toPositiveInt(query.page, 1));
   const limit = Math.min(MAX_LIMIT, toPositiveInt(query.limit, DEFAULT_LIMIT));
   const skip = (page - 1) * limit;
   const type = cleanString(query.type);
@@ -95,6 +104,7 @@ async function getUserActivities(userId, query = {}) {
 module.exports = {
   getUserActivities,
   logActivity,
+  logActivityDeferred,
   logActivitySafe,
   serializeActivity,
 };

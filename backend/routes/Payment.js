@@ -4,7 +4,7 @@ const createStripeClient = require('stripe');
 const auth = require('../middleware/auth');
 const User = require('../models/user');
 const Transaction = require('../models/Transaction');
-const { logActivitySafe } = require('../services/activityService');
+const { logActivityDeferred } = require('../services/activityService');
 
 const PLANS = {
   free: {
@@ -337,7 +337,7 @@ async function fulfillCheckoutSession(session) {
         paymentStatus: session.payment_status,
       },
     });
-    await logActivitySafe({
+    logActivityDeferred({
       user: userId,
       type: 'payment:subscription',
       title: 'Subscription activated',
@@ -345,8 +345,7 @@ async function fulfillCheckoutSession(session) {
       metadata: {
         plan,
         provider: 'stripe',
-        sessionId: session.id,
-        subscriptionId: session.subscription || null,
+        status: 'active',
       },
     });
 
@@ -384,7 +383,7 @@ async function fulfillCheckoutSession(session) {
         paymentStatus: session.payment_status,
       },
     });
-    await logActivitySafe({
+    logActivityDeferred({
       user: userId,
       type: 'payment:deposit',
       title: 'Virtual balance deposit completed',
@@ -393,9 +392,8 @@ async function fulfillCheckoutSession(session) {
         amount,
         currency: session.currency || 'eur',
         provider: 'stripe',
-        sessionId: session.id,
-        balance: user.balance,
         balanceType: 'virtual',
+        status: 'completed',
       },
     });
 
@@ -506,7 +504,7 @@ router.post('/demo-deposit', auth, async (req, res) => {
         notRealPayment: true,
       },
     });
-    await logActivitySafe({
+    logActivityDeferred({
       user: req.user.id,
       type: 'payment:demo_deposit',
       title: 'Demo funds added',
@@ -514,9 +512,9 @@ router.post('/demo-deposit', auth, async (req, res) => {
       metadata: {
         amount: input.amount,
         currency: 'usd',
-        balance: user.balance,
+        provider: 'internal-demo-funding',
         demo: true,
-        notRealPayment: true,
+        status: 'completed',
       },
     });
 
@@ -624,15 +622,15 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         user.stripeSubscriptionStatus = 'canceled';
         user.updatedAt = new Date();
         await user.save();
-        await logActivitySafe({
+        logActivityDeferred({
           user: user._id,
           type: 'payment:subscription_canceled',
           title: 'Subscription canceled',
           description: 'Stripe subscription was canceled and the plan was moved to Free.',
           metadata: {
             provider: 'stripe',
-            subscriptionId: subscription.id,
-            previousPlan,
+            plan: previousPlan,
+            status: 'canceled',
           },
         });
       }
@@ -690,15 +688,15 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             user.stripeSubscriptionStatus = 'past_due';
             user.updatedAt = new Date();
             await user.save();
-            await logActivitySafe({
+            logActivityDeferred({
               user: user._id,
               type: 'payment:subscription_past_due',
               title: 'Subscription payment failed',
               description: `Plan ${previousPlan} was moved to Free after payment failure grace period.`,
               metadata: {
                 provider: 'stripe',
-                previousPlan,
-                subscriptionId,
+                plan: previousPlan,
+                status: 'past_due',
               },
             });
           } else {
@@ -853,16 +851,15 @@ router.post('/cancel-subscription', auth, async (req, res) => {
     user.stripeSubscriptionStatus = 'cancel_at_period_end';
     user.updatedAt = new Date();
     await user.save();
-    await logActivitySafe({
+    logActivityDeferred({
       user: req.user.id,
       type: 'payment:subscription_cancel_requested',
       title: 'Subscription cancellation requested',
       description: 'Subscription will be canceled at the end of the current billing period.',
       metadata: {
         provider: 'stripe',
-        currentPlan: user.plan,
-        cancelAt,
-        subscriptionId: user.stripeSubscriptionId,
+        plan: user.plan,
+        status: 'cancel_at_period_end',
       },
     });
 
