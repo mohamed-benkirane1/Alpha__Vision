@@ -65,13 +65,25 @@ export default function PriceAlertsPanel() {
 
   const hasAlerts = alerts.length > 0
   const isBusy = loading || checking || creating || Boolean(mutatingId)
+  const targetPriceValue = String(form.targetPrice || '').trim()
+  const targetPriceNumber = Number(targetPriceValue)
+  const targetPriceInvalid = targetPriceValue !== '' && (!Number.isFinite(targetPriceNumber) || targetPriceNumber <= 0)
+  const canCreateAlert = form.symbol.trim() && targetPriceValue && !targetPriceInvalid
 
   const handleCreate = async (event) => {
     event.preventDefault()
     const symbol = form.symbol.trim().toUpperCase()
     const targetPrice = Number(form.targetPrice)
 
-    if (!symbol || !Number.isFinite(targetPrice) || targetPrice <= 0 || creating) return
+    if (!symbol) {
+      setError('Symbol is required.')
+      return
+    }
+    if (!Number.isFinite(targetPrice) || targetPrice <= 0) {
+      setError('Target price must be greater than 0.')
+      return
+    }
+    if (creating) return
 
     setCreating(true)
     setError('')
@@ -196,7 +208,7 @@ export default function PriceAlertsPanel() {
         </select>
         <input
           type="number"
-          min="0"
+          min="0.000001"
           step="0.000001"
           value={form.targetPrice}
           onChange={(event) => setForm((current) => ({ ...current, targetPrice: event.target.value }))}
@@ -206,13 +218,19 @@ export default function PriceAlertsPanel() {
         />
         <button
           type="submit"
-          disabled={isBusy || !form.symbol.trim() || !form.targetPrice}
+          disabled={isBusy || !canCreateAlert}
           className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.035] px-3 text-label font-black text-slate-300 transition hover:border-rose-500/22 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
           Add alert
         </button>
       </form>
+
+      {targetPriceInvalid && (
+        <p className="mb-3 text-label font-semibold text-amber-300/90">
+          Target price must be greater than 0.
+        </p>
+      )}
 
       {triggeredAlerts.length > 0 && (
         <div className="mb-3 flex items-start gap-2 rounded-xl border border-rose-500/22 bg-rose-500/[0.075] px-3 py-2 text-label font-semibold text-rose-200">

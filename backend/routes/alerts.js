@@ -9,6 +9,7 @@ const { logActivityDeferred } = require('../services/activityService');
 
 const VALID_CONDITIONS = ['above', 'below'];
 const VALID_PATCH_STATUSES = ['active', 'disabled'];
+const MAX_ACTIVE_ALERTS_PER_USER = 20;
 
 function nowIso() {
   return new Date().toISOString();
@@ -43,6 +44,10 @@ function isUnsupportedQuote(quote = {}) {
   return quote.priceAvailable === false && /not supported/i.test(quote.error || '');
 }
 
+function isFallbackOrStaleQuote(quote = {}) {
+  return quote.fallback === true || quote.stale === true || quote.isStale === true;
+}
+
 function isTriggered(alert, price) {
   if (!Number.isFinite(price)) return false;
   if (alert.condition === 'above') return price >= alert.targetPrice;
@@ -58,7 +63,6 @@ function serializeAlert(alert, quote = null) {
   return {
     id: data._id ? String(data._id) : data.id ? String(data.id) : null,
     _id: data._id ? String(data._id) : data.id ? String(data.id) : null,
-    user: data.user ? String(data.user) : null,
     symbol: data.symbol,
     condition: data.condition,
     targetPrice: data.targetPrice,
@@ -197,6 +201,20 @@ router.post('/', auth, validate(createAlertValidator), async (req, res) => {
       return res.status(409).json(createErrorPayload(`${symbol} already has this active alert.`, {
         alert: serializeAlert(existing),
       }));
+    }
+
+    const activeAlertCount = await PriceAlert.countDocuments({
+      user: req.user.id,
+      status: 'active',
+    });
+    if (activeAlertCount >= MAX_ACTIVE_ALERTS_PER_USER) {
+      return res.status(400).json(createErrorPayload(
+        `Maximum of ${MAX_ACTIVE_ALERTS_PER_USER} active price alerts reached. Disable or delete an active alert before creating a new one.`,
+        {
+          maxActiveAlerts: MAX_ACTIVE_ALERTS_PER_USER,
+          activeAlertCount,
+        },
+      ));
     }
 
     const quote = await resolveCreationQuote(symbol);
@@ -359,11 +377,14 @@ router.post('/check', auth, async (req, res) => {
       alert.lastCheckedAt = now;
       alert.lastCheckedPrice = price;
 
-      if (quote && (quote.fallback === true || quote.stale === true || quote.isStale === true)) {
-        warnings.push(`${alert.symbol} was checked with fallback or stale market data.`);
-      }
       if (price === null) {
         warnings.push(quote?.error || `Price unavailable for ${alert.symbol}.`);
+        await alert.save();
+        continue;
+      }
+
+      if (isFallbackOrStaleQuote(quote)) {
+        warnings.push(`${alert.symbol} was checked with fallback or stale market data. Alert was not triggered automatically.`);
         await alert.save();
         continue;
       }
@@ -391,17 +412,19 @@ router.post('/check', auth, async (req, res) => {
       await alert.save();
     }
 
-    logActivityDeferred({
-      user: req.user.id,
-      type: 'alert:check',
-      title: 'Price alerts checked',
-      description: `${activeAlerts.length} active price alerts checked.`,
-      metadata: {
-        checkedCount: activeAlerts.length,
-        triggeredCount: triggered.length,
-        status: 'completed',
-      },
-    });
+    if (triggered.length > 0) {
+      logActivityDeferred({
+        user: req.user.id,
+        type: 'alert:check',
+        title: 'Price alerts checked',
+        description: `${activeAlerts.length} active price alerts checked; ${triggered.length} triggered.`,
+        metadata: {
+          checkedCount: activeAlerts.length,
+          triggeredCount: triggered.length,
+          status: 'triggered',
+        },
+      });
+    }
 
     return res.json(createAlertsPayload({
       alerts: await getUserAlerts(req.user.id),

@@ -4,7 +4,14 @@ const PriceAlertSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   symbol: { type: String, required: true, trim: true, uppercase: true },
   condition: { type: String, enum: ['above', 'below'], required: true },
-  targetPrice: { type: Number, required: true, min: 0 },
+  targetPrice: {
+    type: Number,
+    required: true,
+    validate: {
+      validator: (value) => Number.isFinite(value) && value > 0,
+      message: 'targetPrice must be greater than 0.',
+    },
+  },
   currentPriceAtCreation: { type: Number, default: null },
   lastCheckedPrice: { type: Number, default: null },
   lastCheckedAt: { type: Date, default: null },
