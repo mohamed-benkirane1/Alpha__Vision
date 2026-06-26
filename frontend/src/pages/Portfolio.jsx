@@ -9,6 +9,7 @@ import PortfolioCard  from '../components/portfolio/PortfolioCard'
 import HoldingsTable  from '../components/portfolio/HoldingsTable'
 import PortfolioChart from '../components/portfolio/PortfolioChart'
 import WatchlistPanel from '../components/portfolio/WatchlistPanel'
+import PortfolioAIAnalysis from '../components/portfolio/PortfolioAIAnalysis'
 
 import { Card, Button } from '../components/ui'
 import { demoDeposit, getPortfolio }             from '../services/portfolioService'
@@ -306,6 +307,9 @@ export default function Portfolio() {
           </div>
         </Card>
       </motion.div>
+
+      {/* AI portfolio analysis */}
+      <PortfolioAIAnalysis />
 
       {/* ── Summary cards ────────────────────────────────────────────────── */}
       <motion.div initial="hidden" animate="visible" variants={stagger}

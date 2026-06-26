@@ -5,6 +5,7 @@ const User = require('../models/user');
 const auth = require('../middleware/auth');
 const passport = require('../config/passport');
 const { isSmtpConfigured, sendPasswordResetEmail } = require('../services/emailService');
+const { logActivitySafe } = require('../services/activityService');
 
 const PROFILE_FIELDS = ['name'];
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -239,6 +240,13 @@ router.post('/signup', async (req, res) => {
     const user = await User.create({ name, email, password });
     const token = signAuthToken(user);
     setAuthCookie(res, token);
+    await logActivitySafe({
+      user: user._id,
+      type: 'auth:signup',
+      title: 'Account created',
+      description: 'A new Alpha Vision account was created.',
+      metadata: { email: user.email, provider: 'local' },
+    });
 
     return res.status(201).json(authSessionResponse(user, token));
   } catch (err) {
@@ -270,6 +278,13 @@ router.post('/login', async (req, res) => {
 
     const token = signAuthToken(user);
     setAuthCookie(res, token);
+    await logActivitySafe({
+      user: user._id,
+      type: 'auth:login',
+      title: 'Signed in',
+      description: 'User signed in with email and password.',
+      metadata: { provider: 'local' },
+    });
     return res.json(authSessionResponse(user, token));
   } catch (err) {
     return res.status(500).json(authSessionError('Unable to sign in.'));
@@ -460,6 +475,13 @@ router.get('/google/callback',
     try {
       const token = signAuthToken(req.user);
       setAuthCookie(res, token);
+      logActivitySafe({
+        user: req.user._id,
+        type: 'auth:login',
+        title: 'Signed in',
+        description: 'User signed in with Google OAuth.',
+        metadata: { provider: 'google' },
+      });
       // Cookie httpOnly posé — redirection directe vers /dashboard sans token dans l'URL
       res.redirect(`${getFrontendUrl()}/dashboard`);
     } catch (err) {

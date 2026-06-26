@@ -10,6 +10,7 @@ import AISignalCard     from '../components/dashboard/AISignalCard'
 import MarketOverview   from '../components/dashboard/MarketOverview'
 import PortfolioSummary from '../components/dashboard/PortfolioSummary'
 import RecentTrades     from '../components/dashboard/RecentTrades'
+import RecentActivity   from '../components/dashboard/RecentActivity'
 
 import { Card, Badge } from '../components/ui'
 import { useAuth } from '../context/useAuth'
@@ -364,8 +365,16 @@ export default function Dashboard() {
       </motion.div>
 
       {/* ── Recent trades ─────────────────────────────────────────────── */}
-      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <RecentTrades trades={trades || []} loading={loading && !trades} />
+      <motion.div
+        initial="hidden" animate="visible" variants={stagger}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+      >
+        <motion.div variants={fadeUp}>
+          <RecentTrades trades={trades || []} loading={loading && !trades} />
+        </motion.div>
+        <motion.div variants={fadeUp}>
+          <RecentActivity />
+        </motion.div>
       </motion.div>
 
     </div>

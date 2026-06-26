@@ -3,6 +3,8 @@ const auth = require('../middleware/auth');
 const Portfolio = require('../models/portfolio');
 const User = require('../models/user');
 const { getPrice, getPricesBatch } = require('../services/marketService');
+const groqService = require('../services/groqService');
+const { logActivitySafe } = require('../services/activityService');
 const {
   MIN_REQUIRED_HISTORY_POINTS,
   createPortfolioSnapshot,
@@ -200,6 +202,194 @@ function createHistoryPayload({ range, data = [], warnings = [], error = null, s
   };
 }
 
+async function buildPortfolioState(userId) {
+  const user = await User.findById(userId).select('balance');
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const holdings = await Portfolio.find({ userId });
+  const symbols = holdings.map((h) => {
+    const s = typeof h.symbol === 'string' ? h.symbol.trim().toUpperCase() : '';
+    return s;
+  }).filter(Boolean);
+  const quotesArray = symbols.length > 0 ? await getPricesBatch(symbols) : [];
+  const quoteMap = new Map(symbols.map((sym, i) => [sym, quotesArray[i]]));
+  const enriched = await Promise.all(holdings.map((h) => enrichHolding(h, quoteMap)));
+  const warnings = enriched.flatMap((holding) => Array.isArray(holding.warnings) ? holding.warnings : []);
+
+  const holdingsValue = enriched.reduce((sum, holding) => {
+    if (!holding.priceAvailable) return sum;
+    const value = Number(holding.currentValue);
+    return Number.isFinite(value) ? sum + value : sum;
+  }, 0);
+
+  const totalProfit = enriched.reduce((sum, holding) => {
+    if (!holding.priceAvailable) return sum;
+    const profit = Number(holding.profit);
+    return Number.isFinite(profit) ? sum + profit : sum;
+  }, 0);
+
+  const totalInvested = enriched.reduce((sum, holding) => {
+    const invested = Number(holding.investedValue);
+    return Number.isFinite(invested) ? sum + invested : sum;
+  }, 0);
+
+  const pricedInvested = enriched.reduce((sum, holding) => {
+    if (!holding.priceAvailable) return sum;
+    const invested = Number(holding.investedValue);
+    return Number.isFinite(invested) ? sum + invested : sum;
+  }, 0);
+
+  const holdingsWithAllocation = enriched.map((holding) => {
+    const currentValue = Number(holding.currentValue);
+    const allocation = holdingsValue > 0 && Number.isFinite(currentValue)
+      ? (currentValue / holdingsValue) * 100
+      : 0;
+
+    return {
+      ...holding,
+      allocation: Number(allocation.toFixed(2)),
+    };
+  });
+
+  const cashBalance = roundMoney(user.balance);
+  const totals = {
+    cashBalance,
+    holdingsValue: roundMoney(holdingsValue),
+    totalPortfolioValue: roundMoney(cashBalance + holdingsValue),
+    totalInvested: roundMoney(totalInvested),
+    totalProfit: roundMoney(totalProfit),
+    totalProfitPercent: pricedInvested > 0 ? roundPercent((totalProfit / pricedInvested) * 100) : 0,
+  };
+
+  return {
+    timestamp: new Date().toISOString(),
+    user,
+    holdings: holdingsWithAllocation,
+    totals,
+    dataQuality: createDataQuality(holdingsWithAllocation),
+    warnings,
+  };
+}
+
+function normalizeAnalysisObject(value = {}) {
+  const safeArray = (items) => (Array.isArray(items) ? items.filter(Boolean).map(String).slice(0, 6) : []);
+
+  return {
+    summary: typeof value.summary === 'string' && value.summary.trim()
+      ? value.summary.trim()
+      : 'Portfolio analysis generated from current paper portfolio data.',
+    allocation: typeof value.allocation === 'string' ? value.allocation.trim() : '',
+    diversification: typeof value.diversification === 'string' ? value.diversification.trim() : '',
+    dominantAssets: safeArray(value.dominantAssets),
+    risks: safeArray(value.risks),
+    positives: safeArray(value.positives),
+    notes: safeArray(value.notes),
+    disclaimer: 'This is an educational analysis, not financial advice.',
+  };
+}
+
+function createFallbackPortfolioAnalysis(portfolioState, reason = '') {
+  const holdings = Array.isArray(portfolioState.holdings) ? portfolioState.holdings : [];
+  const pricedHoldings = holdings.filter((holding) => holding.priceAvailable);
+  const sorted = [...pricedHoldings].sort((a, b) => Number(b.allocation || 0) - Number(a.allocation || 0));
+  const largest = sorted[0] || null;
+  const risks = [];
+  const positives = [];
+  const notes = [];
+
+  if (holdings.length === 0) {
+    risks.push('No open holdings are available to analyze yet.');
+    notes.push('Place paper trades first to build a portfolio for analysis.');
+  }
+  if (holdings.length > 0 && holdings.length < 3) {
+    risks.push('The portfolio has few holdings, so diversification is limited.');
+  }
+  if (largest && Number(largest.allocation) >= 50) {
+    risks.push(`${largest.symbol} represents ${Number(largest.allocation).toFixed(1)}% of holdings value, which indicates concentration risk.`);
+  }
+  if (portfolioState.dataQuality?.valuationReliable === false) {
+    risks.push('Some holdings use unavailable, stale, or fallback prices, so valuation quality is imperfect.');
+  }
+  if (portfolioState.totals.cashBalance > 0) {
+    positives.push('The portfolio keeps available virtual cash, which helps maintain flexibility in paper trading.');
+  }
+  if (holdings.length >= 3) {
+    positives.push('The portfolio contains multiple holdings, which improves basic diversification compared with a single-asset portfolio.');
+  }
+  if (Number(portfolioState.totals.totalProfit) >= 0 && holdings.length > 0) {
+    positives.push('Current unrealized performance is non-negative based on available backend valuations.');
+  }
+  if (reason) notes.push(reason);
+
+  return normalizeAnalysisObject({
+    summary: holdings.length > 0
+      ? `Current portfolio contains ${holdings.length} holding${holdings.length === 1 ? '' : 's'} with a total virtual value of ${formatMoney(portfolioState.totals.totalPortfolioValue)}.`
+      : 'Current portfolio has no open holdings yet.',
+    allocation: largest
+      ? `Largest allocation is ${largest.symbol} at ${Number(largest.allocation).toFixed(1)}% of holdings value.`
+      : 'No priced holdings are available for allocation analysis.',
+    diversification: holdings.length >= 3 ? 'Basic diversification is present.' : 'Diversification is limited because there are fewer than three holdings.',
+    dominantAssets: sorted.slice(0, 3).map((holding) => `${holding.symbol}: ${Number(holding.allocation || 0).toFixed(1)}%`),
+    risks,
+    positives,
+    notes,
+  });
+}
+
+async function generatePortfolioAnalysis(portfolioState) {
+  const promptPayload = {
+    totals: portfolioState.totals,
+    dataQuality: portfolioState.dataQuality,
+    holdings: portfolioState.holdings.map((holding) => ({
+      symbol: holding.symbol,
+      name: holding.name,
+      type: holding.type,
+      quantity: holding.quantity,
+      currentValue: holding.currentValue,
+      investedValue: holding.investedValue,
+      profit: holding.profit,
+      profitPercent: holding.profitPercent,
+      allocation: holding.allocation,
+      priceAvailable: holding.priceAvailable,
+    })),
+    warnings: portfolioState.warnings,
+  };
+  const systemPrompt = [
+    'You are a cautious portfolio education assistant.',
+    'Analyze only the provided paper trading portfolio context.',
+    'Do not give direct buy or sell orders.',
+    'Return valid JSON with keys: summary, allocation, diversification, dominantAssets, risks, positives, notes, disclaimer.',
+    'The disclaimer must be exactly: This is an educational analysis, not financial advice.',
+  ].join(' ');
+
+  try {
+    const ai = await groqService.generateJSON(
+      `Analyze this Alpha Vision paper portfolio context:\n${JSON.stringify(promptPayload)}`,
+      systemPrompt,
+    );
+    return {
+      provider: 'groq',
+      providerStatus: groqService.getProviderStatus(),
+      fallback: false,
+      analysis: normalizeAnalysisObject(ai),
+      warnings: [],
+    };
+  } catch (error) {
+    const reason = groqService.getErrorMessage(error);
+    return {
+      provider: 'rules-based',
+      providerStatus: groqService.getProviderStatus(error),
+      fallback: true,
+      analysis: createFallbackPortfolioAnalysis(portfolioState, reason),
+      warnings: [reason],
+    };
+  }
+}
+
 router.get('/history', auth, async (req, res) => {
   const requestedRange = typeof req.query.range === 'string' ? req.query.range.trim() : '30d';
 
@@ -235,6 +425,60 @@ router.get('/history', auth, async (req, res) => {
       success: false,
       error: err.message || 'Unable to load portfolio history.'
     }));
+  }
+});
+
+router.post('/analyze', auth, async (req, res) => {
+  try {
+    const portfolioState = await buildPortfolioState(req.user.id);
+    const generated = await generatePortfolioAnalysis(portfolioState);
+    const response = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      source: 'backend',
+      provider: generated.provider,
+      providerStatus: generated.providerStatus,
+      fallback: generated.fallback,
+      analysis: generated.analysis,
+      portfolioContext: {
+        totals: portfolioState.totals,
+        holdingsCount: portfolioState.holdings.length,
+        dataQuality: portfolioState.dataQuality,
+      },
+      warnings: generated.warnings,
+      error: null,
+      notFinancialAdvice: true,
+    };
+
+    await logActivitySafe({
+      user: req.user.id,
+      type: 'portfolio:analysis',
+      title: 'Portfolio AI analysis generated',
+      description: generated.fallback
+        ? 'A rules-based portfolio analysis was generated because the AI provider was unavailable.'
+        : 'An AI portfolio analysis was generated.',
+      metadata: {
+        provider: generated.provider,
+        fallback: generated.fallback,
+        holdingsCount: portfolioState.holdings.length,
+        totalPortfolioValue: portfolioState.totals.totalPortfolioValue,
+      },
+    });
+
+    return res.json(response);
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      timestamp: new Date().toISOString(),
+      source: 'backend',
+      provider: 'portfolio-analysis',
+      fallback: false,
+      analysis: null,
+      portfolioContext: null,
+      warnings: [],
+      error: err.message || 'Unable to analyze portfolio.',
+      notFinancialAdvice: true,
+    });
   }
 });
 

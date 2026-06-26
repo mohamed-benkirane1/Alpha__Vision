@@ -84,6 +84,63 @@ export const runBacktest = async (params = {}) => {
   }
 }
 
+const normalizeComparisonRow = (row = {}) => ({
+  strategy: row.strategy || null,
+  success: row.success === true,
+  fallback: row.fallback === true,
+  source: row.source || null,
+  provider: row.provider || null,
+  error: row.error || null,
+  warnings: normalizeArray(row.warnings).filter(Boolean),
+  totalReturn: Number.isFinite(Number(row.totalReturn)) ? Number(row.totalReturn) : null,
+  winRate: Number.isFinite(Number(row.winRate)) ? Number(row.winRate) : null,
+  maxDrawdown: Number.isFinite(Number(row.maxDrawdown)) ? Number(row.maxDrawdown) : null,
+  numberOfTrades: Number.isFinite(Number(row.numberOfTrades)) ? Number(row.numberOfTrades) : 0,
+  finalBalance: Number.isFinite(Number(row.finalBalance)) ? Number(row.finalBalance) : null,
+  finalCapital: Number.isFinite(Number(row.finalCapital)) ? Number(row.finalCapital) : null,
+  totalProfit: Number.isFinite(Number(row.totalProfit)) ? Number(row.totalProfit) : null,
+  equityCurve: normalizeArray(row.equityCurve),
+  results: row.results || null,
+})
+
+export const normalizeBacktestCompareResponse = (payload = {}) => ({
+  success: payload.success === true,
+  timestamp: payload.timestamp || null,
+  source: payload.source || null,
+  provider: payload.provider || null,
+  fallback: payload.fallback === true,
+  params: payload.params || null,
+  bestStrategy: payload.bestStrategy || null,
+  comparisons: normalizeArray(payload.comparisons).map(normalizeComparisonRow),
+  warnings: normalizeArray(payload.warnings).filter(Boolean),
+  error: payload.error || payload.message || null,
+  raw: payload,
+})
+
+export const compareBacktests = async (params = {}) => {
+  try {
+    const response = await api.post('/backtest/compare', {
+      ...buildBacktestPayload(params),
+      strategies: Array.isArray(params.strategies) ? params.strategies : [],
+    })
+    return normalizeBacktestCompareResponse(response.data)
+  } catch (error) {
+    const apiError = extractApiError(error)
+    const payload = apiError.data || {}
+
+    return normalizeBacktestCompareResponse({
+      success: false,
+      timestamp: payload.timestamp || null,
+      source: payload.source || 'backend',
+      provider: payload.provider || 'internal-backtest-engine',
+      params,
+      comparisons: [],
+      warnings: payload.warnings || [],
+      error: payload.error || payload.message || apiError.message || 'Unable to compare backtests.',
+    })
+  }
+}
+
 export const getBacktestCapabilities = async () => {
   try {
     const response = await api.get('/backtest/strategies')
@@ -116,5 +173,6 @@ export const getBacktestCapabilities = async () => {
 
 export default {
   runBacktest,
+  compareBacktests,
   getBacktestCapabilities,
 }

@@ -169,6 +169,7 @@ app.use('/api/watchlist', require('./routes/watchlist'));
 app.use('/api/bot', require('./routes/bot'));
 app.use('/api/backtest', require('./routes/backtest'));
 app.use('/api/payment', require('./routes/Payment'));
+app.use('/api/activity', require('./routes/activity'));
 
 const port = env.port;
 

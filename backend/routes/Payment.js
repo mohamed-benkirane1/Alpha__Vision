@@ -4,6 +4,7 @@ const createStripeClient = require('stripe');
 const auth = require('../middleware/auth');
 const User = require('../models/user');
 const Transaction = require('../models/Transaction');
+const { logActivitySafe } = require('../services/activityService');
 
 const PLANS = {
   free: {
@@ -336,6 +337,18 @@ async function fulfillCheckoutSession(session) {
         paymentStatus: session.payment_status,
       },
     });
+    await logActivitySafe({
+      user: userId,
+      type: 'payment:subscription',
+      title: 'Subscription activated',
+      description: `Plan changed to ${plan}.`,
+      metadata: {
+        plan,
+        provider: 'stripe',
+        sessionId: session.id,
+        subscriptionId: session.subscription || null,
+      },
+    });
 
     return { fulfilled: true, type: 'subscription', plan };
   }
@@ -369,6 +382,20 @@ async function fulfillCheckoutSession(session) {
       metadata: {
         checkoutMode: session.mode || 'payment',
         paymentStatus: session.payment_status,
+      },
+    });
+    await logActivitySafe({
+      user: userId,
+      type: 'payment:deposit',
+      title: 'Virtual balance deposit completed',
+      description: `${amount} ${session.currency || 'eur'} was added to the virtual paper trading balance.`,
+      metadata: {
+        amount,
+        currency: session.currency || 'eur',
+        provider: 'stripe',
+        sessionId: session.id,
+        balance: user.balance,
+        balanceType: 'virtual',
       },
     });
 
@@ -479,6 +506,19 @@ router.post('/demo-deposit', auth, async (req, res) => {
         notRealPayment: true,
       },
     });
+    await logActivitySafe({
+      user: req.user.id,
+      type: 'payment:demo_deposit',
+      title: 'Demo funds added',
+      description: `${input.amount} demo funds were added to the virtual paper trading balance.`,
+      metadata: {
+        amount: input.amount,
+        currency: 'usd',
+        balance: user.balance,
+        demo: true,
+        notRealPayment: true,
+      },
+    });
 
     return res.json({
       success: true,
@@ -578,11 +618,23 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       const subscription = event.data.object;
       const user = await User.findOne({ stripeSubscriptionId: subscription.id });
       if (user) {
+        const previousPlan = user.plan;
         user.plan = 'free';
         user.planExpiresAt = null;
         user.stripeSubscriptionStatus = 'canceled';
         user.updatedAt = new Date();
         await user.save();
+        await logActivitySafe({
+          user: user._id,
+          type: 'payment:subscription_canceled',
+          title: 'Subscription canceled',
+          description: 'Stripe subscription was canceled and the plan was moved to Free.',
+          metadata: {
+            provider: 'stripe',
+            subscriptionId: subscription.id,
+            previousPlan,
+          },
+        });
       }
     }
 
@@ -638,6 +690,17 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             user.stripeSubscriptionStatus = 'past_due';
             user.updatedAt = new Date();
             await user.save();
+            await logActivitySafe({
+              user: user._id,
+              type: 'payment:subscription_past_due',
+              title: 'Subscription payment failed',
+              description: `Plan ${previousPlan} was moved to Free after payment failure grace period.`,
+              metadata: {
+                provider: 'stripe',
+                previousPlan,
+                subscriptionId,
+              },
+            });
           } else {
             // grace period still active — subscription not yet downgraded
           }
@@ -790,6 +853,18 @@ router.post('/cancel-subscription', auth, async (req, res) => {
     user.stripeSubscriptionStatus = 'cancel_at_period_end';
     user.updatedAt = new Date();
     await user.save();
+    await logActivitySafe({
+      user: req.user.id,
+      type: 'payment:subscription_cancel_requested',
+      title: 'Subscription cancellation requested',
+      description: 'Subscription will be canceled at the end of the current billing period.',
+      metadata: {
+        provider: 'stripe',
+        currentPlan: user.plan,
+        cancelAt,
+        subscriptionId: user.stripeSubscriptionId,
+      },
+    });
 
     return res.json({
       success: true,

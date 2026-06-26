@@ -168,6 +168,47 @@ export const getPortfolioHistory = async (range = '30d') => {
   }
 }
 
+const normalizeArray = (items) => (Array.isArray(items) ? items.filter(Boolean).map(String) : [])
+
+export const normalizePortfolioAnalysisResponse = (payload = {}) => ({
+  success: payload.success === true,
+  timestamp: payload.timestamp || null,
+  provider: payload.provider || null,
+  providerStatus: payload.providerStatus || null,
+  fallback: payload.fallback === true,
+  analysis: payload.analysis ? {
+    summary: payload.analysis.summary || '',
+    allocation: payload.analysis.allocation || '',
+    diversification: payload.analysis.diversification || '',
+    dominantAssets: normalizeArray(payload.analysis.dominantAssets),
+    risks: normalizeArray(payload.analysis.risks),
+    positives: normalizeArray(payload.analysis.positives),
+    notes: normalizeArray(payload.analysis.notes),
+    disclaimer: payload.analysis.disclaimer || 'This is an educational analysis, not financial advice.',
+  } : null,
+  portfolioContext: payload.portfolioContext || null,
+  warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
+  error: payload.error || payload.message || null,
+  notFinancialAdvice: payload.notFinancialAdvice !== false,
+  raw: payload,
+})
+
+export const analyzePortfolio = async () => {
+  try {
+    const response = await api.post('/portfolio/analyze')
+    return normalizePortfolioAnalysisResponse(response.data)
+  } catch (error) {
+    const apiError = extractApiError(error)
+    return normalizePortfolioAnalysisResponse({
+      success: false,
+      provider: 'portfolio-analysis',
+      analysis: null,
+      warnings: [],
+      error: apiError.message || 'Unable to analyze portfolio.',
+    })
+  }
+}
+
 export const demoDeposit = async (amount) => {
   const response = await addDemoFunds(amount)
 

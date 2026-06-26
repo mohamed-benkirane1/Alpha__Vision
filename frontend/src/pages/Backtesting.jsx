@@ -4,6 +4,7 @@ import { AlertTriangle, BarChart2, Server } from 'lucide-react'
 import BacktestForm    from '../components/backtest/BacktestForm'
 import BacktestResults from '../components/backtest/BacktestResults'
 import BacktestChart   from '../components/backtest/BacktestChart'
+import BacktestComparePanel from '../components/backtest/BacktestComparePanel'
 import { Card, Badge, EmptyState } from '../components/ui'
 import { getBacktestCapabilities, runBacktest } from '../services/backtestService'
 import { formatDateTime } from '../utils/formatters'
@@ -16,6 +17,7 @@ export default function Backtesting() {
   const [error,              setError]             = useState(null)
   const [capabilities,       setCapabilities]      = useState(null)
   const [capabilitiesError,  setCapabilitiesError] = useState('')
+  const [mode,               setMode]              = useState('single')
 
   useEffect(() => {
     let active = true
@@ -64,7 +66,27 @@ export default function Backtesting() {
       </motion.div>
 
       {/* ── Meta bar si résultats ────────────────────────────────────────── */}
-      {response && (
+      <div className="inline-flex rounded-xl border border-white/[0.07] bg-white/[0.025] p-1">
+        {[
+          ['single', 'Single Backtest'],
+          ['compare', 'Compare Strategies'],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setMode(value)}
+            className={`rounded-lg px-3 py-2 text-body-sm font-black transition ${
+              mode === value
+                ? 'bg-rose-500/14 text-rose-300 border border-rose-500/24'
+                : 'text-slate-600 hover:text-slate-300'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'single' && response && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
           <Card padding="sm">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-label font-bold text-white/35">
@@ -84,7 +106,7 @@ export default function Backtesting() {
       )}
 
       {/* ── Warnings ─────────────────────────────────────────────────────── */}
-      {warnings.length > 0 && (
+      {mode === 'single' && warnings.length > 0 && (
         <div className="space-y-2">
           {warnings.map((w) => (
             <div key={w} className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
@@ -101,6 +123,9 @@ export default function Backtesting() {
       )}
 
       {/* ── Layout 2 colonnes ───────────────────────────────────────────── */}
+      {mode === 'compare' ? (
+        <BacktestComparePanel capabilities={capabilities} />
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Formulaire */}
@@ -143,6 +168,7 @@ export default function Backtesting() {
           )}
         </div>
       </div>
+      )}
     </div>
   )
 }
