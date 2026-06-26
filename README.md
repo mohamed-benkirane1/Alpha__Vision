@@ -16,7 +16,9 @@ Alpha Vision est une application full-stack de suivi de marche et de paper tradi
 - Prix de marche, graphiques OHLC et indicateurs techniques.
 - Ordres BUY/SELL en paper trading avec historique.
 - Portfolio, watchlist et snapshots de performance.
+- Risk Score Portfolio educatif base sur concentration, exposition, diversification et qualite des prix.
 - Backtesting sur donnees historiques Binance pour les symboles crypto supportes.
+- Export CSV des resultats de backtest simple et comparaison de strategies.
 - Bot de trading paper avec strategies techniques et execution paper optionnelle.
 - Paiements Stripe pour abonnements et depots vers solde virtuel.
 - Fonds demo optionnels pour developpement.
@@ -109,13 +111,14 @@ Par defaut, le frontend tourne sur `http://localhost:5173` et l'API sur `http://
 
 ## Precision importante
 
-Alpha Vision n'est pas une plateforme de trading reel. Les ordres, le bot et le solde de trading sont virtuels. Les depots Stripe et les fonds demo alimentent le solde interne de paper trading. Les signaux IA sont indicatifs et ne constituent pas des conseils financiers.
+Alpha Vision n'est pas une plateforme de trading reel. Les ordres, le bot et le solde de trading sont virtuels. Les depots Stripe et les fonds demo alimentent le solde interne de paper trading. Les signaux IA, le Risk Score Portfolio et les exports de backtest sont indicatifs, educatifs et ne constituent pas des conseils financiers.
 
 ## Limites connues
 
 - Pas d'integration broker reelle.
 - Pas de CSRF middleware dedie pour les routes cookie-auth en production.
 - Backtesting limite aux symboles supportes par le backend via Binance historical klines.
+- Export backtest disponible en CSV. L'export PDF n'est pas active pour eviter d'ajouter une dependance de rendu tant qu'elle n'est pas necessaire.
 - News dependantes de `GNEWS_API_KEY`.
 - IA dependante de `GROQ_API_KEY`, avec fallback regle si absent.
 - Les fonctions avancees de securite dans Settings restent partielles: 2FA, sessions actives, suppression de compte.

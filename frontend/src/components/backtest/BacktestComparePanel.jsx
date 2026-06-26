@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { GitCompareArrows, AlertTriangle, ChevronDown, Trophy } from 'lucide-react'
+import { GitCompareArrows, AlertTriangle, CheckCircle, ChevronDown, FileDown, Trophy } from 'lucide-react'
 import {
   CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { compareBacktests } from '../../services/backtestService'
+import { compareBacktests, logBacktestExport } from '../../services/backtestService'
 import { ASSET_GROUPS, TRADING_ASSETS } from '../../constants/tradingAssets'
 import { Button, Badge } from '../ui'
 import { formatCurrency, formatNumber, formatPercent } from '../../utils/formatters'
+import { exportBacktestCompareCsv } from '../../utils/backtestCsvExport'
 
 const STRATEGIES = [
   { value: 'rsi', label: 'RSI' },
@@ -64,6 +65,9 @@ export default function BacktestComparePanel({ capabilities = null }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportMessage, setExportMessage] = useState('')
+  const [exportError, setExportError] = useState('')
 
   const chartData = useMemo(() => buildChartData(result?.comparisons || []), [result])
   const compareWarnings = useMemo(() => {
@@ -93,6 +97,8 @@ export default function BacktestComparePanel({ capabilities = null }) {
     }
     setLoading(true)
     setError('')
+    setExportMessage('')
+    setExportError('')
     const response = await compareBacktests({
       symbol,
       strategies,
@@ -104,6 +110,32 @@ export default function BacktestComparePanel({ capabilities = null }) {
     setResult(response)
     if (!response.success) setError(response.error || 'Unable to compare strategies.')
     setLoading(false)
+  }
+
+  const exportCompare = async () => {
+    if (!result?.comparisons?.length || exporting) return
+    setExporting(true)
+    setExportMessage('')
+    setExportError('')
+
+    try {
+      const filename = exportBacktestCompareCsv(result)
+      const exportStrategies = result.comparisons.map((row) => row.strategy).filter(Boolean)
+      const logResult = await logBacktestExport({
+        scope: 'compare',
+        format: 'csv',
+        symbol: result.params?.symbol || symbol,
+        strategies: exportStrategies,
+        rowCount: result.comparisons.length,
+      })
+      setExportMessage(logResult.success
+        ? `${filename} exported.`
+        : `${filename} exported. Activity log unavailable.`)
+    } catch (err) {
+      setExportError(err?.message || 'Unable to export comparison CSV.')
+    } finally {
+      setExporting(false)
+    }
   }
 
   return (
@@ -119,12 +151,27 @@ export default function BacktestComparePanel({ capabilities = null }) {
           </div>
           <p className="text-body-sm font-medium text-slate-600">Run 2 or 3 backend backtests on the same symbol and period.</p>
         </div>
-        {result?.bestStrategy && (
-          <Badge variant="warning" size="sm">
-            <Trophy size={10} className="mr-1" />
-            Best: {result.bestStrategy.toUpperCase()}
-          </Badge>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {result?.bestStrategy && (
+            <Badge variant="warning" size="sm">
+              <Trophy size={10} className="mr-1" />
+              Best: {result.bestStrategy.toUpperCase()}
+            </Badge>
+          )}
+          {result?.comparisons?.length > 0 && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={exportCompare}
+              loading={exporting}
+              disabled={exporting}
+              leftIcon={!exporting ? <FileDown size={12} /> : null}
+            >
+              Export CSV
+            </Button>
+          )}
+        </div>
       </div>
 
       <form onSubmit={runCompare} className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-5">
@@ -200,6 +247,18 @@ export default function BacktestComparePanel({ capabilities = null }) {
         <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-body-sm font-semibold text-amber-300">
           <AlertTriangle size={13} className="mt-0.5 shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {(exportMessage || exportError) && (
+        <div className={`mb-4 flex items-start gap-2 rounded-xl border px-3 py-2 text-body-sm font-semibold ${
+          exportError
+            ? 'border-amber-500/20 bg-amber-500/8 text-amber-300'
+            : 'border-emerald-500/20 bg-emerald-500/8 text-emerald-300'
+        }`}
+        >
+          {exportError ? <AlertTriangle size={13} className="mt-0.5 shrink-0" /> : <CheckCircle size={13} className="mt-0.5 shrink-0" />}
+          <span>{exportError || exportMessage}</span>
         </div>
       )}
 

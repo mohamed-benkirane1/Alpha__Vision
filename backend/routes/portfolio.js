@@ -275,6 +275,184 @@ async function buildPortfolioState(userId) {
   };
 }
 
+function clampScore(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.max(0, Math.min(100, Math.round(number)));
+}
+
+function getRiskLevel(score) {
+  if (score >= 70) return 'High';
+  if (score >= 35) return 'Medium';
+  return 'Low';
+}
+
+function uniqueList(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function buildPortfolioRiskScore(portfolioState) {
+  const holdings = Array.isArray(portfolioState.holdings) ? portfolioState.holdings : [];
+  const pricedHoldings = holdings.filter((holding) => (
+    holding.priceAvailable === true
+    && Number.isFinite(Number(holding.currentValue))
+    && Number(holding.currentValue) > 0
+  ));
+  const holdingsValue = Number(portfolioState.totals?.holdingsValue || 0);
+  const totalPortfolioValue = Number(portfolioState.totals?.totalPortfolioValue || 0);
+  const cashBalance = Number(portfolioState.totals?.cashBalance || 0);
+  const dataQuality = portfolioState.dataQuality || createDataQuality([]);
+  const positivePoints = [];
+  const riskFactors = [];
+  const suggestions = [];
+  const warnings = Array.isArray(portfolioState.warnings) ? portfolioState.warnings.filter(Boolean) : [];
+
+  if (holdings.length === 0) {
+    return {
+      score: 0,
+      level: 'Low',
+      summary: 'No open paper holdings are available yet, so portfolio risk cannot be meaningfully estimated.',
+      positivePoints: ['No concentrated open position is currently recorded.'],
+      riskFactors: ['Risk scoring is limited because the paper portfolio is empty.'],
+      suggestions: ['Build a paper portfolio first, then use this score as an educational review of allocation risk.'],
+      portfolioContext: {
+        holdingsCount: 0,
+        pricedHoldings: 0,
+        largestSymbol: null,
+        largestAllocation: 0,
+        cryptoExposure: 0,
+        approximateMovement: 0,
+      },
+      warnings,
+    };
+  }
+
+  if (pricedHoldings.length === 0 || holdingsValue <= 0) {
+    return {
+      score: 50,
+      level: 'Medium',
+      summary: 'Current holdings exist, but price data is unavailable, so the risk score is an indicative fallback.',
+      positivePoints: [],
+      riskFactors: ['No priced holdings were available for allocation-based risk scoring.'],
+      suggestions: ['Refresh portfolio data and review price warnings before relying on the score.'],
+      portfolioContext: {
+        holdingsCount: holdings.length,
+        pricedHoldings: 0,
+        largestSymbol: null,
+        largestAllocation: 0,
+        cryptoExposure: 0,
+        approximateMovement: 0,
+      },
+      warnings,
+    };
+  }
+
+  const sorted = [...pricedHoldings].sort((a, b) => Number(b.allocation || 0) - Number(a.allocation || 0));
+  const largest = sorted[0] || null;
+  const largestAllocation = Number(largest?.allocation || 0);
+  const cryptoValue = pricedHoldings.reduce((sum, holding) => (
+    String(holding.type || '').toLowerCase() === 'crypto'
+      ? sum + Number(holding.currentValue || 0)
+      : sum
+  ), 0);
+  const cryptoExposure = holdingsValue > 0 ? (cryptoValue / holdingsValue) * 100 : 0;
+  const approximateMovement = pricedHoldings.reduce((sum, holding) => {
+    const allocation = Number(holding.allocation || 0) / 100;
+    const movement = Math.abs(Number(holding.profitPercent || 0));
+    return Number.isFinite(movement) ? sum + (movement * allocation) : sum;
+  }, 0);
+  const cashRatio = totalPortfolioValue > 0 ? (cashBalance / totalPortfolioValue) * 100 : 0;
+
+  let score = 15;
+
+  if (largestAllocation >= 70) {
+    score += 35;
+    riskFactors.push(`${largest.symbol} represents ${largestAllocation.toFixed(1)}% of priced holdings value.`);
+    suggestions.push('Review concentration scenarios in paper mode when one symbol dominates the portfolio.');
+  } else if (largestAllocation >= 50) {
+    score += 25;
+    riskFactors.push(`${largest.symbol} is the dominant symbol at ${largestAllocation.toFixed(1)}% of priced holdings value.`);
+    suggestions.push('Compare allocation outcomes when exposure is less dependent on one paper position.');
+  } else if (largestAllocation >= 35) {
+    score += 15;
+    riskFactors.push(`Largest symbol allocation is ${largestAllocation.toFixed(1)}%, which creates moderate concentration.`);
+  } else {
+    positivePoints.push('No single priced holding dominates the paper portfolio.');
+  }
+
+  if (holdings.length === 1) {
+    score += 25;
+    riskFactors.push('Only one asset is currently held, so diversification is very limited.');
+    suggestions.push('Use paper scenarios to compare single-asset and multi-asset allocation risk.');
+  } else if (holdings.length === 2) {
+    score += 16;
+    riskFactors.push('The portfolio has only two holdings, so diversification remains limited.');
+  } else if (holdings.length === 3) {
+    score += 8;
+    riskFactors.push('The portfolio has a small number of holdings.');
+  } else if (holdings.length >= 5) {
+    score -= 5;
+    positivePoints.push('The portfolio contains several holdings, which reduces basic concentration risk.');
+  } else {
+    positivePoints.push('The portfolio has more than a single holding.');
+  }
+
+  if (cryptoExposure >= 80) {
+    score += 20;
+    riskFactors.push(`Crypto exposure is approximately ${cryptoExposure.toFixed(1)}% of priced holdings.`);
+    suggestions.push('Treat crypto-heavy paper portfolios as higher variance in educational reviews.');
+  } else if (cryptoExposure >= 50) {
+    score += 10;
+    riskFactors.push(`Crypto exposure is approximately ${cryptoExposure.toFixed(1)}% of priced holdings.`);
+  } else {
+    positivePoints.push('The portfolio is not entirely crypto-based according to current asset metadata.');
+  }
+
+  if (approximateMovement >= 25) {
+    score += 15;
+    riskFactors.push(`Weighted unrealized movement is about ${approximateMovement.toFixed(1)}%, indicating higher recent variation.`);
+  } else if (approximateMovement >= 12) {
+    score += 8;
+    riskFactors.push(`Weighted unrealized movement is about ${approximateMovement.toFixed(1)}%, indicating moderate variation.`);
+  } else {
+    positivePoints.push('Unrealized movement is limited based on available backend valuations.');
+  }
+
+  if (dataQuality.valuationReliable === false) {
+    score += 10;
+    riskFactors.push('Some prices are unavailable, stale, or fallback, so risk scoring quality is reduced.');
+    suggestions.push('Refresh prices and review valuation warnings before presenting the score.');
+  }
+
+  if (cashRatio >= 30) {
+    score -= 5;
+    positivePoints.push('Virtual cash is available, which lowers full exposure to open paper positions.');
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push('Continue monitoring allocation drift and price quality as the paper portfolio changes.');
+  }
+
+  const finalScore = clampScore(score);
+  return {
+    score: finalScore,
+    level: getRiskLevel(finalScore),
+    summary: `Educational risk score is ${finalScore}/100, driven mainly by ${largest?.symbol || 'current allocation'} concentration, holdings count, crypto exposure, and price quality.`,
+    positivePoints: uniqueList(positivePoints),
+    riskFactors: uniqueList(riskFactors),
+    suggestions: uniqueList(suggestions),
+    portfolioContext: {
+      holdingsCount: holdings.length,
+      pricedHoldings: pricedHoldings.length,
+      largestSymbol: largest?.symbol || null,
+      largestAllocation: Number(largestAllocation.toFixed(2)),
+      cryptoExposure: Number(cryptoExposure.toFixed(2)),
+      approximateMovement: Number(approximateMovement.toFixed(2)),
+    },
+    warnings,
+  };
+}
+
 function normalizeAnalysisObject(value = {}) {
   const safeArray = (items) => (Array.isArray(items) ? items.filter(Boolean).map(String).slice(0, 6) : []);
 
@@ -389,6 +567,65 @@ async function generatePortfolioAnalysis(portfolioState) {
     };
   }
 }
+
+router.get('/risk-score', auth, async (req, res) => {
+  try {
+    const portfolioState = await buildPortfolioState(req.user.id);
+    const riskScore = buildPortfolioRiskScore(portfolioState);
+    const response = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      source: 'backend',
+      provider: 'rules-based-risk-score',
+      score: riskScore.score,
+      level: riskScore.level,
+      summary: riskScore.summary,
+      positivePoints: riskScore.positivePoints,
+      riskFactors: riskScore.riskFactors,
+      suggestions: riskScore.suggestions,
+      disclaimer: 'This is an educational risk estimate, not financial advice.',
+      portfolioContext: riskScore.portfolioContext,
+      dataQuality: portfolioState.dataQuality,
+      warnings: riskScore.warnings,
+      error: null,
+      notFinancialAdvice: true,
+    };
+
+    logActivityDeferred({
+      user: req.user.id,
+      type: 'portfolio:risk_score',
+      title: 'Portfolio risk score reviewed',
+      description: `Educational portfolio risk score calculated as ${riskScore.score}/100 (${riskScore.level}).`,
+      metadata: {
+        score: riskScore.score,
+        level: riskScore.level,
+        holdingsCount: riskScore.portfolioContext.holdingsCount,
+        status: 'completed',
+      },
+    });
+
+    return res.json(response);
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      timestamp: new Date().toISOString(),
+      source: 'backend',
+      provider: 'rules-based-risk-score',
+      score: null,
+      level: null,
+      summary: '',
+      positivePoints: [],
+      riskFactors: [],
+      suggestions: [],
+      disclaimer: 'This is an educational risk estimate, not financial advice.',
+      portfolioContext: null,
+      dataQuality: null,
+      warnings: [],
+      error: err.message || 'Unable to calculate portfolio risk score.',
+      notFinancialAdvice: true,
+    });
+  }
+});
 
 router.get('/history', auth, async (req, res) => {
   const requestedRange = typeof req.query.range === 'string' ? req.query.range.trim() : '30d';

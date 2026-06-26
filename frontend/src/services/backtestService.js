@@ -141,6 +141,41 @@ export const compareBacktests = async (params = {}) => {
   }
 }
 
+export const logBacktestExport = async ({
+  scope = 'single',
+  format = 'csv',
+  symbol = null,
+  strategy = null,
+  strategies = [],
+  rowCount = 1,
+} = {}) => {
+  try {
+    const response = await api.post('/backtest/export', {
+      scope,
+      format,
+      symbol,
+      strategy,
+      strategies: Array.isArray(strategies) ? strategies : [],
+      rowCount,
+    })
+    const payload = response.data || {}
+    return {
+      success: payload.success === true,
+      timestamp: payload.timestamp || null,
+      error: payload.error || null,
+      raw: payload,
+    }
+  } catch (error) {
+    const apiError = extractApiError(error)
+    return {
+      success: false,
+      timestamp: null,
+      error: apiError.message || 'Unable to log CSV export.',
+      raw: apiError.data,
+    }
+  }
+}
+
 export const getBacktestCapabilities = async () => {
   try {
     const response = await api.get('/backtest/strategies')
@@ -174,5 +209,6 @@ export const getBacktestCapabilities = async () => {
 export default {
   runBacktest,
   compareBacktests,
+  logBacktestExport,
   getBacktestCapabilities,
 }

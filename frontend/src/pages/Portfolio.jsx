@@ -10,6 +10,7 @@ import HoldingsTable  from '../components/portfolio/HoldingsTable'
 import PortfolioChart from '../components/portfolio/PortfolioChart'
 import WatchlistPanel from '../components/portfolio/WatchlistPanel'
 import PortfolioAIAnalysis from '../components/portfolio/PortfolioAIAnalysis'
+import PortfolioRiskScore from '../components/portfolio/PortfolioRiskScore'
 
 import { Card, Button } from '../components/ui'
 import { demoDeposit, getPortfolio }             from '../services/portfolioService'
@@ -307,6 +308,9 @@ export default function Portfolio() {
           </div>
         </Card>
       </motion.div>
+
+      {/* Educational risk score */}
+      <PortfolioRiskScore />
 
       {/* AI portfolio analysis */}
       <PortfolioAIAnalysis />

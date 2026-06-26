@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, BarChart2, Server } from 'lucide-react'
+import { AlertTriangle, BarChart2, CheckCircle, FileDown, Server } from 'lucide-react'
 import BacktestForm    from '../components/backtest/BacktestForm'
 import BacktestResults from '../components/backtest/BacktestResults'
 import BacktestChart   from '../components/backtest/BacktestChart'
 import BacktestComparePanel from '../components/backtest/BacktestComparePanel'
 import { Card, Badge, EmptyState } from '../components/ui'
-import { getBacktestCapabilities, runBacktest } from '../services/backtestService'
+import { getBacktestCapabilities, logBacktestExport, runBacktest } from '../services/backtestService'
 import { formatDateTime } from '../utils/formatters'
+import { exportSingleBacktestCsv } from '../utils/backtestCsvExport'
 
 const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 
@@ -18,6 +19,9 @@ export default function Backtesting() {
   const [capabilities,       setCapabilities]      = useState(null)
   const [capabilitiesError,  setCapabilitiesError] = useState('')
   const [mode,               setMode]              = useState('single')
+  const [exporting,          setExporting]         = useState(false)
+  const [exportMessage,      setExportMessage]     = useState('')
+  const [exportError,        setExportError]       = useState('')
 
   useEffect(() => {
     let active = true
@@ -30,11 +34,34 @@ export default function Backtesting() {
   }, [])
 
   async function handleRun(payload) {
-    setLoading(true); setError(null)
+    setLoading(true); setError(null); setExportMessage(''); setExportError('')
     const result = await runBacktest(payload)
     setResponse(result)
     setError(result.success ? null : result.error || 'Impossible de lancer le backtest.')
     setLoading(false)
+  }
+
+  async function handleExportSingle() {
+    if (!response?.results || exporting) return
+    setExporting(true); setExportMessage(''); setExportError('')
+
+    try {
+      const filename = exportSingleBacktestCsv(response)
+      const logResult = await logBacktestExport({
+        scope: 'single',
+        format: 'csv',
+        symbol: response.params?.symbol,
+        strategy: response.params?.strategy,
+        rowCount: 1,
+      })
+      setExportMessage(logResult.success
+        ? `${filename} exported.`
+        : `${filename} exported. Activity log unavailable.`)
+    } catch (err) {
+      setExportError(err?.message || 'Unable to export CSV.')
+    } finally {
+      setExporting(false)
+    }
   }
 
   const warnings = [...(response?.warnings || []), ...(response?.dataQuality?.warnings || [])].filter(Boolean)
@@ -89,20 +116,45 @@ export default function Backtesting() {
       {mode === 'single' && response && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
           <Card padding="sm">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-label font-bold text-white/35">
-              <span>Provider : <span className="text-white/55">{response.provider || '--'}</span></span>
-              <span>Source : <span className="text-white/55">{response.source || '--'}</span></span>
-              <span>Données réelles : <span className={response.dataQuality?.usesRealHistoricalData ? 'text-emerald-400' : 'text-amber-400'}>{response.dataQuality?.usesRealHistoricalData ? 'Oui' : 'Non'}</span></span>
-              <span>Mis à jour : <span className="text-white/55">{formatDateTime(response.timestamp)}</span></span>
-              {response.params && (
-                <span>
-                  Stratégie : <span className="text-white/55 uppercase">{response.params.strategy || '--'}</span>
-                  {' | '}Capital : <span className="font-mono text-white/55">{response.params.initialCapital}</span>
-                </span>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-label font-bold text-white/35">
+                <span>Provider : <span className="text-white/55">{response.provider || '--'}</span></span>
+                <span>Source : <span className="text-white/55">{response.source || '--'}</span></span>
+                <span>Données réelles : <span className={response.dataQuality?.usesRealHistoricalData ? 'text-emerald-400' : 'text-amber-400'}>{response.dataQuality?.usesRealHistoricalData ? 'Oui' : 'Non'}</span></span>
+                <span>Mis à jour : <span className="text-white/55">{formatDateTime(response.timestamp)}</span></span>
+                {response.params && (
+                  <span>
+                    Stratégie : <span className="text-white/55 uppercase">{response.params.strategy || '--'}</span>
+                    {' | '}Capital : <span className="font-mono text-white/55">{response.params.initialCapital}</span>
+                  </span>
+                )}
+              </div>
+              {response.results && (
+                <button
+                  type="button"
+                  onClick={handleExportSingle}
+                  disabled={exporting}
+                  className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.035] px-3 text-body-sm font-black text-white/70 transition hover:border-rose-500/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <FileDown size={13} />
+                  {exporting ? 'Exporting...' : 'Export CSV'}
+                </button>
               )}
             </div>
           </Card>
         </motion.div>
+      )}
+
+      {mode === 'single' && (exportMessage || exportError) && (
+        <div className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-body-sm font-semibold ${
+          exportError
+            ? 'border-amber-500/20 bg-amber-500/8 text-amber-300'
+            : 'border-emerald-500/20 bg-emerald-500/8 text-emerald-300'
+        }`}
+        >
+          {exportError ? <AlertTriangle size={14} className="mt-0.5 shrink-0" /> : <CheckCircle size={14} className="mt-0.5 shrink-0" />}
+          <span>{exportError || exportMessage}</span>
+        </div>
       )}
 
       {/* ── Warnings ─────────────────────────────────────────────────────── */}

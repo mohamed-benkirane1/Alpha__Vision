@@ -209,6 +209,45 @@ export const analyzePortfolio = async () => {
   }
 }
 
+export const normalizePortfolioRiskScoreResponse = (payload = {}) => ({
+  success: payload.success === true,
+  timestamp: payload.timestamp || null,
+  provider: payload.provider || null,
+  score: toNumberOrNull(payload.score),
+  level: payload.level || null,
+  summary: payload.summary || '',
+  positivePoints: normalizeArray(payload.positivePoints),
+  riskFactors: normalizeArray(payload.riskFactors),
+  suggestions: normalizeArray(payload.suggestions),
+  disclaimer: payload.disclaimer || 'This is an educational risk estimate, not financial advice.',
+  portfolioContext: payload.portfolioContext || null,
+  dataQuality: payload.dataQuality || null,
+  warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
+  error: payload.error || payload.message || null,
+  notFinancialAdvice: payload.notFinancialAdvice !== false,
+  raw: payload,
+})
+
+export const getPortfolioRiskScore = async () => {
+  try {
+    const response = await api.get('/portfolio/risk-score')
+    return normalizePortfolioRiskScoreResponse(response.data)
+  } catch (error) {
+    const apiError = extractApiError(error)
+    return normalizePortfolioRiskScoreResponse({
+      success: false,
+      provider: 'rules-based-risk-score',
+      score: null,
+      level: null,
+      positivePoints: [],
+      riskFactors: [],
+      suggestions: [],
+      warnings: [],
+      error: apiError.message || 'Unable to calculate portfolio risk score.',
+    })
+  }
+}
+
 export const demoDeposit = async (amount) => {
   const response = await addDemoFunds(amount)
 

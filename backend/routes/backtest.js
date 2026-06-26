@@ -162,6 +162,46 @@ const compareBacktestValidator = [
     }),
 ];
 
+const backtestExportValidator = [
+  body('format')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString().withMessage('format must be a string.')
+    .trim()
+    .toLowerCase()
+    .isIn(['csv']).withMessage('format must be csv.'),
+  body('scope')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString().withMessage('scope must be a string.')
+    .trim()
+    .toLowerCase()
+    .isIn(['single', 'compare']).withMessage('scope must be single or compare.'),
+  body('symbol')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString().withMessage('symbol must be a string.')
+    .trim()
+    .toUpperCase()
+    .isIn(SUPPORTED_SYMBOLS).withMessage(`symbol must be one of: ${SUPPORTED_SYMBOLS.join(', ')}.`),
+  body('strategy')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString().withMessage('strategy must be a string.')
+    .trim()
+    .toLowerCase()
+    .isIn(VALID_STRATEGIES).withMessage(`strategy must be one of: ${VALID_STRATEGIES.join(', ')}.`),
+  body('strategies')
+    .optional()
+    .isArray({ max: 3 }).withMessage('strategies must contain at most 3 strategies.'),
+  body('strategies.*')
+    .optional()
+    .isString().withMessage('each strategy must be a string.')
+    .trim()
+    .toLowerCase()
+    .isIn(VALID_STRATEGIES).withMessage(`strategy must be one of: ${VALID_STRATEGIES.join(', ')}.`),
+  body('rowCount')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1, max: 1000 }).withMessage('rowCount must be between 1 and 1000.')
+    .toInt(),
+];
+
 router.post('/compare', auth, checkPlan('pro'), validate(compareBacktestValidator), async (req, res) => {
   try {
     const strategies = [...new Set((req.body.strategies || []).map((strategy) => String(strategy).trim().toLowerCase()))];
@@ -213,6 +253,47 @@ router.post('/compare', auth, checkPlan('pro'), validate(compareBacktestValidato
   } catch (err) {
     return res.status(500).json(createErrorBacktest(err.message || 'Unable to compare backtests.'));
   }
+});
+
+router.post('/export', auth, checkPlan('pro'), validate(backtestExportValidator), async (req, res) => {
+  const scope = typeof req.body.scope === 'string' ? req.body.scope.trim().toLowerCase() : 'single';
+  const format = typeof req.body.format === 'string' ? req.body.format.trim().toLowerCase() : 'csv';
+  const symbol = typeof req.body.symbol === 'string' ? req.body.symbol.trim().toUpperCase() : null;
+  const strategy = typeof req.body.strategy === 'string' ? req.body.strategy.trim().toLowerCase() : null;
+  const strategies = Array.isArray(req.body.strategies)
+    ? [...new Set(req.body.strategies.map((item) => String(item).trim().toLowerCase()).filter(Boolean))]
+    : [];
+  const rowCount = Number.isInteger(req.body.rowCount) ? req.body.rowCount : (scope === 'compare' ? strategies.length : 1);
+
+  logActivityDeferred({
+    user: req.user.id,
+    type: 'backtest:export',
+    title: 'Backtest CSV exported',
+    description: scope === 'compare'
+      ? `${rowCount} backtest comparison rows exported as CSV.`
+      : 'Single backtest result exported as CSV.',
+    metadata: {
+      symbol,
+      strategy: scope === 'single' ? strategy : null,
+      strategies: scope === 'compare' ? strategies : [],
+      format,
+      action: 'export',
+      rowCount,
+      status: 'completed',
+    },
+  });
+
+  return res.json({
+    success: true,
+    timestamp: new Date().toISOString(),
+    source: 'backend',
+    provider: 'activity-log',
+    format,
+    scope,
+    logged: true,
+    warnings: [],
+    error: null,
+  });
 });
 
 router.get('/strategies', auth, async (req, res) => {
