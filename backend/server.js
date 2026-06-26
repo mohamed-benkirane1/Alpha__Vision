@@ -170,6 +170,7 @@ app.use('/api/bot', require('./routes/bot'));
 app.use('/api/backtest', require('./routes/backtest'));
 app.use('/api/payment', require('./routes/Payment'));
 app.use('/api/activity', require('./routes/activity'));
+app.use('/api/alerts', require('./routes/alerts'));
 
 const port = env.port;
 

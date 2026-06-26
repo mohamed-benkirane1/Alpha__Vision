@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Activity, Bot, BrainCircuit, CreditCard, FlaskConical,
+  Activity, Bell, Bot, BrainCircuit, CreditCard, FlaskConical,
   ListPlus, LogIn, RefreshCw, ShoppingCart,
 } from 'lucide-react'
 import { getActivities } from '../../services/activityService'
@@ -21,6 +21,11 @@ const TYPE_ICON = {
   'watchlist:add': ListPlus,
   'watchlist:remove': ListPlus,
   'portfolio:analysis': BrainCircuit,
+  'alert:create': Bell,
+  'alert:triggered': Bell,
+  'alert:disable': Bell,
+  'alert:delete': Bell,
+  'alert:check': Bell,
 }
 
 function getActivityIcon(type) {

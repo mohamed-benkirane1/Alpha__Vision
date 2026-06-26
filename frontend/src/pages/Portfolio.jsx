@@ -11,6 +11,7 @@ import PortfolioChart from '../components/portfolio/PortfolioChart'
 import WatchlistPanel from '../components/portfolio/WatchlistPanel'
 import PortfolioAIAnalysis from '../components/portfolio/PortfolioAIAnalysis'
 import PortfolioRiskScore from '../components/portfolio/PortfolioRiskScore'
+import PriceAlertsPanel from '../components/portfolio/PriceAlertsPanel'
 
 import { Card, Button } from '../components/ui'
 import { demoDeposit, getPortfolio }             from '../services/portfolioService'
@@ -349,6 +350,11 @@ export default function Portfolio() {
           onAdd={handleAddWatchlist} onRemove={handleRemoveWatchlist}
           onRefresh={() => loadWatchlist()}
         />
+      </motion.div>
+
+      {/* Price alerts */}
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+        <PriceAlertsPanel />
       </motion.div>
 
       {/* ── Insights ─────────────────────────────────────────────────────── */}

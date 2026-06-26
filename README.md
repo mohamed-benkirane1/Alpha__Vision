@@ -17,6 +17,7 @@ Alpha Vision est une application full-stack de suivi de marche et de paper tradi
 - Ordres BUY/SELL en paper trading avec historique.
 - Portfolio, watchlist et snapshots de performance.
 - Risk Score Portfolio educatif base sur concentration, exposition, diversification et qualite des prix.
+- Alertes de prix utilisateur avec verification manuelle des prix de marche.
 - Backtesting sur donnees historiques Binance pour les symboles crypto supportes.
 - Export CSV des resultats de backtest simple et comparaison de strategies.
 - Bot de trading paper avec strategies techniques et execution paper optionnelle.
@@ -24,6 +25,10 @@ Alpha Vision est une application full-stack de suivi de marche et de paper tradi
 - Fonds demo optionnels pour developpement.
 - Chatbot IA avec contexte utilisateur et fallback sans LLM.
 - News financieres via GNews avec fallback explicite.
+
+## Alertes de prix
+
+Les utilisateurs authentifies peuvent creer des alertes simples sur un symbole avec une condition `above` ou `below` et un prix cible. La verification se fait manuellement depuis l'interface via le backend, sans WebSocket, sans email, sans push notification et sans ordre de trading reel.
 
 ## Installation
 
