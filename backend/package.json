@@ -4,6 +4,7 @@
   "main": "server.js",
   "scripts": {
     "check:env": "node config/env.js",
+    "seed:demo": "node scripts/seedDemo.js",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },

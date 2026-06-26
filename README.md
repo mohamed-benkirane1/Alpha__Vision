@@ -87,9 +87,27 @@ Backend:
 
 ```bash
 npm run check:env
+npm run seed:demo
 npm run dev
 npm start
 ```
+
+## Preparer les donnees de demonstration
+
+Le backend fournit un seed local pour preparer un compte de soutenance avec solde virtuel, portfolio, watchlist, trades paper, activites recentes et bot paper arrete.
+
+```bash
+cd backend
+npm run seed:demo
+```
+
+Compte demo:
+
+- Email: `demo@alphavision.local`
+- Password: `Demo123456!`
+- Plan: `elite`
+
+Ce seed est reserve au developpement/local. Il refuse de s'executer avec `NODE_ENV=production`, n'ajoute aucune cle secrete, ne contacte pas Stripe et ne lance pas le scheduler du bot.
 
 ## Lancement local
 
