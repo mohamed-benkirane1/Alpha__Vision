@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Bot, Server, Shield, Zap } from 'lucide-react'
+import { AlertTriangle, Bot, Send, Sparkles } from 'lucide-react'
 
+import { Card, Badge, Button } from '../components/ui'
 import ChatMessage from '../components/chatbot/ChatMessage'
-import ChatInput from '../components/chatbot/ChatInput'
-import SuggestionCard from '../components/chatbot/SuggestionCard'
 import MarketContextPanel from '../components/chatbot/MarketContextPanel'
 import { getChatHistory, sendChatMessage } from '../services/chatbotService'
 
@@ -26,8 +25,8 @@ const INITIAL_MESSAGES = [
   {
     id: 'welcome',
     role: 'ai',
-    content: 'Hello. I can answer trading, crypto, stock market, technical analysis, risk management, and portfolio questions. Gemini is used only when configured on the backend; otherwise fallback responses are clearly labelled.',
-    timestamp: 'Just now',
+    content: 'Bonjour ! Je suis Alpha AI, votre assistant de trading. Posez-moi vos questions sur les marchés, les indicateurs techniques ou vos stratégies.',
+    timestamp: 'Maintenant',
     provider: 'Backend',
     source: 'api',
     fallback: false,
@@ -35,10 +34,10 @@ const INITIAL_MESSAGES = [
 ]
 
 const SUGGESTIONS = [
-  { label: 'Analyze BTC', text: 'Analyze BTC' },
-  { label: 'Explain RSI', text: 'Explain RSI signal' },
-  { label: 'Risk management', text: 'Explain position sizing risk management' },
-  { label: 'Portfolio risk?', text: 'How should I think about portfolio concentration risk?' },
+  'Analyse le marché BTC/USD',
+  'Explique le signal RSI actuel',
+  'Quelle est la tendance XAUUSD ?',
+  'Compare ETH et BTC cette semaine',
 ]
 
 function createUserMessage(text) {
@@ -51,8 +50,7 @@ function createUserMessage(text) {
 }
 
 function createAssistantMessage(response) {
-  const answer = response.answer || response.message || response.error || 'Assistant temporarily unavailable.'
-
+  const answer = response.answer || response.message || response.error || 'Assistant temporairement indisponible.'
   return {
     id: `ai-${Date.now() + 1}`,
     role: 'ai',
@@ -72,12 +70,12 @@ function createAssistantMessage(response) {
 
 function createStoredMessages(storedMessages = []) {
   return storedMessages
-    .filter((message) => message?.content && (message.role === 'user' || message.role === 'assistant'))
-    .map((message, index) => ({
-      id: message._id || `history-${index}`,
-      role: message.role === 'assistant' ? 'ai' : 'user',
-      content: message.content,
-      timestamp: formatProviderTime(message.ts) || 'History',
+    .filter((m) => m?.content && (m.role === 'user' || m.role === 'assistant'))
+    .map((m, i) => ({
+      id: m._id || `history-${i}`,
+      role: m.role === 'assistant' ? 'ai' : 'user',
+      content: m.content,
+      timestamp: formatProviderTime(m.ts) || 'Historique',
     }))
 }
 
@@ -86,62 +84,51 @@ export default function Chatbot() {
   const [thinking, setThinking] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [inputText, setInputText] = useState('')
   const bottomRef = useRef(null)
 
   useEffect(() => {
     let isMounted = true
-
     const loadHistory = async () => {
       const response = await getChatHistory()
       if (!isMounted) return
-
       if (response.success && response.messages.length > 0) {
         setMessages(createStoredMessages(response.messages))
       } else if (!response.success) {
-        setError(response.error || 'Unable to load chatbot history.')
+        setError(response.error || "Impossible de charger l'historique.")
       }
-
       setHistoryLoading(false)
     }
-
     loadHistory()
-
-    return () => {
-      isMounted = false
-    }
+    return () => { isMounted = false }
   }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, thinking, error, historyLoading])
+  }, [messages, thinking, historyLoading])
 
   const handleSend = async (text) => {
     const trimmed = typeof text === 'string' ? text.trim() : ''
     if (!trimmed || thinking) return
-
     setError(null)
     setMessages((prev) => [...prev, createUserMessage(trimmed)])
     setThinking(true)
-
     try {
       const response = await sendChatMessage(trimmed)
       setMessages((prev) => [...prev, createAssistantMessage(response)])
-
-      if (!response.success) {
-        setError(response.error || 'Unable to contact chatbot.')
-      }
+      if (!response.success) setError(response.error || 'Impossible de contacter le chatbot.')
     } catch (err) {
-      const message = err?.message || 'Unable to contact chatbot.'
-      setError(message)
+      const msg = err?.message || 'Impossible de contacter le chatbot.'
+      setError(msg)
       setMessages((prev) => [
         ...prev,
         {
           id: `ai-error-${Date.now()}`,
           role: 'ai',
-          content: message,
+          content: msg,
           timestamp: formatClock(),
           fallback: false,
-          warnings: ['Backend chatbot request failed.'],
+          warnings: ['La requête backend a échoué.'],
         },
       ])
     } finally {
@@ -149,80 +136,142 @@ export default function Chatbot() {
     }
   }
 
+  const handleSendInput = () => {
+    const text = inputText.trim()
+    if (!text || thinking) return
+    setInputText('')
+    handleSend(text)
+  }
+
+  const showSuggestions = messages.length <= 1 && !thinking && !historyLoading
+
   return (
-    <div className="flex flex-col gap-5 h-[calc(100vh-7rem)]">
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
+
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-        className="flex items-center justify-between shrink-0"
+        className="mb-6 shrink-0"
       >
-        <div>
-          <div className="flex items-center gap-2.5 mb-0.5">
-            <Bot size={16} className="text-rose-400" />
-            <h1 className="text-display-sm font-black text-white">AI Trading Assistant</h1>
-          </div>
-          <p className="text-body-sm text-slate-500 font-medium">Backend-powered assistant for trading and market questions</p>
-        </div>
-        <div className="hidden sm:flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-caption font-black px-3 py-1.5 rounded-full shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.10)] tracking-wider">
-            <Server size={10} />
-            BACKEND API
-          </span>
-          <span className="inline-flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 text-caption font-black px-3 py-1.5 rounded-full shrink-0 shadow-[0_0_12px_rgba(99,102,241,0.10)] tracking-wider">
-            <Zap size={10} />
-            PROVIDER-AWARE
-          </span>
-        </div>
+        <p className="text-label uppercase tracking-wider text-white/40 mb-1">IA</p>
+        <h1 className="text-display-sm font-black text-white">Assistant IA</h1>
+        <p className="text-body text-white/40">Posez vos questions de trading à notre intelligence artificielle</p>
       </motion.div>
 
+      {/* ── Error banner ────────────────────────────────────────────────────── */}
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300">
+        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-body-sm font-semibold text-amber-300 mb-4 shrink-0">
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 flex-1 min-h-0">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.38, delay: 0.05 }}
-          className="lg:col-span-2 flex flex-col bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl overflow-hidden backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] min-h-0"
-        >
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
-            <div className="flex items-center gap-2 text-label font-bold text-slate-500">
-              <Shield size={12} className="text-emerald-400" />
-              No frontend AI keys. Responses are served by backend only.
+      {/* ── Layout 2 colonnes ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+
+        {/* Colonne chat */}
+        <div className="lg:col-span-2 flex flex-col min-h-0">
+          <Card padding="none" className="flex flex-col flex-1 overflow-hidden min-h-0">
+
+            {/* Card header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-app-border shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                  <Bot size={16} className="text-rose-400" />
+                </div>
+                <div>
+                  <p className="text-body font-semibold text-white">Alpha AI</p>
+                  <p className="text-caption text-white/40">Propulsé par Groq / Llama 3.3</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {(thinking || historyLoading) && (
+                  <span className="text-caption font-black uppercase tracking-wider text-rose-400">
+                    {historyLoading ? 'Chargement...' : 'Réflexion...'}
+                  </span>
+                )}
+                <Badge variant="success" dot size="sm">En ligne</Badge>
+              </div>
             </div>
-            {(thinking || historyLoading) && (
-              <span className="text-caption font-black uppercase tracking-wider text-indigo-400">
-                {historyLoading ? 'Loading history...' : 'Thinking...'}
-              </span>
-            )}
-          </div>
 
-          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 sidebar-scroll">
-            {messages.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} />
-            ))}
-            {thinking && (
-              <ChatMessage message={{ id: 'thinking', role: 'ai', isThinking: true }} />
-            )}
-            <div ref={bottomRef} />
-          </div>
-          <SuggestionCard suggestions={SUGGESTIONS} onSelect={handleSend} />
-          <ChatInput onSend={handleSend} disabled={thinking} />
-        </motion.div>
+            {/* Zone messages */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0">
+              {messages.length === 0 && !historyLoading ? (
+                <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
+                    <Sparkles size={24} className="text-rose-400" />
+                  </div>
+                  <p className="text-body font-medium text-white mb-1">Bonjour, je suis Alpha AI</p>
+                  <p className="text-body-sm text-white/40 max-w-xs">
+                    Posez-moi vos questions sur les marchés, les signaux ou vos stratégies de trading.
+                  </p>
+                </div>
+              ) : (
+                messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)
+              )}
+              {thinking && <ChatMessage message={{ id: 'thinking', role: 'ai', isThinking: true }} />}
+              <div ref={bottomRef} />
+            </div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 14 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.38, delay: 0.1 }}
-          className="hidden lg:flex flex-col gap-3.5 overflow-y-auto min-h-0 sidebar-scroll"
-        >
+            {/* Suggestions rapides */}
+            {showSuggestions && (
+              <div className="px-5 pb-3 grid grid-cols-2 gap-2 shrink-0">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleSend(s)}
+                    className="text-left px-3 py-2.5 rounded-xl border border-app-border bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.15] text-body-sm text-white/50 hover:text-white transition-all duration-200"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Zone saisie */}
+            <div className="px-4 pb-4 pt-2 border-t border-app-border shrink-0">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <textarea
+                    rows={1}
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="Posez votre question..."
+                    disabled={thinking}
+                    className="w-full resize-none rounded-xl px-4 py-3 bg-white/[0.04] border border-app-border text-body text-white placeholder:text-white/30 focus:outline-none focus:border-rose-500/50 focus:bg-white/[0.06] transition-all duration-200 max-h-32 overflow-y-auto disabled:opacity-40"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendInput() }
+                    }}
+                    onInput={(e) => {
+                      e.target.style.height = 'auto'
+                      e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px'
+                    }}
+                  />
+                </div>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={handleSendInput}
+                  disabled={!inputText.trim()}
+                  loading={thinking}
+                >
+                  <Send size={15} />
+                </Button>
+              </div>
+              <p className="text-caption text-white/20 mt-2 text-center">
+                Shift+Entrée pour un saut de ligne · Les réponses sont générées par IA
+              </p>
+            </div>
+          </Card>
+        </div>
+
+        {/* Colonne contexte */}
+        <div className="hidden lg:flex flex-col gap-4 overflow-y-auto min-h-0">
           <MarketContextPanel />
-        </motion.div>
+        </div>
       </div>
     </div>
   )
