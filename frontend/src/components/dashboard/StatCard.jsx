@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import Card  from '../ui/Card'
 import Badge from '../ui/Badge'
@@ -20,7 +21,7 @@ import useCountUp from '../../hooks/useCountUp'
  *   onClick     function
  *   accentColor ignoré (compat)
  */
-export default function StatCard({
+function StatCard({
   icon: Icon,
   label,
   value,
@@ -120,3 +121,5 @@ export default function StatCard({
     </Card>
   )
 }
+
+export default memo(StatCard)

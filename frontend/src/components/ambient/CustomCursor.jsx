@@ -65,15 +65,25 @@ export default function CustomCursor() {
       }
     }
 
+    const handleVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(rafRef.current)
+      } else {
+        rafRef.current = requestAnimationFrame(animate)
+      }
+    }
+
     window.addEventListener('mousemove', onMove, { passive: true })
     document.addEventListener('mouseover', onOver)
     document.addEventListener('mouseout', onOut)
+    document.addEventListener('visibilitychange', handleVisibility)
     rafRef.current = requestAnimationFrame(animate)
 
     return () => {
       window.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseover', onOver)
       document.removeEventListener('mouseout', onOut)
+      document.removeEventListener('visibilitychange', handleVisibility)
       cancelAnimationFrame(rafRef.current)
     }
   }, [ready])

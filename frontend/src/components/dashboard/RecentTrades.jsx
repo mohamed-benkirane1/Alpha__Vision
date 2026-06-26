@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { ClipboardList, History } from 'lucide-react'
 import { formatCurrency, formatNumber, formatDateTime } from '../../utils/formatters'
@@ -9,7 +10,7 @@ const formatQuantity = (value) => formatNumber(value, 8)
 const normalizeTrades = (trades) => {
   if (!Array.isArray(trades) || trades.length === 0) return []
   return trades.slice(0, 5).map((trade) => ({
-    id:            trade._id || `${trade.symbol}-${trade.createdAt}`,
+    id:            trade._id || `${trade.symbol}-${trade.createdAt || trade.timestamp}-${trade.executedPrice ?? trade.price}`,
     symbol:        trade.symbol || 'N/A',
     type:          trade.type || '--',
     quantity:      trade.quantity,
@@ -21,7 +22,7 @@ const normalizeTrades = (trades) => {
   }))
 }
 
-export default function RecentTrades({ trades = [], loading = false }) {
+function RecentTrades({ trades = [], loading = false }) {
   const entries = normalizeTrades(trades)
 
   return (
@@ -72,7 +73,7 @@ export default function RecentTrades({ trades = [], loading = false }) {
         {/* ── Rows ──────────────────────────────────────────────────────── */}
         {entries.map((t, i) => (
           <motion.div
-            key={t.id || `${t.symbol}-${i}`}
+            key={t.id}
             initial={{ opacity: 0, x: -10 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-20px' }}
@@ -132,3 +133,5 @@ export default function RecentTrades({ trades = [], loading = false }) {
     </motion.div>
   )
 }
+
+export default memo(RecentTrades)

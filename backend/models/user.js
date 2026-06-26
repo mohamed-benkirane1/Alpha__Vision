@@ -19,6 +19,8 @@ const UserSchema = new mongoose.Schema({
   passwordChangedAt: { type: Date, default: null },
 }, { timestamps: true });
 
+UserSchema.index({ stripeSubscriptionId: 1 }, { sparse: true });
+
 UserSchema.pre('save', async function hashPassword(next) {
   if (!this.isModified('password')) return next();
 

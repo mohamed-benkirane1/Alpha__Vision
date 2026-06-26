@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, RefreshCw, TrendingUp, Wallet, Zap } from 'lucide-react'
+import { RefreshCw, Wallet } from 'lucide-react'
 
 import PriceCard    from '../components/trading/PriceCard'
 import OrderForm    from '../components/trading/OrderForm'
@@ -75,7 +75,8 @@ export default function Trading() {
   const [demoFundingEnabled, setDemoFundingEnabled] = useState(false)
   const [fundingLoading,    setFundingLoading]    = useState(false)
   const [fundingMessage,    setFundingMessage]    = useState('')
-  const pricesLoadingRef = useRef(false)
+  const pricesLoadingRef  = useRef(false)
+  const priceErrorCountRef = useRef(0)
 
   const loadPrices = useCallback(async () => {
     if (pricesLoadingRef.current) return
@@ -87,10 +88,12 @@ export default function Trading() {
       const quotes = Array.isArray(data?.quotes) ? data.quotes : data
       const nextAssets = Array.isArray(quotes) ? quotes.map(normalizeAsset).filter((a) => a.symbol) : []
       setAssets(nextAssets)
+      priceErrorCountRef.current = 0
       setMarketError('')
       if (nextAssets.length > 0)
         setSelectedSymbol((cur) => nextAssets.some((a) => a.symbol === cur) ? cur : nextAssets[0].symbol)
     } catch (err) {
+      priceErrorCountRef.current += 1
       setMarketError('Impossible de charger les prix.')
     } finally { pricesLoadingRef.current = false; setPricesLoading(false) }
   }, [])
@@ -172,8 +175,20 @@ export default function Trading() {
   }, [loadBalance, loadPrices, loadTradeHistory])
 
   useEffect(() => {
-    const interval = window.setInterval(() => loadPrices(), AUTO_REFRESH_MS)
-    return () => window.clearInterval(interval)
+    let intervalId
+    const scheduleNext = () => {
+      const backoffMs = priceErrorCountRef.current === 0
+        ? AUTO_REFRESH_MS
+        : priceErrorCountRef.current === 1
+          ? AUTO_REFRESH_MS * 2
+          : Math.min(AUTO_REFRESH_MS * 4, 120_000)
+      intervalId = window.setTimeout(async () => {
+        await loadPrices()
+        scheduleNext()
+      }, backoffMs)
+    }
+    scheduleNext()
+    return () => window.clearTimeout(intervalId)
   }, [loadPrices])
 
   const [mobileTab, setMobileTab] = useState('chart')

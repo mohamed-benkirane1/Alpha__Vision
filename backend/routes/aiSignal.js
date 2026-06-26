@@ -1,8 +1,17 @@
 const router = require('express').Router();
+const { rateLimit } = require('express-rate-limit');
 const auth = require('../middleware/auth');
 const { generateAiSignal } = require('../services/aiSignalService');
 
-router.get('/', auth, async (req, res) => {
+const aiSignalLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many AI signal requests. Please wait before retrying.' },
+});
+
+router.get('/', auth, aiSignalLimiter, async (req, res) => {
   try {
     const symbol = typeof req.query.symbol === 'string' ? req.query.symbol : undefined;
     const response = await generateAiSignal({

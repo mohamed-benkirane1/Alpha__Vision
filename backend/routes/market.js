@@ -3,7 +3,7 @@ const {
   getPrice,
   getAllPrices,
   getTopCryptos,
-  getPricesForSymbols,
+  getPricesBatch,
   getMarketHistory,
   computeDataQuality,
   normalizeSymbol,
@@ -103,7 +103,7 @@ router.get('/prices', async (req, res) => {
     const symbols = typeof symbolsParam === 'string'
       ? symbolsParam.split(',').map(normalizeSymbol).filter(Boolean)
       : [];
-    const quotes = symbols.length > 0 ? await getPricesForSymbols(symbols) : await getAllPrices();
+    const quotes = symbols.length > 0 ? await getPricesBatch(symbols) : await getAllPrices();
     res.json(createListResponse(quotes));
   } catch (err) {
     const response = createErrorResponse(err.message);
@@ -152,7 +152,7 @@ router.post('/specific', async (req, res) => {
       return res.status(response.statusCode).json(response.body);
     }
 
-    const quotes = await getPricesForSymbols(normalizedSymbols);
+    const quotes = await getPricesBatch(normalizedSymbols);
     return res.json(createListResponse(quotes));
   } catch (err) {
     const response = createErrorResponse(err.message);
@@ -174,7 +174,7 @@ router.get('/multi', async (req, res) => {
       return res.status(response.statusCode).json(response.body);
     }
 
-    const quotes = await getPricesForSymbols(symbols);
+    const quotes = await getPricesBatch(symbols);
     return res.json(createListResponse(quotes));
   } catch (err) {
     const response = createErrorResponse(err.message);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -101,7 +101,7 @@ function NavGroup({ label, links, onLinkClick }) {
 // Sidebar content
 // ─────────────────────────────────────────────────────────────────────────────
 
-function SidebarContent({ onLinkClick, onLogout, user }) {
+const SidebarContent = memo(function SidebarContent({ onLinkClick, onLogout, user }) {
   const displayName = user?.name || 'Alpha User'
   const planLabel   = user?.plan ? `${user.plan} Plan` : 'Free plan'
 
@@ -230,7 +230,7 @@ function SidebarContent({ onLinkClick, onLogout, user }) {
       </div>
     </div>
   )
-}
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main layout
@@ -253,16 +253,17 @@ export default function MainLayout() {
   }, [])
 
   // Ferme le dropdown notifications au clic extérieur
+  const handleNotifOutside = useCallback((e) => {
+    if (notifRef.current && !notifRef.current.contains(e.target)) {
+      setShowNotifications(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (!showNotifications) return
-    const handleOutside = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) {
-        setShowNotifications(false)
-      }
-    }
-    document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
-  }, [showNotifications])
+    document.addEventListener('mousedown', handleNotifOutside)
+    return () => document.removeEventListener('mousedown', handleNotifOutside)
+  }, [showNotifications, handleNotifOutside])
 
   const handleLogout = async () => {
     await logout()
@@ -275,8 +276,8 @@ export default function MainLayout() {
 
       {/* Ambient */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-20 right-[8%]  w-[800px] h-[600px] bg-rose-600/[0.03] rounded-full blur-[180px]" />
-        <div className="absolute bottom-0  left-[10%] w-[600px] h-[450px] bg-red-700/[0.02] rounded-full blur-[150px]" />
+        <div className="absolute -top-20 right-[8%]  w-[800px] h-[600px] bg-rose-600/[0.03] rounded-full blur-[180px]" style={{ willChange: 'transform' }} />
+        <div className="absolute bottom-0  left-[10%] w-[600px] h-[450px] bg-red-700/[0.02] rounded-full blur-[150px]" style={{ willChange: 'transform' }} />
       </div>
 
       {/* ── Sidebar desktop ──────────────────────────────────────────────── */}

@@ -8,7 +8,6 @@ import {
   ChevronDown,
   CreditCard,
   RefreshCw,
-  Shield,
   Wallet,
 } from 'lucide-react'
 import {

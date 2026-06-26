@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { motion } from 'framer-motion'
 import { AlertTriangle, TrendingUp, Clock } from 'lucide-react'
@@ -43,16 +44,19 @@ function EmptyHistory({ loading, unavailable, warnings }) {
   )
 }
 
-export default function PerformanceChart({ history = null, loading = false, unavailable = false }) {
+function PerformanceChart({ history = null, loading = false, unavailable = false }) {
   const warnings = Array.isArray(history?.warnings) ? history.warnings.filter(Boolean) : []
-  const data = Array.isArray(history?.data)
-    ? history.data
-      .map((point) => ({
-        ...point,
-        totalPortfolioValue: getValidNumber(point.totalPortfolioValue),
-      }))
-      .filter((point) => point.timestamp && point.totalPortfolioValue !== null)
-    : []
+  const data = useMemo(
+    () => Array.isArray(history?.data)
+      ? history.data
+        .map((point) => ({
+          ...point,
+          totalPortfolioValue: getValidNumber(point.totalPortfolioValue),
+        }))
+        .filter((point) => point.timestamp && point.totalPortfolioValue !== null)
+      : [],
+    [history?.data],
+  )
   const hasEnoughData = history?.dataQuality?.hasEnoughData === true && data.length >= 2
   const minValue = hasEnoughData ? Math.min(...data.map((point) => point.totalPortfolioValue)) : 0
   const maxValue = hasEnoughData ? Math.max(...data.map((point) => point.totalPortfolioValue)) : 0
@@ -144,3 +148,5 @@ export default function PerformanceChart({ history = null, loading = false, unav
     </motion.div>
   )
 }
+
+export default memo(PerformanceChart)

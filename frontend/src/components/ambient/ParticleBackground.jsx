@@ -99,11 +99,12 @@ export default function ParticleBackground({ count = 55, opacity = 1, className 
         ctx.fill()
       }
 
-      // O(n²) connections — capped by effectiveCount, shorter threshold on mobile
+      // O(n²) connections — early-exit on axis distance before sqrt (~70% skip)
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x
           const dy = particles[i].y - particles[j].y
+          if (Math.abs(dx) > connectDist || Math.abs(dy) > connectDist) continue
           const d  = Math.sqrt(dx * dx + dy * dy)
           if (d < connectDist) {
             ctx.beginPath()

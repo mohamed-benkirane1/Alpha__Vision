@@ -13,33 +13,35 @@ const DEFAULT_RESET_PASSWORD_EXPIRES_MINUTES = 15;
 const PASSWORD_RESET_PUBLIC_MESSAGE = 'If an account exists for this email, a password reset link has been sent.';
 const VALID_COOKIE_SAME_SITE_VALUES = new Set(['strict', 'lax', 'none']);
 
+// Env constants — read once at startup, never inside request handlers
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+const RESET_EXPIRES_MINUTES = (() => {
+  const configured = Number(process.env.RESET_PASSWORD_EXPIRES_MINUTES);
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_RESET_PASSWORD_EXPIRES_MINUTES;
+})();
+const IS_PRODUCTION = String(process.env.NODE_ENV || 'development').trim().toLowerCase() === 'production';
+const AUTH_COOKIE_SAMESITE_RAW = String(process.env.AUTH_COOKIE_SAME_SITE || '').trim().toLowerCase();
+const ENABLE_DEV_RESET_TOKEN = !IS_PRODUCTION && String(process.env.ENABLE_DEV_RESET_TOKEN_RESPONSE || '').trim().toLowerCase() === 'true';
+
 function nowIso() {
   return new Date().toISOString();
 }
 
 function getFrontendUrl() {
-  return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  return FRONTEND_URL;
 }
 
 function getResetPasswordExpiresMinutes() {
-  const configured = Number(process.env.RESET_PASSWORD_EXPIRES_MINUTES);
-  return Number.isFinite(configured) && configured > 0
-    ? configured
-    : DEFAULT_RESET_PASSWORD_EXPIRES_MINUTES;
-}
-
-function parseBoolean(value) {
-  return String(value || '').trim().toLowerCase() === 'true';
+  return RESET_EXPIRES_MINUTES;
 }
 
 function isProduction() {
-  return String(process.env.NODE_ENV || 'development').trim().toLowerCase() === 'production';
+  return IS_PRODUCTION;
 }
 
 function getAuthCookieSameSite() {
-  const configured = String(process.env.AUTH_COOKIE_SAME_SITE || '').trim().toLowerCase();
-  if (VALID_COOKIE_SAME_SITE_VALUES.has(configured)) return configured;
-  return isProduction() ? 'strict' : 'lax';
+  if (VALID_COOKIE_SAME_SITE_VALUES.has(AUTH_COOKIE_SAMESITE_RAW)) return AUTH_COOKIE_SAMESITE_RAW;
+  return IS_PRODUCTION ? 'strict' : 'lax';
 }
 
 function getAuthCookieOptions() {
@@ -47,13 +49,13 @@ function getAuthCookieOptions() {
 
   return {
     httpOnly: true,
-    secure: isProduction() || sameSite === 'none',
+    secure: IS_PRODUCTION || sameSite === 'none',
     sameSite,
   };
 }
 
 function canExposeDevResetToken() {
-  return !isProduction() && parseBoolean(process.env.ENABLE_DEV_RESET_TOKEN_RESPONSE);
+  return ENABLE_DEV_RESET_TOKEN;
 }
 
 function isEmail(value) {

@@ -18,7 +18,7 @@ export default function NewsCard({ article, index }) {
     <>
       {article.image && (
         <div className="mb-4 h-32 rounded-xl overflow-hidden border border-white/[0.06] bg-white/[0.03]">
-          <img src={article.image} alt="" className="w-full h-full object-cover" loading="lazy" />
+          <img src={article.image} alt="" width="600" height="128" className="w-full h-full object-cover" loading="lazy" />
         </div>
       )}
 

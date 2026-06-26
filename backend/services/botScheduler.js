@@ -18,7 +18,7 @@ async function runTick(botId) {
   ticksInProgress.add(botId);
 
   try {
-    const bot = await BotInstance.findById(botId).select('user isRunning status');
+    const bot = await BotInstance.findById(botId).select('user isRunning status').lean();
 
     if (!bot) {
       console.log(`[BotScheduler] bot ${botId} introuvable en base — désenregistrement`);
@@ -80,7 +80,7 @@ async function startBotScheduler() {
   try {
     const runningBots = await BotInstance.find({
       $or: [{ isRunning: true }, { status: 'running' }],
-    }).select('_id intervalSeconds');
+    }).select('_id intervalSeconds').lean();
 
     console.log(`[BotScheduler] démarrage — ${runningBots.length} bot(s) actif(s) chargé(s) depuis MongoDB`);
 

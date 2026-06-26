@@ -69,20 +69,27 @@ const MAX_DEMO_DEPOSIT = 100000;
 const MIN_STRIPE_DEPOSIT = 10;
 const MAX_STRIPE_DEPOSIT = 100000;
 
+// Env constants — read once at startup
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || null;
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || null;
+const ALLOW_DEMO_FUNDING = process.env.ALLOW_DEMO_FUNDING === 'true';
+const PAYMENT_FRONTEND_URL = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+const STRIPE_NODE_ENV = process.env.NODE_ENV || 'development';
+
 function nowIso() {
   return new Date().toISOString();
 }
 
 function isDemoFundingAllowed() {
-  return process.env.ALLOW_DEMO_FUNDING === 'true';
+  return ALLOW_DEMO_FUNDING;
 }
 
 function isStripeSecretConfigured() {
-  return Boolean(process.env.STRIPE_SECRET_KEY);
+  return Boolean(STRIPE_SECRET_KEY);
 }
 
 function isStripeWebhookConfigured() {
-  return Boolean(process.env.STRIPE_WEBHOOK_SECRET);
+  return Boolean(STRIPE_WEBHOOK_SECRET);
 }
 
 function isStripeConfigured() {
@@ -90,7 +97,7 @@ function isStripeConfigured() {
 }
 
 function getStripeMode() {
-  const secret = String(process.env.STRIPE_SECRET_KEY || '').trim();
+  const secret = String(STRIPE_SECRET_KEY || '').trim();
   if (!secret) return 'not_configured';
   if (secret.startsWith('sk_test_') || secret.startsWith('rk_test_')) return 'test';
   if (secret.startsWith('sk_live_') || secret.startsWith('rk_live_')) return 'live';
@@ -102,7 +109,7 @@ function getTransactionMode() {
 }
 
 function getFrontendUrl() {
-  return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  return PAYMENT_FRONTEND_URL;
 }
 
 function getStripeClient() {
@@ -112,14 +119,14 @@ function getStripeClient() {
     throw error;
   }
 
-  return createStripeClient(process.env.STRIPE_SECRET_KEY);
+  return createStripeClient(STRIPE_SECRET_KEY);
 }
 
 function getStripeWarnings() {
   const warnings = [];
   if (!isStripeSecretConfigured()) warnings.push('Stripe secret key is not configured on the backend.');
   if (!isStripeWebhookConfigured()) warnings.push('Stripe webhook secret is not configured. Checkout can open, but fulfillment depends on webhook or session verification.');
-  if (getStripeMode() === 'live' && process.env.NODE_ENV !== 'production') warnings.push('Stripe live key detected outside production.');
+  if (getStripeMode() === 'live' && STRIPE_NODE_ENV !== 'production') warnings.push('Stripe live key detected outside production.');
   return warnings;
 }
 
@@ -555,7 +562,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
   try {
     const stripe = getStripeClient();
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
   } catch {
     return res.status(400).json(paymentError('Invalid Stripe webhook signature', {
       stripeConfigured: true,
@@ -605,7 +612,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             user.stripeSubscriptionStatus = 'active';
             user.updatedAt = new Date();
             await user.save();
-            console.log(`[Stripe] Renouvellement pour user ${user._id} — plan ${user.plan} prolongé jusqu'au ${user.planExpiresAt.toISOString()}`);
           }
         }
       }
@@ -632,12 +638,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             user.stripeSubscriptionStatus = 'past_due';
             user.updatedAt = new Date();
             await user.save();
-            console.log(`[Stripe] Paiement échoué — user ${user._id} rétrogradé de ${previousPlan} vers free (période de grâce expirée)`);
           } else {
-            const nextAttemptDate = typeof nextPaymentAttempt === 'number'
-              ? new Date(nextPaymentAttempt * 1000).toISOString()
-              : 'aucune date planifiée';
-            console.warn(`[Stripe] Paiement échoué pour user ${user._id} (plan ${user.plan}) — prochaine tentative : ${nextAttemptDate}`);
+            // grace period still active — subscription not yet downgraded
           }
         }
       }

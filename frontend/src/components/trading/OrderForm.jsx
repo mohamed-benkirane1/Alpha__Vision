@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ShoppingCart, ChevronDown, CheckCircle } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { getValidNumber, formatCurrency, formatDateTime } from '../../utils/formatters'
@@ -35,14 +35,14 @@ export default function OrderForm({
     return () => clearTimeout(t)
   }, [submitted])
 
-  const handleTypeChange = (nextType) => {
+  const handleTypeChange = useCallback((nextType) => {
     onTypeChange?.(nextType)
-  }
+  }, [onTypeChange])
 
-  const handleSymbolChange = (nextSymbol) => {
+  const handleSymbolChange = useCallback((nextSymbol) => {
     setSymbol(nextSymbol)
     onSymbolChange?.(nextSymbol)
-  }
+  }, [onSymbolChange])
 
   const quote = selectedQuote?.symbol === symbol ? selectedQuote : prices[symbol]
   const price = getValidNumber(quote?.price)

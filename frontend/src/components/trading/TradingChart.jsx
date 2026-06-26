@@ -121,15 +121,26 @@ const calcTrend = (ma20, ma50) => {
   return { label: 'Neutral', tone: 'slate', icon: Activity, detail: 'MA20 aligned with MA50.' }
 }
 
+const PRICE_FMT_2 = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const PRICE_FMT_4 = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 4 })
+const PRICE_FMT_6 = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 })
+const VOL_FMT     = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 2 })
+
+const TREND_TONE = {
+  emerald: 'border-emerald-500/18 bg-emerald-500/[0.06] text-emerald-400',
+  rose:    'border-rose-500/18 bg-rose-500/[0.06] text-rose-400',
+  slate:   'border-white/[0.07] bg-white/[0.03] text-slate-500',
+}
+
 const getNum   = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null }
 const fmtPrice = (v) => {
   const n = getNum(v); if (!n) return '--'
-  const d = n >= 100 ? 2 : n >= 1 ? 4 : 6
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: d }).format(n)
+  const fmt = n >= 100 ? PRICE_FMT_2 : n >= 1 ? PRICE_FMT_4 : PRICE_FMT_6
+  return fmt.format(n)
 }
 const fmtVol = (v) => {
   const n = getNum(v)
-  return n ? new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 2 }).format(n) : '--'
+  return n ? VOL_FMT.format(n) : '--'
 }
 
 function StatusBadge({ meta, hasData }) {
@@ -240,8 +251,10 @@ const CHART_NORMAL_HEIGHT = 400
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function TradingChart({ symbol, quote }) {
   const { user } = useAuth()
-  const plan     = user?.plan || 'free'
-  const allowed  = PLAN_INDICATORS[plan] || PLAN_INDICATORS.free
+  const allowed  = useMemo(
+    () => PLAN_INDICATORS[user?.plan || 'free'] || PLAN_INDICATORS.free,
+    [user?.plan],
+  )
 
   // Deux refs séparés : un pour le mode normal, un pour le plein écran
   const normalContainerRef    = useRef(null)
@@ -340,11 +353,7 @@ export default function TradingChart({ symbol, quote }) {
     setActive((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
   }
 
-  const trendTone = {
-    emerald: 'border-emerald-500/18 bg-emerald-500/[0.06] text-emerald-400',
-    rose:    'border-rose-500/18 bg-rose-500/[0.06] text-rose-400',
-    slate:   'border-white/[0.07] bg-white/[0.03] text-slate-500',
-  }[trend.tone]
+  const trendTone = TREND_TONE[trend.tone]
 
   // ── Header partagé (rendu dans les deux modes) ────────────────────────────
   const ChartHeader = (

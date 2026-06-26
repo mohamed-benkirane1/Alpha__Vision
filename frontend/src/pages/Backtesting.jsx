@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, BarChart2, FlaskConical, Server } from 'lucide-react'
+import { AlertTriangle, BarChart2, Server } from 'lucide-react'
 import BacktestForm    from '../components/backtest/BacktestForm'
 import BacktestResults from '../components/backtest/BacktestResults'
 import BacktestChart   from '../components/backtest/BacktestChart'

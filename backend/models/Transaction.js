@@ -26,6 +26,8 @@ const TransactionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+TransactionSchema.index({ userId: 1, createdAt: -1 });
+
 TransactionSchema.pre('validate', function normalizeOptionalPlan(next) {
   if (this.type !== 'subscription') {
     this.plan = undefined;

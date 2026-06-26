@@ -129,7 +129,8 @@ export default function Dashboard() {
   const [loading,           setLoading]           = useState(true)
   const [refreshing,        setRefreshing]        = useState(false)
   const [error,             setError]             = useState('')
-  const loadingRef = useRef(false)
+  const loadingRef   = useRef(false)
+  const errorCountRef = useRef(0)
 
   const loadDashboardData = useCallback(async ({ refresh = false } = {}) => {
     if (loadingRef.current) return
@@ -148,10 +149,12 @@ export default function Dashboard() {
       setServiceQuality(data.dataQuality ?? null)
       setBot(data.bot ?? null)
       setAiSignal(data.aiSignal ?? null)
+      errorCountRef.current = 0
       if (!data.success) setError('Some dashboard data could not be refreshed.')
     } catch (err) {
       console.error('[Dashboard] load failed:', err)
       setError('Dashboard data could not be refreshed from the backend.')
+      errorCountRef.current += 1
     } finally {
       loadingRef.current = false
       setLoading(false)
@@ -160,9 +163,23 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    const timer    = window.setTimeout(() => loadDashboardData(), 0)
-    const interval = window.setInterval(() => loadDashboardData({ refresh: true }), AUTO_REFRESH_MS)
-    return () => { window.clearTimeout(timer); window.clearInterval(interval) }
+    const timer = window.setTimeout(() => loadDashboardData(), 0)
+    let intervalId
+
+    const scheduleNext = () => {
+      const backoffMs = errorCountRef.current === 0
+        ? AUTO_REFRESH_MS
+        : errorCountRef.current === 1
+          ? AUTO_REFRESH_MS * 2
+          : Math.min(AUTO_REFRESH_MS * 4, 120_000)
+      intervalId = window.setTimeout(async () => {
+        await loadDashboardData({ refresh: true })
+        scheduleNext()
+      }, backoffMs)
+    }
+    scheduleNext()
+
+    return () => { window.clearTimeout(timer); window.clearTimeout(intervalId) }
   }, [loadDashboardData])
 
   // ── Derived values — toutes sécurisées ──────────────────────────────────────

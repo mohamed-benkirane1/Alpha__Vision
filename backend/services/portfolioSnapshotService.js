@@ -1,7 +1,7 @@
 const Portfolio = require('../models/portfolio');
 const PortfolioSnapshot = require('../models/PortfolioSnapshot');
 const User = require('../models/user');
-const { getPrice } = require('./marketService');
+const { getPrice, getPricesBatch } = require('./marketService');
 
 const DEFAULT_MIN_INTERVAL_SECONDS = 300;
 const MIN_REQUIRED_HISTORY_POINTS = 2;
@@ -120,13 +120,13 @@ function createDataQualityFromValuations(valuations) {
   };
 }
 
-async function valueHoldingForSnapshot(holding) {
+async function valueHoldingForSnapshot(holding, quoteMap = null) {
   const quantity = toFiniteNumber(holding.quantity);
   const averagePrice = toFiniteNumber(holding.avgPrice);
   const investedValue = quantity * averagePrice;
 
   try {
-    const quote = await getPrice(holding.symbol);
+    const quote = (quoteMap && quoteMap[holding.symbol]) ? quoteMap[holding.symbol] : await getPrice(holding.symbol);
     const price = Number(quote?.price);
     const priceAvailable = quote?.priceAvailable === true
       && quote?.price !== null
@@ -178,7 +178,12 @@ async function buildPortfolioDataFromState(userId) {
     throw new Error('User not found for portfolio snapshot.');
   }
 
-  const valuations = await Promise.all(holdings.map(valueHoldingForSnapshot));
+  const uniqueSymbols = [...new Set(holdings.map((h) => h.symbol))];
+  const batchQuotes = uniqueSymbols.length > 0 ? await getPricesBatch(uniqueSymbols) : [];
+  const quoteMap = {};
+  uniqueSymbols.forEach((s, i) => { if (batchQuotes[i]) quoteMap[s] = batchQuotes[i]; });
+
+  const valuations = await Promise.all(holdings.map((h) => valueHoldingForSnapshot(h, quoteMap)));
   const holdingsValue = valuations.reduce((sum, valuation) => (
     valuation.priceAvailable ? sum + toFiniteNumber(valuation.currentValue) : sum
   ), 0);

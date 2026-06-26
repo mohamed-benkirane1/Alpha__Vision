@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const BotAction = require('../models/BotAction');
 const BotInstance = require('../models/BotInstance');
 const Portfolio = require('../models/portfolio');
@@ -329,13 +330,27 @@ async function getRecentBotActions(userId, limit = 20) {
 }
 
 async function computeBotPerformance(userId) {
-  const [buyCount, sellCount, holdCount, skipCount, executedActions] = await Promise.all([
-    BotAction.countDocuments({ user: userId, action: 'BUY' }),
-    BotAction.countDocuments({ user: userId, action: 'SELL' }),
-    BotAction.countDocuments({ user: userId, action: 'HOLD' }),
-    BotAction.countDocuments({ user: userId, action: 'SKIP' }),
-    BotAction.find({ user: userId, executed: true }).select('execution'),
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const [agg, executedActions] = await Promise.all([
+    BotAction.aggregate([
+      { $match: { user: userObjectId } },
+      {
+        $facet: {
+          buy:  [{ $match: { action: 'BUY'  } }, { $count: 'n' }],
+          sell: [{ $match: { action: 'SELL' } }, { $count: 'n' }],
+          hold: [{ $match: { action: 'HOLD' } }, { $count: 'n' }],
+          skip: [{ $match: { action: 'SKIP' } }, { $count: 'n' }],
+        },
+      },
+    ]),
+    BotAction.find({ user: userId, executed: true }).select('execution').lean(),
   ]);
+
+  const buyCount  = agg[0]?.buy[0]?.n  ?? 0;
+  const sellCount = agg[0]?.sell[0]?.n ?? 0;
+  const holdCount = agg[0]?.hold[0]?.n ?? 0;
+  const skipCount = agg[0]?.skip[0]?.n ?? 0;
+
   const realizedPnlValues = executedActions
     .map((action) => toFiniteNumber(action.execution?.realizedPnl))
     .filter((value) => value !== null);

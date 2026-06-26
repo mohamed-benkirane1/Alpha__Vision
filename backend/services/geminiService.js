@@ -48,7 +48,8 @@ function isRetryable(error) {
     code === 'ETIMEDOUT' ||
     code === 'ECONNRESET' ||
     status === 503 ||
-    status === 502
+    status === 502 ||
+    status === 429
   );
 }
 

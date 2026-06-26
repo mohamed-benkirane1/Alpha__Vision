@@ -98,7 +98,7 @@ async function buildUserContext(userId) {
     Portfolio.find({ userId }).sort({ symbol: 1 }).limit(20),
     Trade.find({ userId }).sort({ createdAt: -1 }).limit(10),
     Watchlist.find({ userId }).sort({ createdAt: 1 }).limit(20),
-    BotInstance.findOne({ user: userId }).sort({ updatedAt: -1 }),
+    BotInstance.findOne({ user: userId }).sort({ updatedAt: -1 }).select('status isRunning mode symbol strategy executeTrades lastRunAt lastTickAt lastDecision').lean(),
   ]);
 
   return {
