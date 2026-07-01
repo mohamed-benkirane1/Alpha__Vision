@@ -1,1 +1,0 @@
-# Alpha__Vision
