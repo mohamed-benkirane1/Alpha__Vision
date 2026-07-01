@@ -152,3 +152,6 @@ backend/node_modules/
 .env
 backend/.env
 frontend/.env
+dist/
+frontend/dist/
+.vercel/

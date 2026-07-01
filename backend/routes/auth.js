@@ -42,7 +42,7 @@ function isProduction() {
 
 function getAuthCookieSameSite() {
   if (VALID_COOKIE_SAME_SITE_VALUES.has(AUTH_COOKIE_SAMESITE_RAW)) return AUTH_COOKIE_SAMESITE_RAW;
-  return IS_PRODUCTION ? 'strict' : 'lax';
+  return IS_PRODUCTION ? 'none' : 'lax';
 }
 
 function getAuthCookieOptions() {

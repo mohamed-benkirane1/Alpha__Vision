@@ -27,16 +27,59 @@ const sensitiveRateLimitMax = env.rateLimits.authMax;
 const paymentRateLimitMax = env.rateLimits.paymentMax;
 const paymentReadRateLimitMax = env.rateLimits.paymentReadMax;
 const chatbotRateLimitMax = env.rateLimits.chatbotMax;
+let mongoConnectionPromise = null;
 
-function getMongoHealth() {
-  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-  const readyState = mongoose.connection.readyState;
+function normalizeOrigin(value) {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
 
-  return {
-    connected: readyState === 1,
-    readyState,
-    status: states[readyState] || 'unknown',
-  };
+function parseOrigins(value) {
+  return String(value || '')
+    .split(',')
+    .map(normalizeOrigin)
+    .filter(Boolean);
+}
+
+const allowedCorsOrigins = Array.from(new Set([
+  'http://localhost:5173',
+  'http://localhost:5174',
+  frontendUrl,
+  process.env.FRONTEND_URL_ALT,
+  ...parseOrigins(process.env.FRONTEND_ORIGINS),
+].map(normalizeOrigin).filter(Boolean)));
+
+function isCorsOriginAllowed(origin) {
+  return allowedCorsOrigins.includes(normalizeOrigin(origin));
+}
+
+async function connectMongo() {
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  if (mongoConnectionPromise) return mongoConnectionPromise;
+
+  mongoConnectionPromise = mongoose.connect(env.mongoUri)
+    .then((connection) => {
+      console.log('MongoDB connected');
+      return connection;
+    })
+    .catch((error) => {
+      mongoConnectionPromise = null;
+      throw error;
+    });
+
+  return mongoConnectionPromise;
+}
+
+async function ensureMongoConnection(req, res, next) {
+  try {
+    await connectMongo();
+    return next();
+  } catch (error) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database connection unavailable',
+      error: 'database_unavailable',
+    });
+  }
 }
 
 function createRateLimitMessage(message) {
@@ -122,10 +165,13 @@ const marketLimiter = rateLimit({
 app.use(compression());
 app.use(helmet());
 app.use(cors({
-  origin: [
-    frontendUrl,
-    ...(process.env.FRONTEND_URL_ALT ? [process.env.FRONTEND_URL_ALT] : []),
-  ].filter(Boolean),
+  origin(origin, callback) {
+    if (!origin || isCorsOriginAllowed(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(cookieParser());
@@ -149,14 +195,13 @@ app.use('/api/chatbot', chatbotLimiter);
 
 // Routes
 app.get('/api/health', (req, res) => {
-  const mongo = getMongoHealth();
-
-  res.status(mongo.connected ? 200 : 503).json({
-    success: mongo.connected,
-    message: mongo.connected ? 'Backend is running' : 'Backend is running but MongoDB is not connected',
-    mongo,
+  res.json({
+    ok: true,
+    service: 'Alpha Vision API',
   });
 });
+
+app.use('/api', ensureMongoConnection);
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/market', require('./routes/market'));
@@ -176,15 +221,18 @@ const port = env.port;
 
 async function startServer() {
   try {
-    await mongoose.connect(env.mongoUri);
-    console.log('✅ MongoDB connected');
+    await connectMongo();
 
     startBotScheduler();
-    app.listen(port, () => console.log(`✅ Server on port ${port}`));
+    app.listen(port, () => console.log(`Server running on port ${port}`));
   } catch (err) {
-    console.error('❌ MongoDB connection failed:', err.message || err);
+    console.error('MongoDB connection failed:', err.message || err);
     process.exit(1);
   }
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+module.exports = app;

@@ -132,6 +132,58 @@ npm run dev
 
 Par defaut, le frontend tourne sur `http://localhost:5173` et l'API sur `http://localhost:5000/api`.
 
+## Deploiement Vercel
+
+Alpha Vision se deploie en deux projets Vercel separes: le backend d'abord, puis le frontend.
+
+### Backend Vercel
+
+- Importer le repo dans Vercel.
+- Root Directory: `backend`
+- Framework Preset: `Other`
+- Install Command: `npm install`
+- Build Command: laisser vide.
+- Output Directory: laisser vide.
+- Ajouter les variables d'environnement backend depuis `backend/.env.example` avec les vraies valeurs dans Vercel uniquement.
+- Tester apres deploiement: `https://backend-url.vercel.app/api/health`
+
+Variables backend minimales a configurer sur Vercel:
+
+- `NODE_ENV=production`
+- `MONGO_URI`
+- `JWT_SECRET`
+- `FRONTEND_URL=https://frontend-url.vercel.app` apres deploiement frontend
+- `FRONTEND_ORIGINS=https://frontend-url.vercel.app` si plusieurs domaines/previews doivent etre autorises, separer par des virgules
+- `AUTH_COOKIE_SAME_SITE=none` pour les cookies httpOnly cross-site en HTTPS
+
+Variables backend selon les modules actives:
+
+- `GROQ_API_KEY`
+- `GNEWS_API_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_CALLBACK_URL=https://backend-url.vercel.app/api/auth/google/callback`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `EMAIL_FROM`
+
+### Frontend Vercel
+
+- Importer le meme repo une deuxieme fois dans Vercel.
+- Root Directory: `frontend`
+- Framework Preset: `Vite`
+- Install Command: `npm install`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Ajouter `VITE_API_URL=https://backend-url.vercel.app/api`
+
+Apres le deploiement frontend, retourner dans le projet backend Vercel, mettre a jour `FRONTEND_URL=https://frontend-url.vercel.app`, ajouter aussi ce domaine dans `FRONTEND_ORIGINS` si necessaire, puis redeployer le backend.
+
 ## Precision importante
 
 Alpha Vision n'est pas une plateforme de trading reel. Les ordres, le bot et le solde de trading sont virtuels. Les depots Stripe et les fonds demo alimentent le solde interne de paper trading. Les signaux IA, le Risk Score Portfolio et les exports de backtest sont indicatifs, educatifs et ne constituent pas des conseils financiers.
