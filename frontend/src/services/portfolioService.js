@@ -1,5 +1,6 @@
 import api, { extractApiError } from './api'
 import { addDemoFunds } from './paymentService'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null
@@ -48,11 +49,11 @@ const normalizeHolding = (holding = {}) => ({
     fallback: toBoolean(holding.priceMeta?.fallback) || toBoolean(holding.priceFallback),
     fetchedAt: holding.priceMeta?.fetchedAt || holding.priceFetchedAt || holding.priceTimestamp || null,
     timestamp: holding.priceMeta?.timestamp || holding.priceTimestamp || null,
-    error: holding.priceMeta?.error || holding.priceError || null,
+    error: getErrorMessage(holding.priceMeta?.error || holding.priceError) || null,
   },
-  priceError: holding.priceError || null,
-  warning: holding.warning || null,
-  warnings: Array.isArray(holding.warnings) ? holding.warnings.filter(Boolean) : [],
+  priceError: getErrorMessage(holding.priceError) || null,
+  warning: getErrorMessage(holding.warning) || null,
+  warnings: Array.isArray(holding.warnings) ? holding.warnings.map(getErrorMessage).filter(Boolean) : [],
 })
 
 const normalizeTotals = (totals = {}, legacy = {}) => ({
@@ -109,7 +110,7 @@ export const getPortfolio = async () => {
     throw Object.assign(error, {
       normalized: {
         success: false,
-        message: apiError.message,
+        message: getErrorMessage(apiError.message),
         status: apiError.status,
         raw: apiError.data,
       },
@@ -145,8 +146,8 @@ export const normalizePortfolioHistoryResponse = (payload = {}) => {
       usesRealSnapshots: payload.dataQuality?.usesRealSnapshots === true,
     },
     data,
-    warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-    error: payload.error || null,
+    warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+    error: getErrorMessage(payload.error) || null,
     raw: payload,
   }
 }
@@ -160,7 +161,7 @@ export const getPortfolioHistory = async (range = '30d') => {
     throw Object.assign(error, {
       normalized: {
         success: false,
-        message: apiError.message,
+        message: getErrorMessage(apiError.message),
         status: apiError.status,
         raw: apiError.data,
       },
@@ -187,8 +188,8 @@ export const normalizePortfolioAnalysisResponse = (payload = {}) => ({
     disclaimer: payload.analysis.disclaimer || 'This is an educational analysis, not financial advice.',
   } : null,
   portfolioContext: payload.portfolioContext || null,
-  warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-  error: payload.error || payload.message || null,
+  warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+  error: getErrorMessage(payload.error || payload.message) || null,
   notFinancialAdvice: payload.notFinancialAdvice !== false,
   raw: payload,
 })
@@ -204,7 +205,7 @@ export const analyzePortfolio = async () => {
       provider: 'portfolio-analysis',
       analysis: null,
       warnings: [],
-      error: apiError.message || 'Unable to analyze portfolio.',
+      error: getErrorMessage(apiError.message || 'Unable to analyze portfolio.'),
     })
   }
 }
@@ -222,8 +223,8 @@ export const normalizePortfolioRiskScoreResponse = (payload = {}) => ({
   disclaimer: payload.disclaimer || 'This is an educational risk estimate, not financial advice.',
   portfolioContext: payload.portfolioContext || null,
   dataQuality: payload.dataQuality || null,
-  warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-  error: payload.error || payload.message || null,
+  warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+  error: getErrorMessage(payload.error || payload.message) || null,
   notFinancialAdvice: payload.notFinancialAdvice !== false,
   raw: payload,
 })
@@ -243,7 +244,7 @@ export const getPortfolioRiskScore = async () => {
       riskFactors: [],
       suggestions: [],
       warnings: [],
-      error: apiError.message || 'Unable to calculate portfolio risk score.',
+      error: getErrorMessage(apiError.message || 'Unable to calculate portfolio risk score.'),
     })
   }
 }
@@ -253,7 +254,7 @@ export const demoDeposit = async (amount) => {
 
   return {
     success: response.success === true,
-    message: response.message || '',
+    message: getErrorMessage(response.message) || '',
     balance: toNumberOrNull(response.balance),
     raw: response.raw,
   }

@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null
@@ -20,7 +21,7 @@ const normalizePriceMeta = (meta = {}) => ({
   fallback: toBoolean(meta.fallback),
   fetchedAt: meta.fetchedAt || meta.timestamp || null,
   timestamp: meta.timestamp || null,
-  error: meta.error || null,
+  error: getErrorMessage(meta.error) || null,
 })
 
 export const normalizeWatchlistItem = (item = {}) => ({
@@ -34,7 +35,7 @@ export const normalizeWatchlistItem = (item = {}) => ({
   marketCap: toNumberOrNull(item.marketCap),
   priceAvailable: item.priceAvailable === true && toNumberOrNull(item.currentPrice) !== null,
   priceMeta: normalizePriceMeta(item.priceMeta),
-  warning: item.warning || null,
+  warning: getErrorMessage(item.warning) || null,
   createdAt: item.createdAt || null,
   updatedAt: item.updatedAt || null,
 })
@@ -64,7 +65,7 @@ export const normalizeWatchlistResponse = (payload = {}) => {
     data: items,
     watchlist: items,
     dataQuality: normalizeDataQuality(payload.dataQuality, items),
-    message: payload.message || null,
+    message: getErrorMessage(payload.message) || null,
     duplicate: payload.duplicate === true,
     raw: payload,
   }
@@ -74,7 +75,7 @@ const normalizeWatchlistError = (error) => {
   const apiError = extractApiError(error)
   return {
     success: false,
-    message: apiError.message,
+    message: getErrorMessage(apiError.message),
     status: apiError.status,
     items: [],
     data: [],

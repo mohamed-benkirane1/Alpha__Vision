@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const normalizeArticle = (article = {}, index = 0) => ({
   id: article.url || `${article.title || 'news'}-${index}`,
@@ -30,8 +31,8 @@ export const normalizeNewsResponse = (payload = {}) => {
     count: Number.isFinite(Number(payload.count)) ? Number(payload.count) : articles.length,
     articles,
     data: articles,
-    warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-    error: payload.error || null,
+    warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+    error: getErrorMessage(payload.error) || null,
     raw: payload,
   }
 }
@@ -58,8 +59,8 @@ export const getMarketNews = async ({ symbol, category } = {}) => {
       count: 0,
       articles: [],
       data: [],
-      warnings: Array.isArray(apiError.data?.warnings) ? apiError.data.warnings : [],
-      error: apiError.data?.error || apiError.message,
+      warnings: Array.isArray(apiError.data?.warnings) ? apiError.data.warnings.map(getErrorMessage).filter(Boolean) : [],
+      error: getErrorMessage(apiError.data?.error || apiError.message),
       status: apiError.status,
       raw: apiError.data,
     }

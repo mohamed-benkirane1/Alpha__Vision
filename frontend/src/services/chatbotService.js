@@ -1,8 +1,9 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const normalizeChatbotResponse = (payload = {}) => {
   const data = payload.data || null
-  const answer = data?.answer || data?.message || payload.response || payload.answer || payload.reply || ''
+  const answer = getErrorMessage(data?.answer || data?.message || payload.response || payload.answer || payload.reply) || ''
 
   return {
     success: Boolean(payload.success),
@@ -16,8 +17,8 @@ const normalizeChatbotResponse = (payload = {}) => {
     message: answer,
     data,
     contextUsed: data?.contextUsed || null,
-    warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-    error: payload.error || payload.message || null,
+    warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+    error: getErrorMessage(payload.error || payload.message) || null,
     notFinancialAdvice: payload.notFinancialAdvice !== false && data?.notFinancialAdvice !== false,
     raw: payload,
   }
@@ -31,8 +32,8 @@ const normalizeHistoryResponse = (payload = {}) => ({
   providerStatus: payload.providerStatus || null,
   source: payload.source || null,
   messages: Array.isArray(payload.data?.messages) ? payload.data.messages : [],
-  warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-  error: payload.error || payload.message || null,
+  warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+  error: getErrorMessage(payload.error || payload.message) || null,
   raw: payload,
 })
 
@@ -44,8 +45,8 @@ const normalizeContextResponse = (payload = {}) => ({
   providerStatus: payload.providerStatus || null,
   source: payload.source || null,
   context: payload.data?.context || null,
-  warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-  error: payload.error || payload.message || null,
+  warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+  error: getErrorMessage(payload.error || payload.message) || null,
   raw: payload,
 })
 
@@ -91,7 +92,7 @@ export const sendChatMessage = async (message, context = null) => {
       fallback: Boolean(payload.fallback),
       data: payload.data || null,
       warnings: payload.warnings || [],
-      error: payload.error || payload.message || apiError.message || 'Unable to contact chatbot.',
+      error: getErrorMessage(payload.error || payload.message || apiError.message || 'Unable to contact chatbot.'),
     })
   }
 }
@@ -112,7 +113,7 @@ export const getChatHistory = async () => {
       source: payload.source || null,
       data: payload.data || null,
       warnings: payload.warnings || [],
-      error: payload.error || payload.message || apiError.message || 'Unable to load chatbot history.',
+      error: getErrorMessage(payload.error || payload.message || apiError.message || 'Unable to load chatbot history.'),
     })
   }
 }
@@ -133,7 +134,7 @@ export const getChatContext = async () => {
       source: payload.source || null,
       data: payload.data || null,
       warnings: payload.warnings || [],
-      error: payload.error || payload.message || apiError.message || 'Unable to load chatbot context.',
+      error: getErrorMessage(payload.error || payload.message || apiError.message || 'Unable to load chatbot context.'),
     })
   }
 }

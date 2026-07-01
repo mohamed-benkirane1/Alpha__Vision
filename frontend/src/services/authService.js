@@ -1,4 +1,5 @@
 import api, { API_BASE_URL, extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 export const signup = (userData) =>
   api.post('/auth/signup', userData, { skipAuth: true })
@@ -19,9 +20,9 @@ const normalizeProfileResponse = (payload = {}) => ({
   success: Boolean(payload.success),
   timestamp: payload.timestamp || null,
   user: payload.user || null,
-  message: payload.message || '',
-  warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-  error: payload.error || payload.message || null,
+  message: getErrorMessage(payload.message) || '',
+  warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+  error: getErrorMessage(payload.error || payload.message) || null,
   raw: payload,
 })
 
@@ -33,20 +34,20 @@ const normalizeProfileError = (error, fallbackMessage) => {
     success: false,
     timestamp: payload.timestamp || null,
     user: payload.user || null,
-    message: payload.message || '',
-    warnings: payload.warnings || [],
-    error: payload.error || payload.message || apiError.message || fallbackMessage,
+    message: getErrorMessage(payload.message) || '',
+    warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+    error: getErrorMessage(payload.error || payload.message || apiError.message || fallbackMessage),
   })
 }
 
 const normalizeAuthActionResponse = (payload = {}) => ({
   success: Boolean(payload.success),
   timestamp: payload.timestamp || null,
-  message: payload.message || '',
+  message: getErrorMessage(payload.message) || '',
   expiresMinutes: Number.isFinite(Number(payload.expiresMinutes)) ? Number(payload.expiresMinutes) : null,
   devReset: payload.devReset || null,
-  warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-  error: payload.error || null,
+  warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+  error: getErrorMessage(payload.error) || null,
   raw: payload,
 })
 
@@ -57,10 +58,10 @@ const normalizeAuthActionError = (error, fallbackMessage) => {
   return normalizeAuthActionResponse({
     success: false,
     timestamp: payload.timestamp || null,
-    message: payload.message || '',
+    message: getErrorMessage(payload.message) || '',
     expiresMinutes: payload.expiresMinutes,
-    warnings: payload.warnings || [],
-    error: payload.error || payload.message || apiError.message || fallbackMessage,
+    warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+    error: getErrorMessage(payload.error || payload.message || apiError.message || fallbackMessage),
   })
 }
 

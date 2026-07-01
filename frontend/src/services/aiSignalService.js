@@ -1,9 +1,12 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const AI_SIGNAL_DEFAULT_SYMBOL = 'BTC'
 
 const normalizeWarnings = (warnings) =>
-  Array.isArray(warnings) ? warnings.filter((warning) => typeof warning === 'string' && warning.trim()) : []
+  Array.isArray(warnings) ? warnings.map(getErrorMessage).filter(Boolean) : []
+
+const normalizeDisplayText = (value) => getErrorMessage(value) || null
 
 const normalizeConfidencePercent = (value) => {
   const number = Number(value)
@@ -19,9 +22,9 @@ const normalizeSignal = (payload = {}) => {
       ...rawSignal,
       label: rawSignal.label || payload.label || null,
       confidence: normalizeConfidencePercent(rawSignal.confidence ?? payload.confidence),
-      summary: rawSignal.summary || rawSignal.analysis || payload.analysis || null,
-      analysis: rawSignal.analysis || rawSignal.summary || payload.analysis || null,
-      reasons: Array.isArray(rawSignal.reasons) ? rawSignal.reasons : normalizeWarnings(payload.reasons),
+      summary: normalizeDisplayText(rawSignal.summary || rawSignal.analysis || payload.analysis),
+      analysis: normalizeDisplayText(rawSignal.analysis || rawSignal.summary || payload.analysis),
+      reasons: normalizeWarnings(rawSignal.reasons || payload.reasons),
       disclaimer: rawSignal.disclaimer || 'Educational analysis only, not financial advice.',
       notFinancialAdvice: rawSignal.notFinancialAdvice !== false,
     }
@@ -31,8 +34,8 @@ const normalizeSignal = (payload = {}) => {
     return {
       label: typeof rawSignal === 'string' ? rawSignal : payload.label || null,
       confidence: normalizeConfidencePercent(payload.confidence),
-      summary: payload.analysis || null,
-      analysis: payload.analysis || null,
+      summary: normalizeDisplayText(payload.analysis),
+      analysis: normalizeDisplayText(payload.analysis),
       reasons: normalizeWarnings(payload.reasons),
       disclaimer: 'Educational analysis only, not financial advice.',
       notFinancialAdvice: true,
@@ -58,10 +61,10 @@ const normalizeSignalResponse = (payload = {}) => {
     signal,
     label: payload.label || signal?.label || null,
     confidence: normalizeConfidencePercent(payload.confidence ?? signal?.confidence),
-    analysis: payload.analysis || signal?.analysis || signal?.summary || null,
+    analysis: normalizeDisplayText(payload.analysis || signal?.analysis || signal?.summary),
     reasons: normalizeWarnings(payload.reasons || signal?.reasons),
     warnings: normalizeWarnings(payload.warnings),
-    error: payload.error || payload.message || null,
+    error: getErrorMessage(payload.error || payload.message) || null,
     notFinancialAdvice: payload.notFinancialAdvice !== false,
     raw: payload,
   }
@@ -83,7 +86,7 @@ export const getAiSignal = async (symbol = AI_SIGNAL_DEFAULT_SYMBOL) => {
         ...normalizeSignalResponse(payload),
         success: false,
         symbol: payload.symbol || symbol || AI_SIGNAL_DEFAULT_SYMBOL,
-        error: payload.error || apiError.message,
+        error: getErrorMessage(payload.error || apiError.message),
         status: apiError.status,
       },
     })

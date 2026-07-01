@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const LOCAL_API_BASE_URL = 'http://localhost:5000/api'
 
@@ -40,12 +41,16 @@ export class ApiError extends Error {
   }
 }
 
-export const extractApiError = (error) => ({
-  message: error?.message || 'Erreur API',
-  status: error?.status ?? error?.response?.status ?? null,
-  data: error?.data ?? error?.response?.data ?? null,
-  priceStatus: error?.priceStatus ?? error?.data?.priceStatus ?? error?.response?.data?.priceStatus ?? null,
-})
+export const extractApiError = (error) => {
+  const data = error?.data ?? error?.response?.data ?? null
+
+  return {
+    message: getErrorMessage(data?.error || data?.message || error) || 'Erreur API',
+    status: error?.status ?? error?.response?.status ?? null,
+    data,
+    priceStatus: error?.priceStatus ?? error?.data?.priceStatus ?? error?.response?.data?.priceStatus ?? null,
+  }
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -80,11 +85,7 @@ api.interceptors.response.use(
       window.dispatchEvent(new CustomEvent(AUTH_SESSION_EXPIRED_EVENT))
     }
 
-    const message =
-      data?.message ||
-      data?.error ||
-      error.message ||
-      'Erreur API'
+    const message = getErrorMessage(data?.message || data?.error || error) || 'Erreur API'
 
     return Promise.reject(new ApiError(message, { status, data }))
   },

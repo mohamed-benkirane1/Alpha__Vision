@@ -3,6 +3,7 @@ import { getPortfolio, getPortfolioHistory } from './portfolioService'
 import { getTradeHistory } from './tradingService'
 import { getBotStatus } from './botService'
 import { getAiSignal } from './aiSignalService'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const DASHBOARD_SIGNAL_SYMBOL = 'BTC'
 
@@ -16,7 +17,7 @@ const getWidgetStatus = (result) => {
     return {
       status: 'rejected',
       success: false,
-      error: result.reason?.normalized?.error || result.reason?.message || 'Request failed.',
+      error: getErrorMessage(result.reason?.normalized?.error || result.reason?.message || 'Request failed.'),
     }
   }
 
@@ -26,7 +27,7 @@ const getWidgetStatus = (result) => {
   return {
     status: 'fulfilled',
     success,
-    error: isObject(value) ? value.error || value.message || null : null,
+    error: isObject(value) ? getErrorMessage(value.error || value.message) || null : null,
   }
 }
 

@@ -28,6 +28,8 @@ const paymentRateLimitMax = env.rateLimits.paymentMax;
 const paymentReadRateLimitMax = env.rateLimits.paymentReadMax;
 const chatbotRateLimitMax = env.rateLimits.chatbotMax;
 let mongoConnectionPromise = null;
+const marketRoutes = require('./routes/market');
+const paymentRoutes = require('./routes/Payment');
 
 function normalizeOrigin(value) {
   return String(value || '').trim().replace(/\/+$/, '');
@@ -58,6 +60,10 @@ function isCorsOriginAllowed(origin) {
 async function connectMongo() {
   if (mongoose.connection.readyState === 1) return mongoose.connection;
   if (mongoConnectionPromise) return mongoConnectionPromise;
+
+  if (!env.mongoUri) {
+    throw new Error('MongoDB is not configured');
+  }
 
   mongoConnectionPromise = mongoose.connect(env.mongoUri)
     .then((connection) => {
@@ -204,10 +210,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Public runtime endpoints used by the production shell must not depend on MongoDB.
+app.use('/api/market', marketRoutes);
+app.get('/api/payment/plans', paymentRoutes.getPlans);
+app.get('/api/payment/webhook-info', paymentRoutes.getWebhookInfo);
+
 app.use('/api', ensureMongoConnection);
 
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/market', require('./routes/market'));
+app.use('/api/market', marketRoutes);
 app.use('/api/news', require('./routes/news'));
 app.use('/api/chatbot', require('./routes/chatbot'));
 app.use('/api/ai-signal', require('./routes/aiSignal'));
@@ -216,7 +227,7 @@ app.use('/api/portfolio', require('./routes/portfolio'));
 app.use('/api/watchlist', require('./routes/watchlist'));
 app.use('/api/bot', require('./routes/bot'));
 app.use('/api/backtest', require('./routes/backtest'));
-app.use('/api/payment', require('./routes/Payment'));
+app.use('/api/payment', paymentRoutes);
 app.use('/api/activity', require('./routes/activity'));
 app.use('/api/alerts', require('./routes/alerts'));
 

@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null
@@ -24,7 +25,7 @@ const normalizeAlert = (item = {}) => ({
   updatedAt: item.updatedAt || null,
   priceAvailable: item.priceAvailable === true,
   priceMeta: item.priceMeta || null,
-  warning: item.warning || null,
+  warning: getErrorMessage(item.warning) || null,
 })
 
 const normalizeAlerts = (items) => (
@@ -46,9 +47,9 @@ const normalizeAlertResponse = (payload = {}) => {
     checkedCount: toNumberOrNull(payload.checkedCount) ?? 0,
     triggeredCount: toNumberOrNull(payload.triggeredCount) ?? 0,
     triggered: normalizeAlerts(payload.triggered),
-    warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-    message: payload.message || null,
-    error: payload.error || null,
+    warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+    message: getErrorMessage(payload.message) || null,
+    error: getErrorMessage(payload.error) || null,
     raw: payload,
   }
 }
@@ -66,8 +67,8 @@ const normalizeAlertError = (error, fallback) => {
     triggeredCount: 0,
     triggered: [],
     warnings: [],
-    message: apiError.message || fallback,
-    error: apiError.message || fallback,
+    message: getErrorMessage(apiError.message || fallback),
+    error: getErrorMessage(apiError.message || fallback),
     raw: apiError.data,
   }
 }

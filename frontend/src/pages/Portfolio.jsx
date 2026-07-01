@@ -17,6 +17,7 @@ import { Card, Button } from '../components/ui'
 import { demoDeposit, getPortfolio }             from '../services/portfolioService'
 import { addWatchlistSymbol, getWatchlist, removeWatchlistSymbol } from '../services/watchlistService'
 import { getValidNumber, toNumber, formatCurrency, formatPercent, formatDateTime } from '../utils/formatters'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
@@ -26,7 +27,7 @@ const showDemoFunding     = import.meta.env.DEV || import.meta.env.VITE_ALLOW_DE
 
 const getResponseData          = (r) => r?.data ?? r
 const getPortfolioErrorMessage = (e) => e?.status === 401 ? 'Session expirée.' : 'Impossible de charger le portfolio.'
-const getWatchlistErrorMessage = (e) => e?.normalized?.message || e?.message || 'Unable to update watchlist.'
+const getWatchlistErrorMessage = (e) => getErrorMessage(e?.normalized?.message || e?.message || 'Unable to update watchlist.')
 
 function buildSummaryCards(portfolio, loading) {
   const holdings        = Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
@@ -156,7 +157,7 @@ export default function Portfolio() {
       await loadPortfolio({ refresh: true })
     } catch (err) {
       if (!mountedRef.current) return
-      setError(err?.response?.data?.message || err?.message || 'Demo funding failed.')
+      setError(getErrorMessage(err) || 'Demo funding failed.')
     } finally {
       if (mountedRef.current) setFunding(false)
     }

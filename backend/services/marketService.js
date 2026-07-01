@@ -820,7 +820,10 @@ function getFallbackIndexQuote(symbol, message) {
   const fallback = {
     IXIC: { price: 19500, name: 'NASDAQ Composite' },
     SPX: { price: 5900, name: 'S&P 500' },
-    DJI: { price: 43000, name: 'Dow Jones Industrial Average' }
+    DJI: { price: 43000, name: 'Dow Jones Industrial Average' },
+    NDX: { price: 21500, name: 'NASDAQ 100' },
+    RUT: { price: 2200, name: 'Russell 2000' },
+    VIX: { price: 16, name: 'CBOE Volatility Index' }
   };
 
   if (!fallback[symbol]) {
@@ -861,7 +864,7 @@ async function getPrice(symbol) {
 
   return createErrorQuote(
     upperSymbol,
-    `Symbol ${upperSymbol} not supported or price unavailable. Try: BTC, BTCUSDT, ETH, SOL, XAU, GOLD, AAPL, TSLA, IXIC, SPX, DJI`
+    `Symbol ${upperSymbol} not supported or price unavailable. Try: BTC, BTCUSDT, ETH, SOL, XAU, GOLD, AAPL, TSLA, IXIC, SPX, NDX, DJI`
   );
 }
 

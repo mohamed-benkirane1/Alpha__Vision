@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const normalizeActivities = (items) => (
   Array.isArray(items)
@@ -29,8 +30,8 @@ export const getActivities = async ({ limit = 12, page = 1, type = '' } = {}) =>
       timestamp: payload.timestamp || null,
       activities: normalizeActivities(payload.activities),
       pagination: payload.pagination || { page, limit, total: 0, pages: 0 },
-      warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
-      error: payload.error || null,
+      warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
+      error: getErrorMessage(payload.error) || null,
       raw: payload,
     }
   } catch (error) {
@@ -41,7 +42,7 @@ export const getActivities = async ({ limit = 12, page = 1, type = '' } = {}) =>
       activities: [],
       pagination: { page, limit, total: 0, pages: 0 },
       warnings: [],
-      error: apiError.message || 'Unable to load activity.',
+      error: getErrorMessage(apiError.message || 'Unable to load activity.'),
       raw: apiError.data,
     }
   }

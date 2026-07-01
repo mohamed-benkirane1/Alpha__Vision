@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null
@@ -46,7 +47,7 @@ export const normalizeQuote = (quote = {}) => {
     isLive,
     fallback,
     priceAvailable,
-    error: quote.error || null,
+    error: getErrorMessage(quote.error) || null,
   }
 }
 
@@ -74,7 +75,7 @@ const normalizeMeta = (meta = {}) => ({
   fetchedAt: meta.fetchedAt || null,
   cacheTtlSeconds: toNumberOrNull(meta.cacheTtlSeconds),
   cached: toBoolean(meta.cached),
-  warnings: Array.isArray(meta.warnings) ? meta.warnings.filter(Boolean) : [],
+  warnings: Array.isArray(meta.warnings) ? meta.warnings.map(getErrorMessage).filter(Boolean) : [],
 })
 
 export const normalizeMarketResponse = (payload = {}) => {
@@ -140,7 +141,7 @@ export const normalizeMarketHistoryResponse = (payload = {}) => {
     candles,
     data: candles,
     meta: normalizeMeta(payload.meta),
-    message: payload.message || payload.error || null,
+    message: getErrorMessage(payload.message || payload.error) || null,
     raw: payload,
   }
 }
@@ -229,7 +230,7 @@ export const getMarketHistory = async (symbol, interval = '1h', range = '30d') =
       candles: [],
       data: [],
       meta: normalizeMeta(apiError.data?.meta),
-      message: apiError.message,
+      message: getErrorMessage(apiError.message),
       status: apiError.status,
       raw: apiError.data,
     }

@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const normalizeArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : [])
 
@@ -47,7 +48,7 @@ const normalizeStatus = (status = null) => ({
   riskLevel: status?.riskLevel || null,
   intervalSeconds: toNumberOrNull(status?.intervalSeconds),
   lastDecision: status?.lastDecision || null,
-  lastError: status?.lastError || null,
+  lastError: getErrorMessage(status?.lastError) || null,
 })
 
 const normalizeAction = (action = {}) => ({
@@ -57,7 +58,7 @@ const normalizeAction = (action = {}) => ({
   action: action.action || null,
   decision: action.decision || action.action || null,
   mode: action.mode || 'paper',
-  reason: action.reason || '',
+  reason: getErrorMessage(action.reason) || '',
   quantity: toNumberOrNull(action.quantity),
   price: toNumberOrNull(action.price),
   priceSource: action.priceSource || null,
@@ -75,7 +76,7 @@ const normalizeAction = (action = {}) => ({
   executed: action.executed === true,
   trade: action.trade || null,
   execution: action.execution || null,
-  error: action.error || null,
+  error: getErrorMessage(action.error) || null,
   createdAt: action.createdAt || action.timestamp || null,
   timestamp: action.timestamp || action.createdAt || null,
 })
@@ -110,16 +111,16 @@ const normalizeBotResponse = (payload = {}) => {
       isIndicative: Boolean(payload.dataQuality?.isIndicative),
       strategyUsesRealCandles: Boolean(payload.dataQuality?.strategyUsesRealCandles),
       canExecutePaperTrades: Boolean(payload.dataQuality?.canExecutePaperTrades),
-      warnings: normalizeArray(payload.dataQuality?.warnings),
+      warnings: normalizeArray(payload.dataQuality?.warnings).map(getErrorMessage).filter(Boolean),
     },
     bot: status,
     status,
     performance: normalizePerformance(payload.performance),
     recentActions: normalizeArray(payload.recentActions).map(normalizeAction),
     decision: payload.decision ? normalizeAction(payload.decision) : null,
-    warnings: normalizeArray(payload.warnings),
-    error: payload.error || null,
-    message: payload.message || '',
+    warnings: normalizeArray(payload.warnings).map(getErrorMessage).filter(Boolean),
+    error: getErrorMessage(payload.error) || null,
+    message: getErrorMessage(payload.message) || '',
     raw: payload,
 
     // Temporary top-level aliases for existing consumers.
@@ -145,9 +146,9 @@ const normalizeError = (error, fallbackMessage) => {
     status: payload.status || null,
     performance: null,
     recentActions: [],
-    warnings: payload.warnings || [],
-    message: payload.message || fallbackMessage,
-    error: payload.error || payload.message || apiError.message || fallbackMessage,
+    warnings: normalizeArray(payload.warnings).map(getErrorMessage).filter(Boolean),
+    message: getErrorMessage(payload.message || fallbackMessage),
+    error: getErrorMessage(payload.error || payload.message || apiError.message || fallbackMessage),
   })
 }
 

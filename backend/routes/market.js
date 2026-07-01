@@ -7,7 +7,8 @@ const {
   getMarketHistory,
   computeDataQuality,
   normalizeSymbol,
-  getMarketCacheTtlSeconds
+  getMarketCacheTtlSeconds,
+  createErrorQuote
 } = require('../services/marketService');
 
 // Market routes serve public data (Binance/Yahoo) and are used on the public Home page.
@@ -15,6 +16,46 @@ const {
 
 function marketTimestamp() {
   return new Date().toISOString();
+}
+
+const DEFAULT_PRICE_SYMBOLS = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL', 'NDX'];
+const MAX_PRICE_SYMBOLS = 50;
+
+function parseSymbolsParam(value) {
+  if (!value) return [];
+
+  const raw = Array.isArray(value) ? value.join(',') : String(value);
+  return [...new Set(raw
+    .split(',')
+    .map(normalizeSymbol)
+    .filter(Boolean))]
+    .slice(0, MAX_PRICE_SYMBOLS);
+}
+
+function getResponseSource(quotes) {
+  const data = Array.isArray(quotes) ? quotes.filter(Boolean) : [];
+  if (data.length === 0) return 'fallback';
+  return data.every((quote) => quote.isLive === true && quote.priceAvailable === true)
+    ? 'live'
+    : 'fallback';
+}
+
+function logMarketRuntimeError(context, error) {
+  console.error(`[market] ${context}:`, error?.message || error);
+}
+
+async function getSafeQuotes(symbols) {
+  const normalizedSymbols = symbols.map(normalizeSymbol).filter(Boolean);
+  const results = await Promise.allSettled(normalizedSymbols.map((symbol) => getPrice(symbol)));
+
+  return results.map((result, index) => {
+    if (result.status === 'fulfilled' && result.value) return result.value;
+    return createErrorQuote(
+      normalizedSymbols[index],
+      'Market data temporarily unavailable',
+      'unknown'
+    );
+  });
 }
 
 function createMarketMeta(quotes, fetchedAt) {
@@ -30,6 +71,7 @@ function createMarketMeta(quotes, fetchedAt) {
   ));
 
   return {
+    source: getResponseSource(data),
     provider: providers.length === 1 ? providers[0] : providers.length > 1 ? 'mixed' : null,
     providers,
     isLive: data.length > 0 && data.every((quote) => quote.isLive === true),
@@ -41,11 +83,13 @@ function createMarketMeta(quotes, fetchedAt) {
   };
 }
 
-function createListResponse(quotes) {
+function createListResponse(quotes, source = null) {
   const data = Array.isArray(quotes) ? quotes : [];
   const timestamp = marketTimestamp();
+  const responseSource = source || getResponseSource(data);
   return {
     success: true,
+    source: responseSource,
     count: data.length,
     timestamp,
     dataQuality: computeDataQuality(data),
@@ -98,16 +142,16 @@ router.get('/price/:symbol', async (req, res) => {
 });
 
 router.get('/prices', async (req, res) => {
+  const symbols = parseSymbolsParam(req.query.symbols);
+
   try {
-    const symbolsParam = req.query.symbols;
-    const symbols = typeof symbolsParam === 'string'
-      ? symbolsParam.split(',').map(normalizeSymbol).filter(Boolean)
-      : [];
     const quotes = symbols.length > 0 ? await getPricesBatch(symbols) : await getAllPrices();
-    res.json(createListResponse(quotes));
+    return res.status(200).json(createListResponse(quotes));
   } catch (err) {
-    const response = createErrorResponse(err.message);
-    res.status(response.statusCode).json(response.body);
+    logMarketRuntimeError('/prices fallback', err);
+    const fallbackSymbols = symbols.length > 0 ? symbols : DEFAULT_PRICE_SYMBOLS;
+    const quotes = await getSafeQuotes(fallbackSymbols);
+    return res.status(200).json(createListResponse(quotes, 'fallback'));
   }
 });
 

@@ -8,6 +8,7 @@ import {
 import { Link } from 'react-router-dom'
 import { getMarketHistory } from '../../services/marketService'
 import { useAuth } from '../../context/useAuth'
+import { getErrorMessage } from '../../utils/errorMessage'
 
 // ── Plan-gated indicators ──────────────────────────────────────────────────────
 const PLAN_INDICATORS = {
@@ -288,11 +289,11 @@ export default function TradingChart({ symbol, quote }) {
       if (id !== requestIdRef.current) return
       setCandles(Array.isArray(result.candles) ? result.candles : [])
       setMeta(result.meta || null)
-      setMessage(result.message || '')
-      if (!result.success) setError(result.message || 'No chart data available.')
+      setMessage(getErrorMessage(result.message) || '')
+      if (!result.success) setError(getErrorMessage(result.message) || 'No chart data available.')
     } catch (err) {
       if (id !== requestIdRef.current) return
-      setCandles([]); setMeta(null); setError(err?.message || 'Unable to load chart data.')
+      setCandles([]); setMeta(null); setError(getErrorMessage(err) || 'Unable to load chart data.')
     } finally {
       if (id === requestIdRef.current) setLoading(false)
     }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/useAuth'
+import { getErrorMessage } from '../utils/errorMessage'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -22,7 +23,7 @@ export default function AuthCallback() {
         if (!active) return
         navigate('/dashboard', { replace: true })
       } catch (err) {
-        if (active) setError(err?.message || 'OAuth login failed.')
+        if (active) setError(getErrorMessage(err) || 'OAuth login failed.')
       }
     }
 

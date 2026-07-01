@@ -96,17 +96,30 @@ function validateJwtSecret(env) {
 }
 
 function validateEnvironment(env = process.env) {
-  requireEnvValue(env, 'MONGO_URI');
-  requireEnvValue(env, 'JWT_SECRET');
-  validateJwtSecret(env);
-
   const nodeEnv = normalizeNodeEnv(env);
+
   if (nodeEnv === 'production') {
+    requireEnvValue(env, 'MONGO_URI');
+    requireEnvValue(env, 'JWT_SECRET');
+    validateJwtSecret(env);
     requireEnvValue(env, 'FRONTEND_URL');
 
     if (parseBoolean(env.ALLOW_DEMO_FUNDING)) {
-      throw new Error('Unsafe production configuration: ALLOW_DEMO_FUNDING must not be true when NODE_ENV=production.');
+      console.warn('WARNING: ALLOW_DEMO_FUNDING=true is enabled in production for demo/soutenance mode. Disable it for real public production.');
     }
+
+    return;
+  }
+
+  const allowPublicRuntimeOnVercel = Boolean(env.VERCEL);
+
+  if (!allowPublicRuntimeOnVercel || hasValue(env.MONGO_URI)) {
+    requireEnvValue(env, 'MONGO_URI');
+  }
+
+  if (!allowPublicRuntimeOnVercel || hasValue(env.JWT_SECRET)) {
+    requireEnvValue(env, 'JWT_SECRET');
+    validateJwtSecret(env);
   }
 }
 
@@ -121,6 +134,18 @@ function isSmtpConfigured(env) {
 function buildFeatureWarnings(env = process.env) {
   const warnings = [];
   const nodeEnv = normalizeNodeEnv(env);
+
+  if (!hasValue(env.MONGO_URI)) {
+    warnings.push('Database unavailable: MONGO_URI is not configured. Public fallback endpoints can still respond on Vercel.');
+  }
+
+  if (!hasValue(env.JWT_SECRET)) {
+    warnings.push('Cookie auth unavailable: JWT_SECRET is not configured. Authenticated routes will fail until it is set.');
+  }
+
+  if (nodeEnv === 'production' && !hasValue(env.FRONTEND_URL)) {
+    warnings.push('FRONTEND_URL is not configured. Same-origin Vercel rewrites can work, but cross-domain cookies/CORS require FRONTEND_URL.');
+  }
 
   if (!hasValue(env.GOOGLE_CLIENT_ID) || !hasValue(env.GOOGLE_CLIENT_SECRET)) {
     warnings.push('Google OAuth disabled: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are not fully configured.');
@@ -176,7 +201,7 @@ function createConfig(env = process.env) {
     nodeEnv: normalizeNodeEnv(env),
     port: hasValue(env.PORT) ? env.PORT.trim() : 5000,
     frontendUrl: hasValue(env.FRONTEND_URL) ? env.FRONTEND_URL.trim() : 'http://localhost:5173',
-    mongoUri: env.MONGO_URI.trim(),
+    mongoUri: hasValue(env.MONGO_URI) ? env.MONGO_URI.trim() : null,
     allowDemoFunding: parseBoolean(env.ALLOW_DEMO_FUNDING),
     rateLimits: Object.freeze({
       windowMs: positiveInteger(env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),

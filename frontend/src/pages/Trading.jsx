@@ -15,6 +15,7 @@ import { getPortfolio }              from '../services/portfolioService'
 import { createTrade, getTradeHistory } from '../services/tradingService'
 import { useAuth }                   from '../context/useAuth'
 import { getValidNumber, formatCurrency } from '../utils/formatters'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const fadeUp  = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] } } }
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } }
@@ -45,13 +46,14 @@ const normalizeAsset     = (asset) => ({
   isStale: asset.isStale === true || asset.stale === true || asset.fallback === true || asset.priceAvailable !== true,
   isLive: asset.isLive === true,
   priceAvailable: asset.priceAvailable === true && getValidNumber(asset.price) !== null,
-  error: asset.error || null,
+  error: getErrorMessage(asset.error) || null,
 })
 const getTradeErrorMessage = (error) => {
   if (error?.status === 401) return 'Session expirée. Reconnectez-vous.'
-  if (error?.message?.toLowerCase().includes('insufficient balance'))
+  const message = getErrorMessage(error)
+  if (message.toLowerCase().includes('insufficient balance'))
     return 'Solde virtuel insuffisant. Ajoutez des fonds démo.'
-  return error?.message || 'Impossible de placer l\'ordre.'
+  return message || 'Impossible de placer l\'ordre.'
 }
 
 export default function Trading() {
@@ -126,13 +128,13 @@ export default function Trading() {
     setFundingLoading(true); setFundingMessage(''); setTradeError('')
     try {
       const response = await addDemoFunds(PAPER_DEMO_FUNDING_AMOUNT)
-      if (!response.success) { setTradeError(response.error || response.message || 'Erreur.'); return }
+      if (!response.success) { setTradeError(getErrorMessage(response.error || response.message || 'Erreur.')); return }
       const nextBalance = getValidNumber(response.balance)
       if (nextBalance !== null) setBalance(nextBalance)
       const msg = `${response.message || 'Fonds démo ajoutés'}. Solde : ${formatCurrency(nextBalance)}.`
       setFundingMessage(msg); setTradeMessage(msg)
       await Promise.all([loadBalance(), refreshUser?.()])
-    } catch (err) { setTradeError(err?.message || 'Impossible d\'ajouter des fonds.') }
+    } catch (err) { setTradeError(getErrorMessage(err) || 'Impossible d\'ajouter des fonds.') }
     finally { setFundingLoading(false) }
   }, [fundingLoading, loadBalance, refreshUser])
 
@@ -169,7 +171,7 @@ export default function Trading() {
     } catch (err) {
       const normalized = err?.normalized
       setLastPriceStatus(normalized?.priceStatus || err?.priceStatus || null)
-      setTradeError(normalized?.message || getTradeErrorMessage(err))
+      setTradeError(getErrorMessage(normalized?.message) || getTradeErrorMessage(err))
       return false
     } finally { setSubmitting(false) }
   }, [loadBalance, loadPrices, loadTradeHistory])

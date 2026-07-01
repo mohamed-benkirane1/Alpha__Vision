@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const normalizeArray = (value) => (Array.isArray(value) ? value : [])
 
@@ -47,14 +48,14 @@ export const normalizeBacktestResponse = (payload = {}) => ({
     usesRealHistoricalData: Boolean(payload.dataQuality?.usesRealHistoricalData),
     usesMockData: Boolean(payload.dataQuality?.usesMockData),
     isIndicative: Boolean(payload.dataQuality?.isIndicative),
-    warnings: normalizeArray(payload.dataQuality?.warnings).filter(Boolean),
+    warnings: normalizeArray(payload.dataQuality?.warnings).map(getErrorMessage).filter(Boolean),
   },
   params: payload.params || null,
   results: payload.results || null,
   trades: normalizeArray(payload.trades),
   equityCurve: normalizeArray(payload.equityCurve),
-  warnings: normalizeArray(payload.warnings).filter(Boolean),
-  error: payload.error || payload.message || null,
+  warnings: normalizeArray(payload.warnings).map(getErrorMessage).filter(Boolean),
+  error: getErrorMessage(payload.error || payload.message) || null,
   raw: payload,
 })
 
@@ -79,7 +80,7 @@ export const runBacktest = async (params = {}) => {
       trades: [],
       equityCurve: [],
       warnings: payload.warnings || [],
-      error: payload.error || payload.message || apiError.message || 'Unable to run backtest.',
+      error: getErrorMessage(payload.error || payload.message || apiError.message || 'Unable to run backtest.'),
     })
   }
 }
@@ -90,8 +91,8 @@ const normalizeComparisonRow = (row = {}) => ({
   fallback: row.fallback === true,
   source: row.source || null,
   provider: row.provider || null,
-  error: row.error || null,
-  warnings: normalizeArray(row.warnings).filter(Boolean),
+  error: getErrorMessage(row.error) || null,
+  warnings: normalizeArray(row.warnings).map(getErrorMessage).filter(Boolean),
   totalReturn: Number.isFinite(Number(row.totalReturn)) ? Number(row.totalReturn) : null,
   winRate: Number.isFinite(Number(row.winRate)) ? Number(row.winRate) : null,
   maxDrawdown: Number.isFinite(Number(row.maxDrawdown)) ? Number(row.maxDrawdown) : null,
@@ -112,8 +113,8 @@ export const normalizeBacktestCompareResponse = (payload = {}) => ({
   params: payload.params || null,
   bestStrategy: payload.bestStrategy || null,
   comparisons: normalizeArray(payload.comparisons).map(normalizeComparisonRow),
-  warnings: normalizeArray(payload.warnings).filter(Boolean),
-  error: payload.error || payload.message || null,
+  warnings: normalizeArray(payload.warnings).map(getErrorMessage).filter(Boolean),
+  error: getErrorMessage(payload.error || payload.message) || null,
   raw: payload,
 })
 
@@ -136,7 +137,7 @@ export const compareBacktests = async (params = {}) => {
       params,
       comparisons: [],
       warnings: payload.warnings || [],
-      error: payload.error || payload.message || apiError.message || 'Unable to compare backtests.',
+      error: getErrorMessage(payload.error || payload.message || apiError.message || 'Unable to compare backtests.'),
     })
   }
 }
@@ -162,7 +163,7 @@ export const logBacktestExport = async ({
     return {
       success: payload.success === true,
       timestamp: payload.timestamp || null,
-      error: payload.error || null,
+      error: getErrorMessage(payload.error) || null,
       raw: payload,
     }
   } catch (error) {
@@ -170,7 +171,7 @@ export const logBacktestExport = async ({
     return {
       success: false,
       timestamp: null,
-      error: apiError.message || 'Unable to log CSV export.',
+      error: getErrorMessage(apiError.message || 'Unable to log CSV export.'),
       raw: apiError.data,
     }
   }
@@ -188,7 +189,7 @@ export const getBacktestCapabilities = async () => {
       supportedSymbols: normalizeArray(payload.supportedSymbols).filter(Boolean),
       historicalProvider: payload.historicalProvider || null,
       marketType: payload.marketType || null,
-      error: payload.error || null,
+      error: getErrorMessage(payload.error) || null,
     }
   } catch (error) {
     const apiError = extractApiError(error)
@@ -201,7 +202,7 @@ export const getBacktestCapabilities = async () => {
       supportedSymbols: [],
       historicalProvider: payload.historicalProvider || null,
       marketType: payload.marketType || null,
-      error: payload.error || payload.message || apiError.message || 'Unable to load backtest capabilities.',
+      error: getErrorMessage(payload.error || payload.message || apiError.message || 'Unable to load backtest capabilities.'),
     }
   }
 }

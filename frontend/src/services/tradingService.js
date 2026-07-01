@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null
@@ -38,7 +39,7 @@ const normalizeTrade = (trade = {}) => ({
   priceStale: toBooleanOrNull(trade.priceStale),
   priceIsLive: toBooleanOrNull(trade.priceIsLive),
   priceIsStale: toBooleanOrNull(trade.priceIsStale ?? trade.priceStale),
-  priceError: trade.priceError || null,
+  priceError: getErrorMessage(trade.priceError) || null,
 })
 
 const normalizeExecution = (execution = {}, trade = {}) => ({
@@ -62,7 +63,7 @@ const normalizeExecution = (execution = {}, trade = {}) => ({
   priceStale: execution.priceStale === true || execution.priceIsStale === true || trade.priceStale === true || trade.priceIsStale === true,
   priceIsLive: execution.priceIsLive === true || trade.priceIsLive === true,
   priceIsStale: execution.priceIsStale === true || execution.priceStale === true || trade.priceIsStale === true || trade.priceStale === true,
-  priceError: execution.priceError || trade.priceError || null,
+  priceError: getErrorMessage(execution.priceError || trade.priceError) || null,
 })
 
 const normalizePriceStatus = (priceStatus = null) => {
@@ -83,7 +84,7 @@ const normalizePriceStatus = (priceStatus = null) => {
     stale: priceStatus.stale === true || priceStatus.isStale === true,
     isLive: priceStatus.isLive === true,
     isStale: priceStatus.isStale === true || priceStatus.stale === true,
-    error: priceStatus.error || null,
+    error: getErrorMessage(priceStatus.error) || null,
   }
 }
 
@@ -96,7 +97,7 @@ export const normalizeTradeResponse = (payload = {}) => {
     mode: payload.mode || trade.mode || 'paper',
     status: payload.status || trade.status || 'executed',
     orderType: payload.orderType || trade.orderType || 'market',
-    message: payload.message || '',
+    message: getErrorMessage(payload.message) || '',
     trade,
     execution,
     portfolio: payload.portfolio || null,
@@ -105,7 +106,7 @@ export const normalizeTradeResponse = (payload = {}) => {
     holdingRemoved: payload.holdingRemoved ?? payload.portfolio?.holdingRemoved ?? false,
     priceStatus: normalizePriceStatus(payload.priceStatus),
     writeIntegrity: payload.writeIntegrity || null,
-    warnings: Array.isArray(payload.warnings) ? payload.warnings.filter(Boolean) : [],
+    warnings: Array.isArray(payload.warnings) ? payload.warnings.map(getErrorMessage).filter(Boolean) : [],
     raw: payload,
   }
 }
@@ -118,7 +119,7 @@ export const createTrade = async ({ symbol, type, quantity, orderType = 'market'
     const apiError = extractApiError(error)
     const normalized = {
       success: false,
-      message: apiError.message,
+      message: getErrorMessage(apiError.message),
       trade: null,
       execution: null,
       portfolio: null,

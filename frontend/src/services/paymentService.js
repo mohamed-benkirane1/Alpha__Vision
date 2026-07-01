@@ -1,4 +1,5 @@
 import api, { extractApiError } from './api'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null
@@ -7,6 +8,8 @@ const toNumberOrNull = (value) => {
 }
 
 const normalizeArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : [])
+
+const normalizeWarnings = (value) => normalizeArray(value).map(getErrorMessage).filter(Boolean)
 
 const normalizeSubscription = (subscription = {}) => ({
   plan: subscription.plan || 'free',
@@ -45,9 +48,9 @@ const normalizePaymentResponse = (payload = {}) => ({
   rawBodyRequired: payload.rawBodyRequired === true,
   demo: payload.demo === true,
   balance: toNumberOrNull(payload.balance),
-  message: payload.message || '',
-  warnings: normalizeArray(payload.warnings),
-  error: payload.error || payload.message || null,
+  message: getErrorMessage(payload.message) || '',
+  warnings: normalizeWarnings(payload.warnings),
+  error: getErrorMessage(payload.error || payload.message) || null,
   raw: payload,
 })
 
@@ -70,9 +73,9 @@ const normalizePaymentError = (error, fallbackMessage) => {
     demo: Boolean(payload.demo),
     balanceType: payload.balanceType || null,
     balance: payload.balance ?? null,
-    message: payload.message || '',
-    warnings: payload.warnings || [],
-    error: payload.error || payload.message || apiError.message || fallbackMessage,
+    message: getErrorMessage(payload.message) || '',
+    warnings: normalizeWarnings(payload.warnings),
+    error: getErrorMessage(payload.error || payload.message || apiError.message || fallbackMessage),
   })
 }
 

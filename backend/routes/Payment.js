@@ -131,6 +131,66 @@ function getStripeWarnings() {
   return warnings;
 }
 
+function hasUsableStripeConfig() {
+  return isStripeConfigured() && getStripeMode() !== 'unknown';
+}
+
+function createPlansPayload(source = 'fallback', extraWarnings = []) {
+  const stripeReady = source === 'stripe';
+  const warnings = [...getStripeWarnings(), ...extraWarnings].filter(Boolean);
+
+  return {
+    success: true,
+    timestamp: nowIso(),
+    source,
+    provider: 'stripe',
+    stripeConfigured: stripeReady,
+    stripeCheckoutConfigured: stripeReady,
+    stripeMode: getStripeMode(),
+    stripeTestMode: getStripeMode() === 'test',
+    plans: Object.values(PLANS).map((plan) => ({
+      ...plan,
+      provider: plan.id === 'free' ? 'internal' : 'stripe',
+      testMode: getStripeMode() === 'test',
+    })),
+    warnings,
+    error: null,
+  };
+}
+
+function sendPlans(req, res) {
+  try {
+    const source = hasUsableStripeConfig() ? 'stripe' : 'fallback';
+    return res.status(200).json(createPlansPayload(source));
+  } catch (error) {
+    console.error('[payment] Unable to build Stripe plans, using fallback:', error.message || error);
+    return res.status(200).json(createPlansPayload('fallback', [
+      'Stripe plans fallback active. Static Alpha Vision plans are being used.',
+    ]));
+  }
+}
+
+function sendWebhookInfo(req, res) {
+  return res.json({
+    success: true,
+    timestamp: nowIso(),
+    source: hasUsableStripeConfig() ? 'stripe' : 'fallback',
+    provider: 'stripe',
+    endpoint: '/api/payment/webhook',
+    requiredEvents: [
+      'checkout.session.completed',
+      'customer.subscription.deleted',
+      'invoice.payment_succeeded',
+      'invoice.payment_failed',
+    ],
+    rawBodyRequired: true,
+    localForwardCommand: 'stripe listen --forward-to localhost:5000/api/payment/webhook',
+    envVariables: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'FRONTEND_URL'],
+    warnings: getStripeWarnings(),
+    error: null,
+  });
+}
+
 function paymentError(error, extras = {}) {
   return {
     success: false,
@@ -403,46 +463,9 @@ async function fulfillCheckoutSession(session) {
   return { fulfilled: false, reason: 'unsupported_checkout_type' };
 }
 
-router.get('/plans', (req, res) => {
-  res.json({
-    success: true,
-    timestamp: nowIso(),
-    source: 'backend',
-    provider: 'stripe',
-    stripeConfigured: isStripeConfigured(),
-    stripeCheckoutConfigured: isStripeConfigured(),
-    stripeMode: getStripeMode(),
-    stripeTestMode: getStripeMode() === 'test',
-    plans: Object.values(PLANS).map((plan) => ({
-      ...plan,
-      provider: plan.id === 'free' ? 'internal' : 'stripe',
-      testMode: getStripeMode() === 'test',
-    })),
-    warnings: getStripeWarnings(),
-    error: null,
-  });
-});
+router.get('/plans', sendPlans);
 
-router.get('/webhook-info', (req, res) => {
-  res.json({
-    success: true,
-    timestamp: nowIso(),
-    source: 'backend',
-    provider: 'stripe',
-    endpoint: '/api/payment/webhook',
-    requiredEvents: [
-      'checkout.session.completed',
-      'customer.subscription.deleted',
-      'invoice.payment_succeeded',
-      'invoice.payment_failed',
-    ],
-    rawBodyRequired: true,
-    localForwardCommand: 'stripe listen --forward-to localhost:5000/api/payment/webhook',
-    envVariables: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'FRONTEND_URL'],
-    warnings: getStripeWarnings(),
-    error: null,
-  });
-});
+router.get('/webhook-info', sendWebhookInfo);
 
 // Demo funding for PFA/dev environments only. This is not a real payment.
 router.post('/demo-deposit', auth, async (req, res) => {
@@ -902,5 +925,8 @@ router.get('/features', auth, async (req, res) => {
     return res.status(500).json(paymentError(err.message || 'Unable to load plan features'));
   }
 });
+
+router.getPlans = sendPlans;
+router.getWebhookInfo = sendWebhookInfo;
 
 module.exports = router;

@@ -6,6 +6,7 @@ import { Card, Badge, Button } from '../components/ui'
 import ChatMessage from '../components/chatbot/ChatMessage'
 import MarketContextPanel from '../components/chatbot/MarketContextPanel'
 import { getChatHistory, sendChatMessage } from '../services/chatbotService'
+import { getErrorMessage } from '../utils/errorMessage'
 
 const formatClock = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
@@ -50,7 +51,7 @@ function createUserMessage(text) {
 }
 
 function createAssistantMessage(response) {
-  const answer = response.answer || response.message || response.error || 'Assistant temporairement indisponible.'
+  const answer = getErrorMessage(response.answer || response.message || response.error) || 'Assistant temporairement indisponible.'
   return {
     id: `ai-${Date.now() + 1}`,
     role: 'ai',
@@ -95,7 +96,7 @@ export default function Chatbot() {
       if (response.success && response.messages.length > 0) {
         setMessages(createStoredMessages(response.messages))
       } else if (!response.success) {
-        setError(response.error || "Impossible de charger l'historique.")
+        setError(getErrorMessage(response.error) || "Impossible de charger l'historique.")
       }
       setHistoryLoading(false)
     }
@@ -116,9 +117,9 @@ export default function Chatbot() {
     try {
       const response = await sendChatMessage(trimmed)
       setMessages((prev) => [...prev, createAssistantMessage(response)])
-      if (!response.success) setError(response.error || 'Impossible de contacter le chatbot.')
+      if (!response.success) setError(getErrorMessage(response.error) || 'Impossible de contacter le chatbot.')
     } catch (err) {
-      const msg = err?.message || 'Impossible de contacter le chatbot.'
+      const msg = getErrorMessage(err) || 'Impossible de contacter le chatbot.'
       setError(msg)
       setMessages((prev) => [
         ...prev,

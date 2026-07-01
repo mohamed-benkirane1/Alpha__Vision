@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getMarketPrices } from '../../services/marketService'
+import { getErrorMessage } from '../../utils/errorMessage'
 
 const TICKER_SYMBOLS = ['BTC', 'ETH', 'SOL', 'XAU', 'AAPL', 'NDX', 'BNB', 'XRP', 'ADA', 'DOGE', 'AVAX']
 
@@ -90,7 +91,7 @@ export default function PriceTicker() {
       } catch (err) {
         if (cancelled) return
         setQuotes([])
-        setError(err?.normalized?.error || err?.message || 'Market data unavailable')
+        setError(getErrorMessage(err?.normalized?.error || err) || 'Market data unavailable')
       } finally {
         if (!cancelled) setLoading(false)
       }
