@@ -42,7 +42,7 @@ function isProduction() {
 
 function getAuthCookieSameSite() {
   if (VALID_COOKIE_SAME_SITE_VALUES.has(AUTH_COOKIE_SAMESITE_RAW)) return AUTH_COOKIE_SAMESITE_RAW;
-  return IS_PRODUCTION ? 'none' : 'lax';
+  return 'lax';
 }
 
 function getAuthCookieOptions() {
@@ -52,6 +52,7 @@ function getAuthCookieOptions() {
     httpOnly: true,
     secure: IS_PRODUCTION || sameSite === 'none',
     sameSite,
+    path: '/',
   };
 }
 
@@ -254,6 +255,7 @@ router.post('/signup', async (req, res) => {
       return res.status(409).json(authSessionError('Email is already registered.'));
     }
 
+    console.error('[auth] signup failed:', err.message || err);
     return res.status(500).json(authSessionError('Unable to create account.'));
   }
 });
@@ -287,6 +289,7 @@ router.post('/login', async (req, res) => {
     });
     return res.json(authSessionResponse(user, token));
   } catch (err) {
+    console.error('[auth] login failed:', err.message || err);
     return res.status(500).json(authSessionError('Unable to sign in.'));
   }
 });

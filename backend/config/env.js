@@ -186,7 +186,7 @@ function buildFeatureWarnings(env = process.env) {
   if (
     nodeEnv === 'production'
     && authCookieSameSite !== 'none'
-    && (isCrossDomainHttpsDeployment(env) || (isHttpsUrl(env.FRONTEND_URL) && !getBackendHostname(env)))
+    && isCrossDomainHttpsDeployment(env)
   ) {
     warnings.push('AUTH_COOKIE_SAME_SITE is not set to "none". Cross-domain HTTPS frontend/backend cookies may fail; use AUTH_COOKIE_SAME_SITE=none for separate Vercel projects.');
   }

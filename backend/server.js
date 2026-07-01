@@ -15,11 +15,15 @@ const cors = require('cors');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
-const { rateLimit } = require('express-rate-limit');
+const { ipKeyGenerator, rateLimit } = require('express-rate-limit');
 const passport = require('./config/passport');
 const { startBotScheduler } = require('./services/botScheduler');
 
 const app = express();
+if (env.nodeEnv === 'production' || process.env.VERCEL) {
+  app.set('trust proxy', 1);
+}
+
 const frontendUrl = env.frontendUrl;
 const defaultRateLimitWindowMs = env.rateLimits.windowMs;
 const globalRateLimitMax = env.rateLimits.apiMax;
@@ -32,7 +36,16 @@ const marketRoutes = require('./routes/market');
 const paymentRoutes = require('./routes/Payment');
 
 function normalizeOrigin(value) {
-  return String(value || '').trim().replace(/\/+$/, '');
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  try {
+    return new URL(withProtocol).origin.replace(/\/+$/, '');
+  } catch {
+    return raw.replace(/\/+$/, '');
+  }
 }
 
 function parseOrigins(value) {
@@ -44,18 +57,72 @@ function parseOrigins(value) {
 
 const localCorsOrigins = env.nodeEnv === 'production'
   ? []
-  : ['http://localhost:5173', 'http://localhost:5174'];
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'http://localhost:5000'];
 
 const allowedCorsOrigins = Array.from(new Set([
   ...localCorsOrigins,
   frontendUrl,
   ...(env.nodeEnv === 'production' ? [] : [process.env.FRONTEND_URL_ALT]),
   ...parseOrigins(process.env.FRONTEND_ORIGINS),
+  ...(env.nodeEnv === 'production' ? [
+    process.env.VERCEL_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  ] : []),
 ].map(normalizeOrigin).filter(Boolean)));
 
 function isCorsOriginAllowed(origin) {
   return allowedCorsOrigins.includes(normalizeOrigin(origin));
 }
+
+function logCorsConfiguration() {
+  console.log(`[cors] allowed origins: ${allowedCorsOrigins.length > 0 ? allowedCorsOrigins.join(', ') : '(none)'}`);
+
+  if (env.nodeEnv === 'production' && !isCorsOriginAllowed(frontendUrl)) {
+    console.warn(`[cors] FRONTEND_URL is not allowed: ${frontendUrl || '(empty)'}`);
+  }
+}
+
+function rejectDisallowedCorsOrigin(req, res, next) {
+  const origin = req.headers.origin;
+
+  if (!origin || isCorsOriginAllowed(origin)) {
+    return next();
+  }
+
+  if (env.nodeEnv === 'production') {
+    console.warn(`[cors] blocked origin: ${origin}`);
+  }
+
+  return res.status(403).json({
+    success: false,
+    message: 'CORS origin is not allowed.',
+    error: 'cors_origin_not_allowed',
+  });
+}
+
+function getForwardedHeaderIp(value) {
+  const firstForwardedValue = String(value || '').split(',')[0]?.trim();
+  if (!firstForwardedValue) return null;
+
+  const match = firstForwardedValue.match(/(?:^|;)\s*for=(?:"([^"]+)"|([^;,\s]+))/i);
+  let candidate = String(match?.[1] || match?.[2] || '').trim();
+  if (!candidate || candidate.toLowerCase() === 'unknown' || candidate.startsWith('_')) return null;
+
+  const bracketedIpv6 = candidate.match(/^\[([^\]]+)\](?::\d+)?$/);
+  if (bracketedIpv6) return bracketedIpv6[1];
+
+  if (/^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(candidate)) {
+    candidate = candidate.split(':')[0];
+  }
+
+  return candidate;
+}
+
+function getRateLimitKey(req) {
+  return ipKeyGenerator(getForwardedHeaderIp(req.headers.forwarded) || req.ip);
+}
+
+logCorsConfiguration();
 
 async function connectMongo() {
   if (mongoose.connection.readyState === 1) return mongoose.connection;
@@ -102,6 +169,7 @@ function createRateLimitMessage(message) {
 const apiLimiter = rateLimit({
   windowMs: defaultRateLimitWindowMs,
   limit: globalRateLimitMax,
+  keyGenerator: getRateLimitKey,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => req.originalUrl.split('?')[0] === '/api/payment/webhook',
@@ -111,6 +179,7 @@ const apiLimiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: defaultRateLimitWindowMs,
   limit: sensitiveRateLimitMax,
+  keyGenerator: getRateLimitKey,
   standardHeaders: true,
   legacyHeaders: false,
   handler: createRateLimitMessage('Too many authentication requests. Please retry later.'),
@@ -119,6 +188,7 @@ const authLimiter = rateLimit({
 const forgotPasswordLimiter = rateLimit({
   windowMs: defaultRateLimitWindowMs,
   limit: Math.max(5, Math.floor(sensitiveRateLimitMax / 2)),
+  keyGenerator: getRateLimitKey,
   standardHeaders: true,
   legacyHeaders: false,
   handler: createRateLimitMessage('Too many password reset requests. Please retry later.'),
@@ -127,6 +197,7 @@ const forgotPasswordLimiter = rateLimit({
 const paymentLimiter = rateLimit({
   windowMs: defaultRateLimitWindowMs,
   limit: paymentRateLimitMax,
+  keyGenerator: getRateLimitKey,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
@@ -148,6 +219,7 @@ const paymentLimiter = rateLimit({
 const paymentReadLimiter = rateLimit({
   windowMs: defaultRateLimitWindowMs,
   limit: paymentReadRateLimitMax,
+  keyGenerator: getRateLimitKey,
   standardHeaders: true,
   legacyHeaders: false,
   handler: createRateLimitMessage('Too many payment read requests. Please retry later.'),
@@ -156,6 +228,7 @@ const paymentReadLimiter = rateLimit({
 const chatbotLimiter = rateLimit({
   windowMs: defaultRateLimitWindowMs,
   limit: chatbotRateLimitMax,
+  keyGenerator: getRateLimitKey,
   standardHeaders: true,
   legacyHeaders: false,
   handler: createRateLimitMessage('Too many chatbot requests. Please retry later.'),
@@ -165,6 +238,7 @@ const chatbotLimiter = rateLimit({
 const marketLimiter = rateLimit({
   windowMs: defaultRateLimitWindowMs,
   limit: Math.min(globalRateLimitMax, 120),
+  keyGenerator: getRateLimitKey,
   standardHeaders: true,
   legacyHeaders: false,
   handler: createRateLimitMessage('Too many market data requests. Please retry later.'),
@@ -173,13 +247,10 @@ const marketLimiter = rateLimit({
 // Middleware
 app.use(compression());
 app.use(helmet());
+app.use(rejectDisallowedCorsOrigin);
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || isCorsOriginAllowed(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('Not allowed by CORS'));
+    return callback(null, !origin || isCorsOriginAllowed(origin));
   },
   credentials: true,
 }));
@@ -230,6 +301,22 @@ app.use('/api/backtest', require('./routes/backtest'));
 app.use('/api/payment', paymentRoutes);
 app.use('/api/activity', require('./routes/activity'));
 app.use('/api/alerts', require('./routes/alerts'));
+
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+
+  console.error('[server] unhandled API error:', err.message || err);
+
+  if (req.originalUrl?.startsWith('/api')) {
+    return res.status(err.status || 500).json({
+      success: false,
+      message: 'Internal server error',
+      error: 'internal_server_error',
+    });
+  }
+
+  return next(err);
+});
 
 const port = env.port;
 
