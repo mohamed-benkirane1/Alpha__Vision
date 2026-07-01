@@ -25,6 +25,10 @@ function parseBoolean(value) {
   return String(value || '').trim().toLowerCase() === 'true';
 }
 
+function normalizeNodeEnv(env = process.env) {
+  return String(env.NODE_ENV || 'development').trim().toLowerCase();
+}
+
 function positiveInteger(value, fallback) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -39,6 +43,37 @@ function normalizeSecretCandidate(value) {
 
 function isPlaceholderApiKey(value) {
   return PLACEHOLDER_API_KEYS.has(String(value || '').trim().toLowerCase());
+}
+
+function getHostname(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
+  try {
+    const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    return new URL(normalized).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function isHttpsUrl(value) {
+  return /^https:\/\//i.test(String(value || '').trim());
+}
+
+function getBackendHostname(env = process.env) {
+  return getHostname(env.BACKEND_URL || env.API_URL || env.VERCEL_URL);
+}
+
+function isCrossDomainHttpsDeployment(env = process.env) {
+  const frontendUrl = String(env.FRONTEND_URL || '').trim();
+  const frontendHost = getHostname(frontendUrl);
+  const backendHost = getBackendHostname(env);
+
+  return isHttpsUrl(frontendUrl)
+    && Boolean(frontendHost)
+    && Boolean(backendHost)
+    && frontendHost !== backendHost;
 }
 
 function requireEnvValue(env, variableName) {
@@ -65,9 +100,13 @@ function validateEnvironment(env = process.env) {
   requireEnvValue(env, 'JWT_SECRET');
   validateJwtSecret(env);
 
-  const nodeEnv = String(env.NODE_ENV || 'development').trim().toLowerCase();
-  if (nodeEnv === 'production' && parseBoolean(env.ALLOW_DEMO_FUNDING)) {
-    throw new Error('Unsafe production configuration: ALLOW_DEMO_FUNDING must not be true when NODE_ENV=production.');
+  const nodeEnv = normalizeNodeEnv(env);
+  if (nodeEnv === 'production') {
+    requireEnvValue(env, 'FRONTEND_URL');
+
+    if (parseBoolean(env.ALLOW_DEMO_FUNDING)) {
+      throw new Error('Unsafe production configuration: ALLOW_DEMO_FUNDING must not be true when NODE_ENV=production.');
+    }
   }
 }
 
@@ -81,6 +120,7 @@ function isSmtpConfigured(env) {
 
 function buildFeatureWarnings(env = process.env) {
   const warnings = [];
+  const nodeEnv = normalizeNodeEnv(env);
 
   if (!hasValue(env.GOOGLE_CLIENT_ID) || !hasValue(env.GOOGLE_CLIENT_SECRET)) {
     warnings.push('Google OAuth disabled: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are not fully configured.');
@@ -117,6 +157,15 @@ function buildFeatureWarnings(env = process.env) {
     warnings.push('News unavailable/fallback: GNEWS_API_KEY is not configured.');
   }
 
+  const authCookieSameSite = String(env.AUTH_COOKIE_SAME_SITE || '').trim().toLowerCase();
+  if (
+    nodeEnv === 'production'
+    && authCookieSameSite !== 'none'
+    && (isCrossDomainHttpsDeployment(env) || (isHttpsUrl(env.FRONTEND_URL) && !getBackendHostname(env)))
+  ) {
+    warnings.push('AUTH_COOKIE_SAME_SITE is not set to "none". Cross-domain HTTPS frontend/backend cookies may fail; use AUTH_COOKIE_SAME_SITE=none for separate Vercel projects.');
+  }
+
   return warnings;
 }
 
@@ -124,7 +173,7 @@ function createConfig(env = process.env) {
   const authRateLimitMax = positiveInteger(env.AUTH_RATE_LIMIT_MAX, 30);
 
   return Object.freeze({
-    nodeEnv: String(env.NODE_ENV || 'development').trim().toLowerCase(),
+    nodeEnv: normalizeNodeEnv(env),
     port: hasValue(env.PORT) ? env.PORT.trim() : 5000,
     frontendUrl: hasValue(env.FRONTEND_URL) ? env.FRONTEND_URL.trim() : 'http://localhost:5173',
     mongoUri: env.MONGO_URI.trim(),

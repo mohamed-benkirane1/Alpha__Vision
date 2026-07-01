@@ -9,6 +9,10 @@ const activeBots = new Map();
 // Set<string> — bots dont un tick est en cours, pour éviter les chevauchements
 const ticksInProgress = new Set();
 
+function isServerlessRuntime() {
+  return Boolean(process.env.VERCEL);
+}
+
 async function runTick(botId) {
   if (ticksInProgress.has(botId)) {
     console.log(`[BotScheduler] tick ignoré pour bot ${botId} — tick précédent toujours en cours`);
@@ -42,6 +46,11 @@ async function runTick(botId) {
 }
 
 function registerBot(botId, intervalSeconds) {
+  if (isServerlessRuntime()) {
+    console.log('[BotScheduler] scheduler auto disabled on Vercel/serverless. Use manual bot ticks instead.');
+    return false;
+  }
+
   const key = String(botId);
 
   if (activeBots.has(key)) {
@@ -58,6 +67,7 @@ function registerBot(botId, intervalSeconds) {
   activeBots.set(key, intervalId);
 
   console.log(`[BotScheduler] bot ${key} enregistré — tick toutes les ${safeSeconds}s`);
+  return true;
 }
 
 function unregisterBot(botId) {
@@ -77,6 +87,11 @@ function refreshBot(botId, intervalSeconds) {
 }
 
 async function startBotScheduler() {
+  if (isServerlessRuntime()) {
+    console.log('[BotScheduler] scheduler auto disabled on Vercel/serverless. Use manual bot ticks instead.');
+    return;
+  }
+
   try {
     const runningBots = await BotInstance.find({
       $or: [{ isRunning: true }, { status: 'running' }],

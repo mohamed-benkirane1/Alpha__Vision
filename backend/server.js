@@ -40,11 +40,14 @@ function parseOrigins(value) {
     .filter(Boolean);
 }
 
+const localCorsOrigins = env.nodeEnv === 'production'
+  ? []
+  : ['http://localhost:5173', 'http://localhost:5174'];
+
 const allowedCorsOrigins = Array.from(new Set([
-  'http://localhost:5173',
-  'http://localhost:5174',
+  ...localCorsOrigins,
   frontendUrl,
-  process.env.FRONTEND_URL_ALT,
+  ...(env.nodeEnv === 'production' ? [] : [process.env.FRONTEND_URL_ALT]),
   ...parseOrigins(process.env.FRONTEND_ORIGINS),
 ].map(normalizeOrigin).filter(Boolean)));
 

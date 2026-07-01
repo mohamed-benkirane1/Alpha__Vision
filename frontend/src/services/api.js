@@ -1,15 +1,26 @@
 import axios from 'axios'
 
-const DEFAULT_API_BASE_URL = 'http://localhost:5000/api'
+const LOCAL_API_BASE_URL = 'http://localhost:5000/api'
 
 const normalizeApiBaseUrl = (value) => {
-  const url = String(value || DEFAULT_API_BASE_URL).trim().replace(/\/+$/, '')
-  if (!url) return DEFAULT_API_BASE_URL
+  const url = String(value || '').trim().replace(/\/+$/, '')
+  if (!url) return ''
   if (url.endsWith('/api') || url.includes('/api/')) return url
   return `${url}/api`
 }
 
-export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL)
+const resolveApiBaseUrl = () => {
+  const configuredUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL)
+  if (configuredUrl) return configuredUrl
+
+  if (import.meta.env.PROD) {
+    throw new Error('VITE_API_URL is required in production')
+  }
+
+  return LOCAL_API_BASE_URL
+}
+
+export const API_BASE_URL = resolveApiBaseUrl()
 export const AUTH_SESSION_EXPIRED_EVENT = 'alpha-vision:auth-session-expired'
 
 // Token now lives in an httpOnly cookie set by the backend.
