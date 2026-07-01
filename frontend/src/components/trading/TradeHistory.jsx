@@ -1,0 +1,126 @@
+import { motion, AnimatePresence } from 'framer-motion'
+import { ClipboardList } from 'lucide-react'
+import { getValidNumber, formatCurrency, formatDateTime } from '../../utils/formatters'
+
+const fmt     = formatCurrency
+const fmtDate = (value) => formatDateTime(value, 'time')
+
+function MetaBadge({ label, tone = 'slate' }) {
+  const tones = {
+    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    slate: 'bg-white/[0.03] border-white/[0.07] text-slate-500',
+  }
+  return (
+    <span className={`rounded-full border px-1.5 py-0.5 text-caption font-black uppercase ${tones[tone] || tones.slate}`}>
+      {label}
+    </span>
+  )
+}
+
+export default function TradeHistory({ trades = [], loading = false, error = '', onRetry }) {
+  return (
+    <motion.div
+      whileHover={{ borderColor: 'rgba(225,29,72,0.12)' }}
+      className="bg-[#0a1628]/88 border border-white/[0.07] rounded-2xl p-5 backdrop-blur-2xl shadow-[0_4px_28px_rgba(0,0,0,0.32)] transition-all duration-300"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <ClipboardList size={13} className="text-rose-400" />
+          <h2 className="text-body font-bold text-white">Paper Trade History</h2>
+        </div>
+        <span className="text-caption text-slate-700 font-bold">
+          {loading ? 'Loading' : `${trades.length} paper orders`}
+        </span>
+      </div>
+
+      {error ? (
+        <div className="py-10 text-center">
+          <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-3">
+            <ClipboardList size={16} className="text-slate-700" />
+          </div>
+          <p className="text-body-sm text-amber-400/85 font-semibold">{error}</p>
+          <p className="text-label text-slate-700 mt-1">Paper trade history could not be loaded from the backend.</p>
+          {onRetry && (
+            <button type="button" onClick={onRetry} className="mt-3 text-caption text-rose-400 font-black hover:text-rose-300">
+              Retry
+            </button>
+          )}
+        </div>
+      ) : trades.length === 0 ? (
+        <div className="py-10 text-center">
+          <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-3">
+            <ClipboardList size={16} className="text-slate-700" />
+          </div>
+          <p className="text-body-sm text-slate-600 font-medium">
+            {loading ? 'Loading paper trade history...' : 'No paper trades placed yet.'}
+          </p>
+          <p className="text-label text-slate-700 mt-1">
+            {loading ? 'Orders are being loaded from the backend.' : 'Backend paper trades will appear here after a simulated order is accepted.'}
+          </p>
+        </div>
+      ) : (
+        /* overflow-x-auto pour scroll horizontal mobile */
+        <div className="overflow-x-auto">
+          <div className="min-w-[600px]">
+            <div className="hidden sm:grid grid-cols-5 px-3 mb-2 text-caption text-slate-700 uppercase tracking-wide font-black">
+              <span>Asset</span><span>Type</span><span className="text-right">Qty</span>
+              <span className="text-right">Price</span><span className="text-right">Value / Time</span>
+            </div>
+            <div className="space-y-1.5">
+              <AnimatePresence initial={false}>
+                {trades.map((t, index) => (
+                  <motion.div
+                    key={t._id || `${t.symbol || 'trade'}-${index}`}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.25 }}
+                    whileHover={{ x: 2, backgroundColor: 'rgba(225,29,72,0.03)' }}
+                    className="grid grid-cols-3 sm:grid-cols-5 items-center px-3 py-3 bg-white/[0.02] border border-white/[0.045] rounded-xl transition-all duration-200 text-body-sm gap-1 sm:gap-0"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-white/[0.05] border border-white/[0.07] flex items-center justify-center text-caption font-black text-slate-400 shrink-0">
+                        {(t.symbol || '--').slice(0, 2)}
+                      </div>
+                      <span className="text-white font-bold">{t.symbol || '--'}</span>
+                    </div>
+                    <span className={`hidden sm:inline-flex w-fit px-2 py-0.5 rounded-lg text-caption font-black ${
+                      t.type === 'BUY'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/18'
+                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/18'
+                    }`}>
+                      {t.type}
+                    </span>
+                    <span className="text-slate-500 text-right sm:text-left font-medium tabular-nums font-mono">
+                      {getValidNumber(t.quantity) ?? '--'}
+                    </span>
+                    <span className="hidden sm:block text-slate-400 text-right font-medium tabular-nums font-mono">
+                      {fmt(t.executedPrice ?? t.price)}
+                    </span>
+                    <div className="text-right">
+                      <p className="text-white font-black tabular-nums font-mono">{fmt(t.total)}</p>
+                      <p className="text-caption text-slate-700 font-medium">{fmtDate(t.createdAt)}</p>
+                    </div>
+                    <div className="col-span-3 sm:col-span-5 mt-1 pt-2 border-t border-white/[0.035] grid grid-cols-1 sm:grid-cols-5 gap-1.5 text-caption font-medium">
+                      <span className="text-slate-700">Provider <span className="text-slate-500">{t.priceProvider || t.priceSource || '--'}</span></span>
+                      <span className="text-slate-700">Source <span className="text-slate-500">{t.priceSource || '--'}</span></span>
+                      <span className="text-slate-700">Mode <span className="text-slate-500">{t.mode || 'paper'}</span></span>
+                      <span className="text-slate-700">PnL <span className="text-slate-500">{t.realizedPnl === null || t.realizedPnl === undefined ? '--' : fmt(t.realizedPnl)}</span></span>
+                      <span className="flex flex-wrap gap-1 justify-start sm:justify-end">
+                        {t.priceCached === true && <MetaBadge label="Cached" />}
+                        {t.priceFallback === true && <MetaBadge label="Fallback" tone="amber" />}
+                        {t.priceStale === true && <MetaBadge label="Stale" tone="amber" />}
+                        {t.priceCached !== true && t.priceFallback !== true && t.priceStale !== true && <MetaBadge label="Paper" />}
+                      </span>
+                      {t.priceError && <p className="sm:col-span-4 text-amber-400/80 font-semibold">{t.priceError}</p>}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  )
+}

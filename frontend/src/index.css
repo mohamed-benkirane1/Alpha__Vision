@@ -1,0 +1,314 @@
+@import "tailwindcss";
+/* Inter Variable is self-hosted via @fontsource-variable/inter (imported in main.jsx) */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS — CSS Custom Properties
+   Usage : var(--app-accent), var(--app-surface), etc.
+   Ces variables sont disponibles dans toute l'app CSS/inline styles.
+───────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --app-bg:          #070E20;
+  --app-bg-deep:     #040710;
+  --app-bg-public:   #06020c;
+
+  /* Surfaces */
+  --app-surface:     rgba(10, 22, 40, 0.88);
+  --app-surface-2:   rgba(255, 255, 255, 0.03);
+  --app-surface-hover: rgba(255, 255, 255, 0.05);
+
+  /* Borders */
+  --app-border:      rgba(255, 255, 255, 0.07);
+  --app-border-focus: rgba(225, 29, 72, 0.5);
+
+  /* Text */
+  --app-text:        rgba(255, 255, 255, 1);
+  --app-muted:       rgba(255, 255, 255, 0.5);
+  --app-muted-2:     rgba(255, 255, 255, 0.35);
+
+  /* Accent — Rose/Red brand */
+  --app-accent:       #e11d48;
+  --app-accent-hover: #be123c;
+  --app-accent-glow:  rgba(225, 29, 72, 0.25);
+
+  /* Semantic trading colors */
+  --app-success:     #10b981;
+  --app-success-bg:  rgba(16, 185, 129, 0.12);
+  --app-danger:      #f43f5e;
+  --app-danger-bg:   rgba(244, 63, 94, 0.12);
+  --app-warning:     #f59e0b;
+  --app-warning-bg:  rgba(245, 158, 11, 0.12);
+  --app-info:        #3b82f6;
+  --app-info-bg:     rgba(59, 130, 246, 0.12);
+
+  /* Typography */
+  --font-family-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing scale */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Shadows */
+  --shadow-card:      0 4px 28px rgba(0,0,0,0.32);
+  --shadow-card-hover: 0 8px 40px rgba(0,0,0,0.48);
+  --shadow-glow:      0 0 24px rgba(225,29,72,0.25);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TAILWIND v4 THEME
+   Génère les classes utilitaires : bg-app-*, text-app-*, shadow-card, etc.
+───────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* Colors (crée bg-app-*, text-app-*, border-app-*) */
+  --color-app-bg:          #070E20;
+  --color-app-bg-deep:     #040710;
+  --color-app-bg-public:   #06020c;
+  --color-app-accent:      #e11d48;
+  --color-app-accent-hover: #be123c;
+  --color-app-success:     #10b981;
+  --color-app-danger:      #f43f5e;
+  --color-app-warning:     #f59e0b;
+  --color-app-info:        #3b82f6;
+
+  /* Fonts (crée font-sans, font-mono) */
+  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Font sizes (crée text-caption, text-label, text-body, etc.) */
+  --text-caption:     10px;
+  --text-caption--line-height: 14px;
+  --text-caption--letter-spacing: 0.04em;
+  --text-label:       11px;
+  --text-label--line-height: 16px;
+  --text-label--letter-spacing: 0.06em;
+  --text-body-sm:     12px;
+  --text-body-sm--line-height: 18px;
+  --text-body:        14px;
+  --text-body--line-height: 20px;
+  --text-ui:          15px;
+  --text-ui--line-height: 22px;
+  --text-heading-sm:  18px;
+  --text-heading-sm--line-height: 26px;
+  --text-heading:     22px;
+  --text-heading--line-height: 30px;
+  --text-display-sm:  28px;
+  --text-display-sm--line-height: 36px;
+  --text-display:     36px;
+  --text-display--line-height: 44px;
+  --text-display-lg:  48px;
+  --text-display-lg--line-height: 56px;
+
+  /* Spacing extensions (crée p-18, m-22, gap-26, etc.) */
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+  --spacing-26: 6.5rem;
+  --spacing-30: 7.5rem;
+
+  /* Border radius (crée rounded-card, rounded-pill) */
+  --radius-card: 14px;
+  --radius-pill: 9999px;
+
+  /* Box shadows (crée shadow-card, shadow-card-hover, shadow-glow-rose) */
+  --shadow-card:         0 4px 28px rgba(0,0,0,0.32);
+  --shadow-card-hover:   0 8px 40px rgba(0,0,0,0.48);
+  --shadow-glow-rose:    0 0 24px rgba(225,29,72,0.25);
+  --shadow-glow-rose-lg: 0 0 48px rgba(225,29,72,0.35);
+
+  /* Backdrop blur (crée backdrop-blur-card) */
+  --blur-card: 24px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILITY CLASSES pour valeurs rgba (non supportées par @theme)
+   Ces classes sont équivalentes aux tokens surface/border.
+───────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  .bg-app-surface        { background-color: rgba(10, 22, 40, 0.88); }
+  .bg-app-surface-2      { background-color: rgba(255, 255, 255, 0.03); }
+  .bg-app-surface-hover  { background-color: rgba(255, 255, 255, 0.05); }
+  .border-app-border     { border-color: rgba(255, 255, 255, 0.07); }
+  .text-app-muted        { color: rgba(255, 255, 255, 0.5); }
+  .text-app-muted-2      { color: rgba(255, 255, 255, 0.35); }
+  .ring-app-accent       { --tw-ring-color: rgba(225, 29, 72, 0.5); }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────────────────────────────────────── */
+body {
+  background-color: var(--app-bg);
+  font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HOME HERO GRID
+───────────────────────────────────────────────────────────────────────────── */
+.home-grid {
+  background-image:
+    linear-gradient(rgba(225, 29, 72, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(225, 29, 72, 0.04) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCROLLBAR
+───────────────────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: rgba(225, 29, 72, 0.28); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(225, 29, 72, 0.5); }
+
+.sidebar-scroll::-webkit-scrollbar       { width: 2px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(225, 29, 72, 0.15); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TEXT SELECTION
+───────────────────────────────────────────────────────────────────────────── */
+::selection { background: rgba(225, 29, 72, 0.28); color: #fff; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   KEYFRAMES
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Horizontal price ticker */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-ticker       { animation: ticker 34s linear infinite; }
+.animate-ticker:hover { animation-play-state: paused; }
+
+/* Slow float */
+@keyframes float {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-8px); }
+}
+.animate-float { animation: float 4.5s ease-in-out infinite; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Neon border glow */
+@keyframes neonGlow {
+  0%, 100% { box-shadow: 0 0 6px  rgba(225,29,72,0.35), 0 0 18px rgba(225,29,72,0.15); }
+  50%       { box-shadow: 0 0 14px rgba(225,29,72,0.75), 0 0 36px rgba(225,29,72,0.32); }
+}
+.animate-neon { animation: neonGlow 2.4s ease-in-out infinite; }
+
+/* Expanding ring */
+@keyframes ringPulse {
+  0%   { transform: scale(1);   opacity: 0.65; }
+  100% { transform: scale(2.2); opacity: 0;    }
+}
+.animate-ring { animation: ringPulse 2.2s ease-out infinite; }
+
+/* Brightness/saturation glow pulse */
+@keyframes glowPulse {
+  0%, 100% { filter: brightness(1)   saturate(1.0); }
+  50%       { filter: brightness(1.6) saturate(1.4); }
+}
+.animate-glow-pulse { animation: glowPulse 2.4s ease-in-out infinite; }
+
+/* SVG path draw-on */
+@keyframes drawSvg {
+  from { stroke-dashoffset: 3000; opacity: 0.2; }
+  to   { stroke-dashoffset: 0;    opacity: 1;   }
+}
+.animate-draw { animation: drawSvg 2.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Chart area drift */
+@keyframes chartDrift {
+  0%   { transform: translateX(0px)   scaleY(1.00); }
+  50%  { transform: translateX(-18px) scaleY(1.04); }
+  100% { transform: translateX(0px)   scaleY(1.00); }
+}
+.animate-chart-drift { animation: chartDrift 9s ease-in-out infinite; }
+
+/* Ripple on click */
+@keyframes ripple {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 0.45; }
+  100% { transform: translate(-50%,-50%) scale(5); opacity: 0;    }
+}
+.ripple-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.ripple-btn::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  transform: translate(-50%,-50%) scale(0);
+  opacity: 0;
+}
+.ripple-btn:active::after {
+  animation: ripple 0.55s ease-out forwards;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HOME PAGE — Keyframes (déplacés depuis Home.jsx)
+───────────────────────────────────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+@keyframes signalGlow {
+  0%, 100% { box-shadow: 0 0 16px rgba(225,29,72,0.20); }
+  50%       { box-shadow: 0 0 30px rgba(225,29,72,0.48); }
+}
+.signal-card { animation: signalGlow 3s ease-in-out infinite; }
+
+@keyframes coreBreath {
+  0%, 100% { opacity: 0.72; transform: scale(1);    }
+  50%       { opacity: 1;    transform: scale(1.08); }
+}
+.ai-core-breath { animation: coreBreath 5s ease-in-out infinite; }
+
+@keyframes coreFloat {
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-10px); }
+}
+.ai-core-float { animation: coreFloat 7s ease-in-out infinite; }
+
+@keyframes dataBlink {
+  0%, 100% { opacity: 0.18; }
+  50%       { opacity: 0.88; }
+}
+.ai-data-blink { animation: dataBlink 3s ease-in-out infinite; }
+
+@keyframes aiRingPulse {
+  0%, 100% { opacity: 0.30; }
+  50%       { opacity: 0.60; }
+}
+.ai-ring-pulse { animation: aiRingPulse 4s ease-in-out infinite; }
